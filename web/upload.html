@@ -1,0 +1,9 @@
+<h1>Upload</h1>
+
+Upload a CSV or tab-separated file of your RNA-Seq data.  One row per gene, and one column per replicate.
+
+<form name="upload" action="r-json.cgi" method="post" enctype="multipart/form-data">
+<input type="hidden" name="query" value="upload">
+<input type="file" name="filename" />
+<input type="submit" value="Send" />
+</form>
