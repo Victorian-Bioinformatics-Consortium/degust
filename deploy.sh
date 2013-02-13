@@ -1,10 +1,13 @@
 #!/bin/sh
 
+(cd coffee ; coffee -c .)
+
 mkdir -p dist
 cd dist
 
 ln -sf ../src/r-json.hs r-json.cgi
-for f in ../web/* ../src/*; do ln -sf $f .; done
+
+for f in ../html/* ../src/* ../coffee/*.js; do ln -sf $f .; done
 
 mkdir -p tmp
 mkdir -p cached

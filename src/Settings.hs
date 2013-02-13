@@ -1,8 +1,8 @@
 module Settings
     ( Settings
     , fromResult
-    , strToCode, codeToStr
-    , readSettings
+    , strToCode, codeToStr, settingsFile
+    , readSettings, getCode
 
     , createSettings
     , get_replicates, counts_file, counts_skip
@@ -83,7 +83,7 @@ initSettings (Code str) = toJSObject [("replicates", showJSON ([] :: [String]))
                                      ]
 
 get_replicates :: Settings -> [(String,[String])]
-get_replicates settings = fromResult $ valFromObj "replicates" settings
+get_replicates settings = fromJSObject $ fromResult $ valFromObj "replicates" settings
 
 
 counts_file :: Settings -> FilePath

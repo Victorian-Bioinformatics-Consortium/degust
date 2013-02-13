@@ -1,0 +1,122 @@
+<html>
+  <head>
+
+    <!-- Boostrap CSS -->
+    <link href="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/css/bootstrap-combined.min.css" rel="stylesheet">
+
+    <!-- D3 CSS -->
+    <link rel="stylesheet" type="text/css" href="http://drpowell.github.com/parallel-coordinates/d3.parcoords.css">
+
+
+    <!-- SlickGrid CSS -->
+    <link rel="stylesheet" href="http://mleibman.github.com/SlickGrid/slick.grid.css" type="text/css"/>
+    <link rel="stylesheet" href="http://mleibman.github.com/SlickGrid/css/smoothness/jquery-ui-1.8.16.custom.css" type="text/css"/>
+
+    <link rel="stylesheet" href="compare.css" type="text/css"/>
+
+    <!-- jQuery -->
+    <script type="text/javascript" src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.8.2.min.js"></script>
+    <script type="text/javascript" src="http://code.jquery.com/ui/1.9.1/jquery-ui.js"></script>
+
+    <!-- Bootstrap -->
+    <script src="//netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/js/bootstrap.min.js"></script>
+    <!-- D3 -->
+    <script type="text/javascript" src="http://mbostock.github.com/d3/d3.js?2.5.0"></script>
+    <script type="text/javascript" src="http://drpowell.github.com/parallel-coordinates/d3.parcoords.js"></script>
+
+    <!-- SlickGrid -->
+    <script type="text/javascript" src="http://mleibman.github.com/SlickGrid/lib/jquery.event.drag-2.0.min.js"></script>
+    <script type="text/javascript" src="http://mleibman.github.com/SlickGrid/slick.core.js"></script>
+    <script type="text/javascript" src="http://mleibman.github.com/SlickGrid/slick.grid.js"></script>
+    <script type="text/javascript" src="http://mleibman.github.com/SlickGrid/slick.dataview.js"></script>
+
+    <script type="text/javascript" src="##SETTINGS##"></script>
+    <script type="text/javascript" src="slider.js"></script>
+    <script type="text/javascript" src="heatmap.js"></script>
+    <script type="text/javascript" src="kegg.js"></script>
+    <script type="text/javascript" src="compare.js"></script>
+
+  </head>
+  <body>
+    <div class='container'>
+      <div class='right'>
+        <div class='filter'>
+          <h4>Options</h4>
+          <div title='Filter genes by False Discovery Rate' data-placement='left'>
+            <label>FDR cut-off</label>
+            <input class="fdr-fld" type="text" value="0.01" />
+            <div id='fdrSlider'></div>
+          </div>
+          <div title='Filter genes by absolute of the log Fold Change' data-placement='left'>
+            <label>abs log FC</label>
+            <input class="fc-fld" type="text" value="0" />
+            <div id='fcSlider'></div>
+          </div>
+          <div title='Show FC from average (vs FC from "primary" sample)' data-placement='left'>
+            <label for='plot-avgfc-cb'>FC from Avg</label>
+            <input type="checkbox" id='plot-avgfc-cb' checked>
+          </div>
+          <div title='Show raw counts in the table' data-placement='left'>
+            <label for='show-counts-cb'>Show Counts</label>
+            <input type="checkbox" id='show-counts-cb'>
+          </div>
+          <div title='Only show genes with annotation' data-placement='left'>
+            <label for='annot-genes-cb'>Annot. genes</label>
+            <input type="checkbox" id='annot-genes-cb'>
+          </div>
+          <div title='Colour lines by p-value instead of by EC' data-placement='left'>
+            <label for='pval-col-cb'>p-val colour</label>
+            <input type="checkbox" id='pval-col-cb'>
+          </div>
+        </div>
+
+        <div class='filter kegg-filter'>
+          <h4>Kegg Pathway</h4>
+          <select id='kegg'></select>
+        </div>
+      </div>
+
+      <div class='filter ec-group' title='Click a group to filter genes by EC group' data-placement='left'>
+        <h4>EC Group</h4>
+        <div class='ec-filter'></div>
+      </div>
+
+      <div class='row'>
+        <div class='span2'>
+          <h3>Conditions</h3>
+          <div id='files'></div>
+        </div>
+
+        <div class='span6' id='expression'>
+          <div id='loading'><img src='ajax-loader.gif'></div>
+          <h3 title='Plot of log FC for each sample.  Click & drag on axes to select range.  Drag axis title to reorder columns' data-placement='bottom'>Expression</h3>
+          <div id="dge-pc" class="parcoords"></div>
+        </div>
+      </div>
+
+      <div class='row'>
+        <div id="heatmap-info"></div>
+        <div id='heatmap'></div>
+      </div>
+
+      <div class='row'>
+        <h2>Genes</h2>
+        <div>
+          <div class="tab-search">
+            Search:
+            <input type="text">
+          </div>
+          <a id='csv-download' href='#'>Download CSV</a>
+          <div id="grid-info"></div>
+        </div>
+        <div id="grid"></div>
+        <div id="gene-info"></div>
+      </div>
+
+    </div>
+
+    <div id='kegg-image'></div>
+</body>
+</html>
+
+

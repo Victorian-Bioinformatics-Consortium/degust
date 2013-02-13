@@ -48,6 +48,7 @@ fromRight (Left e) = error e
 --doQuery :: CGI String
 doQuery = do query <- getInput "query"
              case query of
+               Nothing -> cached "text/html" getPage
                Just "dge" -> cached "text/csv" getDGE
                Just "counts" -> cached "text/csv" getCounts
                Just "annot" -> cached "text/csv" getAnnot
@@ -74,6 +75,14 @@ cached typ act = do
   where
     getFile :: FilePath -> IO (Either IOException String)
     getFile = try . System.IO.Strict.readFile
+
+getPage :: CGI String
+getPage = do
+    html <- liftIO $ Prelude.readFile "compare.html"
+    settings <- findSettings
+    return $ replace "##SETTINGS##" (settingsFile $ getCode settings) html
+  where
+    replace s1 s2 str = intercalate s2 $ splitOn s1 str
 
 getDGE :: CGI String
 getDGE = getWithFields dgeR
