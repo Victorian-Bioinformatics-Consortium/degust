@@ -1,9 +1,18 @@
-<h1>Upload</h1>
+<html>
+  <head profile="http://www.w3.org/2005/10/profile">
+    <link rel="icon" type="image/png" href="favicon.png"/>
+  </head>
 
-Upload a CSV or tab-separated file of your RNA-Seq data.  One row per gene, and one column per replicate.
+  <body>
+    <h1>Upload</h1>
 
-<form name="upload" action="r-json.cgi" method="post" enctype="multipart/form-data">
-<input type="hidden" name="query" value="upload">
-<input type="file" name="filename" />
-<input type="submit" value="Send" />
-</form>
+    Upload a CSV or tab-separated file of your RNA-Seq data.  One row per gene, and one column per replicate.
+
+    <form name="upload" action="r-json.cgi" method="post" enctype="multipart/form-data">
+      <input type="hidden" name="query" value="upload"/>
+      <input type="file" name="filename" />
+      <input type="submit" value="Send" />
+    </form>
+  </body>
+</html>
+

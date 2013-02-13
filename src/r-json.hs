@@ -30,6 +30,7 @@ import Data.Text.Lazy.Builder (toLazyText)
 import Text.Regex.PCRE
 import Text.JSON (decode,Result(..))
 import Data.Time (getCurrentTime)
+import Text.Printf
 
 import Data.ByteString.Lazy (pack)
 import Data.Digest.Pure.MD5 (md5)
@@ -54,7 +55,7 @@ doQuery = do query <- getInput "query"
                Just "annot" -> cached "text/csv" getAnnot
                Just "kegg_titles" -> cached "text/csv" getKeggTitles
                Just "clustering" -> cached "text/csv" getClustering
-               Just "upload" -> doUpload >>= output
+               Just "upload" -> doUpload
                x -> logMsg ("Unknown query : "++show x) >> output ""
 
 hash key = show . md5 . pack . map (fromIntegral . fromEnum) . show $ key
@@ -94,7 +95,9 @@ getCounts :: CGI String
 getCounts = runR getCountsR
 
 getAnnot :: CGI String
-getAnnot = liftIO $ Prelude.readFile "annot.csv"
+getAnnot = do
+    settings <- findSettings
+    liftIO $ Prelude.readFile $ annotFile $ getCode settings
 
 getWithFields :: (Settings -> [String] -> FilePath -> String) -> CGI String
 getWithFields act = do jsonString <- getInput "fields"
@@ -123,7 +126,7 @@ getKeggTitles =  liftIO $ do
                               let ecs = xml =~ "name=\"ec:([.\\d]+)\"" :: [[String]]
                               return $ line ++ [intercalate " " $ map (!!1) ecs]
 
-doUpload :: CGI String
+doUpload :: CGI CGIResult
 doUpload = do
   dat <- getInputFPS "filename"
   case dat of
@@ -131,7 +134,15 @@ doUpload = do
                    now <- liftIO getCurrentTime
                    code <- liftIO $ createSettings dat [("remote_addr", remote_ip),("created",show now)]
                    logMsg $ "New upload from "++remote_ip++" : "++codeToStr code
-                   return $ "Created settings "++codeToStr code
+                   let url = "r-json.cgi?code="++codeToStr code
+                   setHeader "Content-type" "text/html"
+                   output $ printf "Redirecting...<br>Click <a href='%s'>here</a> \
+                                   \if it doesn't happen automatically.\
+                                   \<meta http-equiv=\"refresh\" content=\"0;URL='%s'\">" url url
+
+                   -- setStatus 302 "Found"
+                   -- redirect $ url
+
     Nothing -> error "No input filename"
 
 runR :: (Settings -> FilePath -> String) -> CGI String
@@ -204,7 +215,7 @@ initR settings =
   library(limma)
   library(edgeR)
 
-  x<-read.delim('#{counts_file settings}',skip=#{counts_skip settings})
+  x<-read.delim('#{get_counts_file settings}',skip=#{get_counts_skip settings})
   counts <- x[,#{columns settings}]
   design <- #{design settings}
  |] ()

@@ -1,11 +1,11 @@
 module Settings
     ( Settings
     , fromResult
-    , strToCode, codeToStr, settingsFile
+    , strToCode, codeToStr, settingsFile, annotFile
     , readSettings, getCode
 
     , createSettings
-    , get_replicates, counts_file, counts_skip
+    , get_replicates, get_counts_file, get_counts_skip
     ) where
 
 import Data.List
@@ -32,6 +32,7 @@ codeToFilePath (Code s) = user_dir </> s
 settingsFile,countsFile :: Code -> String
 settingsFile code = codeToFilePath code ++ "-settings.js"
 countsFile code = codeToFilePath code ++ "-counts.csv"
+annotFile code = codeToFilePath code ++ "-annot.csv"
 
 user_dir :: FilePath
 user_dir = "user-files"
@@ -85,11 +86,10 @@ initSettings (Code str) = toJSObject [("replicates", showJSON ([] :: [String]))
 get_replicates :: Settings -> [(String,[String])]
 get_replicates settings = fromJSObject $ fromResult $ valFromObj "replicates" settings
 
+get_counts_file :: Settings -> FilePath
+get_counts_file s = countsFile $ getCode s
 
-counts_file :: Settings -> FilePath
-counts_file s = countsFile $ getCode s
-
-counts_skip :: Settings -> Int
-counts_skip s = fromResult $ valFromObj "skip" s
+get_counts_skip :: Settings -> Int
+get_counts_skip s = fromResult $ valFromObj "skip" s
 
 
