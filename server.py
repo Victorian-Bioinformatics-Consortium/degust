@@ -5,7 +5,7 @@ import sys, os
 import CGIHTTPServer, BaseHTTPServer
 
 
-os.system("./deploy.sh")
+os.system("./deploy-dev.sh")
 os.chdir("dist")
 
 
