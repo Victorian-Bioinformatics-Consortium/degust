@@ -1,4 +1,4 @@
-script = (params) -> "r-json.cgi?code=#{settings.code}&#{params}"
+script = (params) -> "r-json.cgi?code=#{window.my_code}&#{params}"
 
 select_primary = (e) ->
            el = $(e.target).parent('div')

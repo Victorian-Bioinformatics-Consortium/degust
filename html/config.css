@@ -9,4 +9,4 @@
 .template { display: none; }
 .conditions { border: 1px solid #aaa; border-radius: 5px; padding: 0 3px; }
 
-#view { float: right; }
+.view { float: right; }

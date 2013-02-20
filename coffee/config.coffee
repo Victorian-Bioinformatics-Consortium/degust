@@ -1,4 +1,4 @@
-script = (params) -> "r-json.cgi?code=#{settings.code}" + if params then "&#{params}" else ""
+script = (params) -> "r-json.cgi?code=#{window.my_code}" + if params then "&#{params}" else ""
 
 mod_settings = null
 reset_settings = () ->
@@ -7,7 +7,6 @@ reset_settings = () ->
 data = null
 grid = null
 asRows = null
-to_hide = []
 
 init_table = () ->
     options =
@@ -57,11 +56,14 @@ save = () ->
         dataType: 'json'
     }).done((x) ->
         $('#saving-modal .modal-body').html("Save successful.")
+        $('#saving-modal .view').show()
      ).fail(
         $('#saving-modal .modal-body').html("Failed!")
+        $('#saving-modal .view').hide()
      ).always(
         $('#saving-modal').modal({'backdrop': true, 'keyboard' : true})
         $('#saving-modal .modal-footer').show()
+        $('#saving-modal #close-modal').click( () -> window.location = window.location)
      )
 
 
@@ -98,8 +100,9 @@ update_data = () ->
         create_condition_widget(n,lst)
 
 update_table = () ->
+    mod_settings.hide_columns ||= []
     column_keys = d3.keys(asRows[0])
-    columns = column_keys.filter((key,i) -> key not in to_hide ).map((key,i) ->
+    columns = column_keys.filter((key,i) -> key not in mod_settings.hide_columns ).map((key,i) ->
         id: key
         name: key
         field: key
@@ -167,7 +170,7 @@ init = () ->
     $('#save').click(save)
     #$('#cancel').click(() -> window.location = script())
     $('#cancel').click(() -> reset_settings(); update_data())
-    $('#view').attr('href', script())
+    $('.view').attr('href', script())
 
     $('select.id-column').change(() ->
         mod_settings.id_column = $("select.id-column option:selected").val()

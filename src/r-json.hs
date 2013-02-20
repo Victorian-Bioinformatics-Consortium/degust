@@ -30,7 +30,7 @@ import qualified Data.Text.Lazy as T
 import Data.Text.Lazy.Builder (toLazyText)
 import qualified Data.ByteString.Lazy as BS
 import Text.Regex.PCRE
-import Text.JSON (decode,Result(..))
+import Text.JSON (encode,decode,Result(..))
 import Data.Time (getCurrentTime)
 import Text.Printf
 
@@ -51,10 +51,13 @@ main = do
 fromRight (Right r) = r
 fromRight (Left e) = error e
 
+urlForCode code = "r-json.cgi?code="++codeToStr code
+
 --doQuery :: CGI String
 doQuery = do query <- getInput "query"
              case query of
                Nothing -> getPage "compare.html"
+               Just "settings" -> getJSSettings
                Just "config" -> getPage "config.html"
                Just "csv" -> getCSV
                Just "dge" -> cached "text/csv" getDGE
@@ -91,7 +94,7 @@ getPage file = do
     html <- liftIO $ Prelude.readFile file
     settings <- findSettings
     setHeader "Content-type" "text/html"
-    output $ replace "##SETTINGS##" (settingsFile $ getCode settings) html
+    output $ replace "##SETTINGS##" (urlForCode (getCode settings) ++ "&query=settings") html
   where
     replace s1 s2 str = intercalate s2 $ splitOn s1 str
 
@@ -104,7 +107,14 @@ getCSV = do
     outputFPS . bsUnlines . take 20 . bsLines $ counts
   where
     bsLines = BS.split (BS.head "\n")
-    bsUnlines = BS.intercalate "\n" 
+    bsUnlines = BS.intercalate "\n"
+
+getJSSettings :: CGI CGIResult
+getJSSettings = do
+    settings <- findSettings
+    setHeader "Content-type" "application/javascript"
+    let settingStr = encode . get_user_settings $ settings
+    output $ "window.settings = "++settingStr++"; window.my_code='"++codeToStr (getCode settings)++"';"
 
 getDGE :: CGI String
 getDGE = getWithFields dgeR
@@ -169,9 +179,9 @@ doUpload = do
 
     save dat = do remote_ip <- remoteAddr
                   now <- liftIO getCurrentTime
-                  code <- liftIO $ createSettings dat [("remote_addr", remote_ip),("created",show now)]
+                  code <- liftIO $ createSettings dat remote_ip now
                   logMsg $ "New upload from "++remote_ip++" : "++codeToStr code
-                  let url = "r-json.cgi?code="++codeToStr code
+                  let url = urlForCode code
                   setHeader "Content-type" "text/html"
                   output $ printf "Redirecting...<br>Click <a href='%s'>here</a> \
                                   \if it doesn't happen automatically.\
@@ -187,11 +197,9 @@ saveSettings = do
     let mNew = decode $ fromMaybe (error "No data") jsonString
     case mNew of
       Error e -> logMsg ("ERR:"++e) >> outputMethodNotAllowed [""]
-      Ok new -> if getCode oldSettings /= getCode new
-                then error "Cannot change code"
-                else do liftIO $ writeSettings (getCode oldSettings) new
-                        setHeader "Content-type" "text/json"
-                        output "{\"result\": \"ok!\"}"
+      Ok new -> do liftIO $ writeUserSettings oldSettings new
+                   setHeader "Content-type" "text/json"
+                   output "{\"result\": \"ok!\"}"
 
 runR :: (Settings -> FilePath -> String) -> CGI String
 runR script = do
@@ -231,8 +239,11 @@ getCountsR settings file =
   write.csv(counts, file="#{file}", row.names=FALSE)
  |] ()
 
+-- | Convert the array of column names into an R list (remember to replace magic characters in the column name)
 toRStringList :: [String] -> String
-toRStringList ls = intercalate "," . map (\c -> "'"++c++"'") $ ls
+toRStringList ls = intercalate "," . map (\col -> "'"++repl col++"'") $ ls
+  where
+    repl str = map (\c -> if c `elem` "-:" then '.' else c) str
 
 -- | Build an R list of the columns
 columns settings = let columns = concatMap snd $ get_replicates settings
