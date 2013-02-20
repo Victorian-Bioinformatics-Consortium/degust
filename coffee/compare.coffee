@@ -167,7 +167,7 @@ init_chart = () ->
 
 update_info = () ->
     view = grid.getViewport()
-    btm = d3.minimum [view.bottom, dataView.length()]
+    btm = d3.min [view.bottom, dataView.getLength()]
     $('#grid-info').html("Showing #{view.top}..#{btm} of #{dataView.getLength()}")
 
 comparer = (x,y) -> (if x == y then 0 else (if x > y then 1 else -1))
