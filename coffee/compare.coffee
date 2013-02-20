@@ -518,7 +518,7 @@ init = () ->
     request_init_data()
 
     # Select some samples
-    init_select = settings['init_select'] || Object.keys(settings.replicates)
+    init_select = settings['init_select'] || []
     $.each(init_select, (i,name) ->
         cl = name.replace(/\./g, '\\.')
         $("div.#{cl}").addClass('selected')

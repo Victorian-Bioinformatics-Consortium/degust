@@ -43,7 +43,8 @@ warnings = () ->
 
 save = () ->
     mod_settings.name = $("input.name").val()
-    mod_settings.replicates = conditions_to_settings()
+    conditions_to_settings()
+
 
     $('#saving-modal').modal({'backdrop': 'static', 'keyboard' : false})
     $('#saving-modal .modal-body').html("Saving...")
@@ -97,7 +98,7 @@ update_data = () ->
 
     $('.condition:not(.template)').remove()
     for n,lst of mod_settings.replicates
-        create_condition_widget(n,lst)
+        create_condition_widget(n, lst, n in (mod_settings['init_select'] || []))
 
 update_table = () ->
     mod_settings.hide_columns ||= []
@@ -123,7 +124,7 @@ set_guess_type = () ->
     else
         $('#fmt-csv').attr('checked','checked')
 
-create_condition_widget = (name, selected) ->
+create_condition_widget = (name, selected, is_init) ->
     cond = $('.condition.template').clone(true)
     cond.removeClass('template')
 
@@ -139,6 +140,7 @@ create_condition_widget = (name, selected) ->
         noneSelectedText: '-- None selected --'
         selectedList: 4
     )
+    $('.init-select',cond).prop('checked', is_init)
 
     $(".condition-group").append(cond)
 
@@ -147,13 +149,16 @@ del_condition_widget = (e) ->
 
 conditions_to_settings = () ->
     c = {}
+    init_select = []
     $('.condition:not(.template)').each( (i,e) ->
         lst = []
         $('select.columns option:selected',e).each( (j,opt) -> lst.push($(opt).val()))
         name = $('.col-name',e).val() || "Cond #{i+1}"
         c[name] = lst
+        init_select.push(name) if $('.init-select',e).is(':checked')
     )
-    return c
+    mod_settings.replicates = c
+    mod_settings.init_select = init_select
 
 init = () ->
     reset_settings()
