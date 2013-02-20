@@ -2,7 +2,7 @@ module Settings
     ( Settings
     , fromResult
     , strToCode, codeToStr, settingsFile, annotFile
-    , readSettings, getCode
+    , readSettings, writeSettings, getCode
 
     , createSettings
     , get_replicates, get_counts_file, get_counts_skip
@@ -15,7 +15,7 @@ import qualified Data.ByteString.Lazy as BS
 
 import Utils
 
-newtype Code = Code {codeToStr :: String}
+newtype Code = Code {codeToStr :: String} deriving (Eq)
 
 type Settings = JSObject JSValue
 

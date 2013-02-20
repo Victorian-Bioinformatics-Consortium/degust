@@ -167,7 +167,8 @@ init_chart = () ->
 
 update_info = () ->
     view = grid.getViewport()
-    $('#grid-info').html("Showing #{view.top}..#{view.bottom} of #{dataView.getLength()}")
+    btm = d3.minimum [view.bottom, dataView.length()]
+    $('#grid-info').html("Showing #{view.top}..#{btm} of #{dataView.getLength()}")
 
 comparer = (x,y) -> (if x == y then 0 else (if x > y then 1 else -1))
 
@@ -494,6 +495,8 @@ update_data = (data) ->
     parcoords.brush()   # Reset any brushes that were in place
 
 init = () ->
+    $('a.config').attr('href', script("query=config"))
+
     fdrThreshold = settings['fdrThreshold'] if settings['fdrThreshold'] != undefined
     fcThreshold  = settings['fcThreshold']  if settings['fcThreshold'] != undefined
 

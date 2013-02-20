@@ -1,6 +1,6 @@
 #!/usr/bin/env runghc
 
-{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE QuasiQuotes, OverloadedStrings #-}
 
 {- Test on the command line:
       QUERY_STRING=query=counts ./r-json.hs
@@ -25,8 +25,10 @@ import System.IO (openTempFile, hClose, hPutStr, hPutStrLn, stderr)
 import System.Process
 import System.Directory (removeFile)
 import Text.Shakespeare.Text
-import Data.Text.Lazy (unpack)
+import Data.Text.Lazy.Encoding
+import qualified Data.Text.Lazy as T
 import Data.Text.Lazy.Builder (toLazyText)
+import qualified Data.ByteString.Lazy as BS
 import Text.Regex.PCRE
 import Text.JSON (decode,Result(..))
 import Data.Time (getCurrentTime)
@@ -41,7 +43,10 @@ import Settings
 debug = False
 
 main = do
-  runCGI doQuery
+  runCGI $ catchCGI doQuery
+                 (\ex -> do logMsg $ "Exception : "++show ex
+                            outputError 400 "Bad request" []
+                 )
 
 fromRight (Right r) = r
 fromRight (Left e) = error e
@@ -49,14 +54,17 @@ fromRight (Left e) = error e
 --doQuery :: CGI String
 doQuery = do query <- getInput "query"
              case query of
-               Nothing -> cached "text/html" getPage
+               Nothing -> getPage "compare.html"
+               Just "config" -> getPage "config.html"
+               Just "csv" -> getCSV
                Just "dge" -> cached "text/csv" getDGE
                Just "counts" -> cached "text/csv" getCounts
                Just "annot" -> cached "text/csv" getAnnot
                Just "kegg_titles" -> cached "text/csv" getKeggTitles
                Just "clustering" -> cached "text/csv" getClustering
                Just "upload" -> doUpload
-               x -> logMsg ("Unknown query : "++show x) >> output ""
+               Just "save" -> saveSettings
+               x -> let msg = "Unknown query : "++show x in logMsg msg >> outputNotFound msg
 
 hash key = show . md5 . pack . map (fromIntegral . fromEnum) . show $ key
 
@@ -77,13 +85,26 @@ cached typ act = do
     getFile :: FilePath -> IO (Either IOException String)
     getFile = try . System.IO.Strict.readFile
 
-getPage :: CGI String
-getPage = do
-    html <- liftIO $ Prelude.readFile "compare.html"
+-- | Return an HTML page with a substitution for SETTINGS
+getPage :: FilePath -> CGI CGIResult
+getPage file = do
+    html <- liftIO $ Prelude.readFile file
     settings <- findSettings
-    return $ replace "##SETTINGS##" (settingsFile $ getCode settings) html
+    setHeader "Content-type" "text/html"
+    output $ replace "##SETTINGS##" (settingsFile $ getCode settings) html
   where
     replace s1 s2 str = intercalate s2 $ splitOn s1 str
+
+-- | Return a string with the first 20 lines of the csv counts file
+getCSV :: CGI CGIResult
+getCSV = do
+    settings <- findSettings
+    setHeader "Content-type" "text/csv"
+    counts <- liftIO $ BS.readFile (get_counts_file settings)
+    outputFPS . bsUnlines . take 20 . bsLines $ counts
+  where
+    bsLines = BS.split (BS.head "\n")
+    bsUnlines = BS.intercalate "\n" 
 
 getDGE :: CGI String
 getDGE = getWithFields dgeR
@@ -123,27 +144,54 @@ getKeggTitles =  liftIO $ do
     header = ["code","title","ec"]
     lookupEC line@(mp:_) = do xml <- catch (Prelude.readFile $ "kegg/kgml/map/map"++mp++".xml")
                                      ((\_ -> return "" ) :: IOException -> IO String)
-                              let ecs = xml =~ "name=\"ec:([.\\d]+)\"" :: [[String]]
+                              let ecs = xml =~ ("name=\"ec:([.\\d]+)\"" ::String) :: [[String]]
                               return $ line ++ [intercalate " " $ map (!!1) ecs]
 
 doUpload :: CGI CGIResult
 doUpload = do
-  dat <- getInputFPS "filename"
-  case dat of
-    Just dat -> do remote_ip <- remoteAddr
-                   now <- liftIO getCurrentTime
-                   code <- liftIO $ createSettings dat [("remote_addr", remote_ip),("created",show now)]
-                   logMsg $ "New upload from "++remote_ip++" : "++codeToStr code
-                   let url = "r-json.cgi?code="++codeToStr code
-                   setHeader "Content-type" "text/html"
-                   output $ printf "Redirecting...<br>Click <a href='%s'>here</a> \
-                                   \if it doesn't happen automatically.\
-                                   \<meta http-equiv=\"refresh\" content=\"0;URL='%s'\">" url url
+    dat <- getInputFPS "filename"
+    case dat of
+      Nothing -> error "No input data"
+      Just dat -> case isValid dat of
+                    Nothing -> save dat
+                    Just msg -> do setHeader "Content-type" "text/html"; output msg
+  where
+    chkLines txt = let n = length $ T.lines txt
+                   in if n<10
+                      then Just "Too few lines in the file"
+                      else if n>40000
+                           then Just "Too many lines in the file"
+                           else Nothing
 
-                   -- setStatus 302 "Found"
-                   -- redirect $ url
+    isValid dat = case decodeUtf8' dat of
+                    Left _ex  -> Just "File does not appear to be text"
+                    Right txt -> chkLines txt
 
-    Nothing -> error "No input filename"
+    save dat = do remote_ip <- remoteAddr
+                  now <- liftIO getCurrentTime
+                  code <- liftIO $ createSettings dat [("remote_addr", remote_ip),("created",show now)]
+                  logMsg $ "New upload from "++remote_ip++" : "++codeToStr code
+                  let url = "r-json.cgi?code="++codeToStr code
+                  setHeader "Content-type" "text/html"
+                  output $ printf "Redirecting...<br>Click <a href='%s'>here</a> \
+                                  \if it doesn't happen automatically.\
+                                  \<meta http-equiv=\"refresh\" content=\"0;URL='%s'\">" url url
+
+                  -- setStatus 302 "Found"
+                  -- redirect $ url
+
+saveSettings :: CGI CGIResult
+saveSettings = do
+    oldSettings <- findSettings
+    jsonString <- getInput "settings"
+    let mNew = decode $ fromMaybe (error "No data") jsonString
+    case mNew of
+      Error e -> logMsg ("ERR:"++e) >> outputMethodNotAllowed [""]
+      Ok new -> if getCode oldSettings /= getCode new
+                then error "Cannot change code"
+                else do liftIO $ writeSettings (getCode oldSettings) new
+                        setHeader "Content-type" "text/json"
+                        output "{\"result\": \"ok!\"}"
 
 runR :: (Settings -> FilePath -> String) -> CGI String
 runR script = do
@@ -177,7 +225,7 @@ instance ToText Int where toText = toText . show
 
 getCountsR :: Settings -> FilePath -> String
 getCountsR settings file =
-  unpack . toLazyText $ [text|
+  T.unpack . toLazyText $ [text|
   #{initR settings}
   counts <- cbind(Feature=x$Feature, counts)
   write.csv(counts, file="#{file}", row.names=FALSE)
@@ -211,7 +259,7 @@ contMatrix settings (c1:cs) =  "matrix(data=c("++intercalate "," (concat allCols
 
 -- | Common R setup code
 initR settings =
-  unpack . toLazyText $ [text|
+  T.unpack . toLazyText $ [text|
   library(limma)
   library(edgeR)
 
@@ -222,7 +270,7 @@ initR settings =
 
 dgeR :: Settings -> [String] -> FilePath -> String
 dgeR settings cs file =
-    unpack . toLazyText $ [text|
+    T.unpack . toLazyText $ [text|
   #{initR settings}
 
   nf <- calcNormFactors(counts)
@@ -247,7 +295,7 @@ dgeR settings cs file =
  |] ()
 
 clusteringR settings cs file =
-    unpack . toLazyText $ [text|
+    T.unpack . toLazyText $ [text|
   #{initR settings}
 
   nf <- calcNormFactors(counts)

@@ -1,0 +1,130 @@
+<html>
+  <head profile="http://www.w3.org/2005/10/profile">
+    <link rel="icon" type="image/png" href="favicon.png"/>
+
+    <!-- Boostrap CSS -->
+    <link href="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/css/bootstrap-combined.min.css" rel="stylesheet">
+
+    <!-- D3 CSS -->
+    <link rel="stylesheet" type="text/css" href="http://drpowell.github.com/parallel-coordinates/d3.parcoords.css">
+
+
+    <!-- SlickGrid CSS -->
+    <link rel="stylesheet" href="http://mleibman.github.com/SlickGrid/slick.grid.css" type="text/css"/>
+    <link rel="stylesheet" href="http://mleibman.github.com/SlickGrid/css/smoothness/jquery-ui-1.8.16.custom.css" type="text/css"/>
+
+    <!-- jQuery Multi-select CSS -->
+    <link rel="stylesheet" href="jquery.multiselect.css" type="text/css"/>
+    
+
+    <link rel="stylesheet" href="compare.css" type="text/css"/>
+    <link rel="stylesheet" href="config.css" type="text/css"/>
+
+    <!-- jQuery -->
+    <script type="text/javascript" src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.8.2.min.js"></script>
+    <script type="text/javascript" src="http://code.jquery.com/ui/1.9.1/jquery-ui.js"></script>
+
+    <!-- jQuery Multi-select js -->
+    <script type="text/javascript" src="jquery.multiselect.min.js"></script>
+
+    <!-- Bootstrap -->
+    <script src="//netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/js/bootstrap.min.js"></script>
+    <!-- D3 -->
+    <script type="text/javascript" src="http://mbostock.github.com/d3/d3.js?2.5.0"></script>
+
+    <!-- SlickGrid -->
+    <script type="text/javascript" src="http://mleibman.github.com/SlickGrid/lib/jquery.event.drag-2.0.min.js"></script>
+    <script type="text/javascript" src="http://mleibman.github.com/SlickGrid/slick.core.js"></script>
+    <script type="text/javascript" src="http://mleibman.github.com/SlickGrid/slick.grid.js"></script>
+    <script type="text/javascript" src="http://mleibman.github.com/SlickGrid/slick.dataview.js"></script>
+
+    <script type="text/javascript" src="##SETTINGS##"></script>
+    <script type="text/javascript" src="config.js"></script>
+  </head>
+  <body>
+    <div class="container">
+
+      <div class="row">
+        <div class="span8 options form-horizontal">
+          <legend>Settings</legend>
+
+          <div class="control-group">
+            <label class="control-label" for="name">Name</label>
+            <div class="controls">
+              <input type="text" name="name" placeholder=""/>
+            </div>
+          </div>
+          <div class="control-group">
+            <label class="control-label">Format type</label>
+            <div class="controls">
+              <label class="radio">
+                <input type="radio" name="fmt" class="fmt" id="fmt-csv" value="CSV">Comma separated (CSV)
+              </label>
+              <label class="radio">
+                <input type="radio" name="fmt" class="fmt" id="fmt-tab" value="TAB">TAB separated (TSV)
+              </label>
+            </div>
+          </div>
+
+          <div class="id-column control-group">
+            <label class="control-label">ID column</label>
+            <div class="controls">
+              <select class="id-column"></select>
+              <span class="help-inline"></span>
+            </div>
+          </div>
+          <div class="control-group">
+            <label class="control-label">Hide columns</label>
+            <div class="controls">
+              <select id="hide-columns" multiple="multiple"></select>
+            </div>
+          </div>
+
+          <div class="condition-group conditions">
+
+            <div class="control-group">
+              <span class="control-label">Condition name</span>
+              <div class="controls">
+                <span>Replicates</span>
+              </div>
+            </div>
+
+            <div class="control-group condition template">
+              <input class="control-label col-name" placeholder="Condition Name"/>
+              <div class="controls">
+                <select class="columns" multiple="multiple"></select>
+                <button type="button" class="del-condition">&times;</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="control-group">
+            <button type="button" id="add-condition" class="btn">Add condition</button>
+          </div>
+
+          <div class="control-group">
+            <button type="submit" id="save" class="btn btn-primary">Save changes</button>
+            <button type="button" id="cancel" class="btn">Revert</button>
+            <a id="view" class="btn btn-inverse" href="#">View</a>
+          </div>
+        </div>
+      </div>
+
+      <div id="grid-info" class="row"></div>
+      <div id="grid" class="row"></div>
+    </div>
+
+    <div id="saving-modal" class="modal hide fade" tabindex="-1" role="dialog">
+      <div class="modal-header">
+        <h3 id="myModalLabel">Saving settings</h3>
+      </div>
+      <div class="modal-body">
+      </div>
+      <div class="modal-footer">
+        <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+        <!-- <button class="btn btn-primary">Save changes</button> -->
+      </div>
+    </div>
+
+  </body>
+</html>
