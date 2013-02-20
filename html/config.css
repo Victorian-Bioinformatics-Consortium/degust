@@ -1,4 +1,6 @@
 
+body { padding-top: 60px; }
+
 .options { border: 1px solid #aaa; border-radius: 5px; background-color: #eee; padding: 0 3px; }
 
 #grid { height: 300px; font-size: 8pt; }

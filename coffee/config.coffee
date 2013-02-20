@@ -173,7 +173,6 @@ init = () ->
 
     $('input.fmt').click(update_data)
     $('#save').click(save)
-    #$('#cancel').click(() -> window.location = script())
     $('#cancel').click(() -> reset_settings(); update_data())
     $('.view').attr('href', script())
 
