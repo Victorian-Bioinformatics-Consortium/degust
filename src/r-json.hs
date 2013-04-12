@@ -181,7 +181,7 @@ doUpload = do
                   now <- liftIO getCurrentTime
                   code <- liftIO $ createSettings dat remote_ip now
                   logMsg $ "New upload from "++remote_ip++" : "++codeToStr code
-                  let url = urlForCode code
+                  let url = urlForCode code ++ "&query=config"
                   setHeader "Content-type" "text/html"
                   output $ printf "Redirecting...<br>Click <a href='%s'>here</a> \
                                   \if it doesn't happen automatically.\

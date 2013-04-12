@@ -129,6 +129,7 @@ create_condition_widget = (name, selected, is_init) ->
     cond.removeClass('template')
 
     $("input.col-name",cond).val(name) if name
+
     column_keys = d3.keys(asRows[0])
     opts = ""
     $.each(column_keys, (i, col) ->
@@ -143,6 +144,33 @@ create_condition_widget = (name, selected, is_init) ->
     $('.init-select',cond).prop('checked', is_init)
 
     $(".condition-group").append(cond)
+
+    # Auto setting of condition name based on columns selected
+    $("select",cond).change(() ->
+        inp = $("input.col-name",cond)
+        if inp.val()=="" || !inp.data('edited')
+            lst = []
+            $('select.columns option:selected',cond).each( (j,opt) -> lst.push($(opt).val()))
+            inp.val(common_prefix(lst))
+    )
+
+    # Track editing of the name.  Blanking the name out makes it "un-edited"
+    $("input.col-name",cond).data('edited', false)
+    $("input.col-name",cond).change(() ->
+        inp = $("input.col-name",cond)
+        inp.data('edited', inp.val()!="")
+    )
+
+# Return the longest common prefix of the list of strings passed in
+common_prefix = (lst) ->
+    lst = lst.slice(0).sort()
+    tem1 = lst[0]
+    s = tem1.length;
+    tem2 = lst.pop();
+    while(s && tem2.indexOf(tem1) == -1)
+        tem1 = tem1.substring(0, --s)
+    tem1
+
 
 del_condition_widget = (e) ->
     $(e.target).parents(".condition").remove()
