@@ -269,9 +269,12 @@ pcFilter = (item) ->
 
     return false if item[pval_col] > fdrThreshold
     return false if annot_genes_only && !current_annot[item.id]
-    ec_codes = $('.ec-filter .selected').map((i,d) -> $(d).data('code'))
-    if ec_codes.length>0
-        return ec_code(item.id) in ec_codes
+
+    # TODO - this is a very inefficient place to filter on ec.  Disabled for now.  Remove?
+    # ec_codes = $('.ec-filter .selected').map((i,d) -> $(d).data('code'))
+    # if ec_codes.length>0
+    #     return ec_code(item.id) in ec_codes
+    #
     if kegg_filter.length>0
         return ec_number(item.id) in kegg_filter
 
