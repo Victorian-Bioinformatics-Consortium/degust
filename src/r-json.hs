@@ -1,6 +1,6 @@
 #!/usr/bin/env runghc
 
-{-# LANGUAGE QuasiQuotes, OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes, OverloadedStrings, TemplateHaskell #-}
 
 {- Test on the command line:
       QUERY_STRING=query=counts ./r-json.hs
@@ -25,6 +25,7 @@ import System.IO (openTempFile, hClose, hPutStr, hPutStrLn, stderr)
 import System.Process
 import System.Directory (removeFile)
 import Text.Shakespeare.Text
+import Text.Hamlet
 import Data.Text.Lazy.Encoding
 import qualified Data.Text.Lazy as T
 import Data.Text.Lazy.Builder (toLazyText)
@@ -233,9 +234,11 @@ instance ToText Int where toText = toText . show
 
 getCountsR :: Settings -> FilePath -> String
 getCountsR settings file =
+    let extra_cols = nub $ get_id_column settings : get_ec_column settings : get_info_columns settings
+    in
   T.unpack . toLazyText $ [text|
   #{initR settings}
-  counts <- cbind(Feature=x$Feature, counts)
+  counts <- cbind(x[,c(#{toRStringList extra_cols})], counts)
   write.csv(counts, file="#{file}", row.names=FALSE)
  |] ()
 

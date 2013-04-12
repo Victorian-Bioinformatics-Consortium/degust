@@ -37,8 +37,8 @@ colour_cat20 = d3.scale.category20().domain([1..20])
 
 unknown_colour = 16
 ec_code = (id) ->
-    return unknown_colour if !current_annot[id]
-    ec = current_annot[id]['EC_NUMBER']
+    return unknown_colour if !ec_column || !current_counts[id][ec_column]
+    ec = current_counts[id][ec_column]
     Number(ec[0])
 
 colour_by_ec = (d) -> colour_cat20(ec_code(d.id))
@@ -46,8 +46,8 @@ colour_by_ec = (d) -> colour_cat20(ec_code(d.id))
 colour_by_pval = (d) -> blue_to_brown(d[pval_col])
 
 ec_number = (id) ->
-    if current_annot[id]!=undefined && current_annot[id]['EC_NUMBER']
-        return current_annot[id]['EC_NUMBER']
+    if ec_column && current_counts[id][ec_column]
+        return current_counts[id][ec_column]
     else
         ""
 
@@ -73,12 +73,7 @@ heatmap = null
 
 id_col = null       # Column used for the ID
 info_columns = []   # Columns used to display info about the genes
-
-annot_to_html = (obj) ->
-    res=""
-    for k,v of obj
-        res += "<div><span class='lbl'>#{k}: </span><span>#{v}</span></div>"
-    res
+ec_column = null    # Column (if any) with EC number
 
 kegg_mouseover = (obj) ->
     ec = obj.id
@@ -127,10 +122,6 @@ init_chart = () ->
         i = grid.getCellFromEvent(e).row
         d = dataView.getItem(i)
         parcoords.highlight([d])
-        annot = current_annot[d[id_col]]
-        if annot != undefined
-            $('#gene-info').html(annot_to_html(annot))
-            kegg.highlight(ec_number(d[id_col]))
     )
     grid.onMouseLeave.subscribe( (e,args) ->
         parcoords.unhighlight()
@@ -268,7 +259,7 @@ pcFilter = (item) ->
         return false if !keep
 
     return false if item[pval_col] > fdrThreshold
-    return false if annot_genes_only && !current_annot[item.id]
+    return false if annot_genes_only && (!ec_colum || !current_counts[item.id][ec_column])
 
     # TODO - this is a very inefficient place to filter on ec.  Disabled for now.  Remove?
     # ec_codes = $('.ec-filter .selected').map((i,d) -> $(d).data('code'))
@@ -376,7 +367,7 @@ kegg_selected = () ->
     else
         ec_colours = calc_kegg_colours(current_data)
         kegg.load(code, ec_colours, set_filter)
-        $('div#kegg-image').dialog({width:500, height:600, title: title, position: {my: "right top", at:"right top", of: $('body')} })
+        $('div#kegg-image').dialog({width:500, height:600, title: title, position: {my: "right top", at:"right top+60", of: $('body')} })
 
 update_flags = () ->
     show_expr = $('#plot-expr-cb').is(":checked")
@@ -385,35 +376,30 @@ update_flags = () ->
     annot_genes_only = $('#annot-genes-cb').is(":checked")
     pval_colour = $('#pval-col-cb').is(":checked")
 
-current_annot = {}
 current_counts = {}
 
 request_init_data = () ->
     d3.csv(script('query=counts'), (data) ->
         data.forEach (row) ->
           current_counts[row[id_col]] = row
-        #console.log current_counts
-    )
+        # console.log current_counts
 
-    d3.csv(script('query=annot'), (data) ->
-        data.forEach (row) ->
-            current_annot[row[id_col]] = row
+        if ec_column
+            d3.tsv(script('query=kegg_titles'), (data) ->
+                opts = "<option value=''>--- No pathway selected ---</option>"
 
-        d3.tsv(script('query=kegg_titles'), (data) ->
-            opts = "<option value=''>--- No pathway selected ---</option>"
+                have_ec = {}
+                for k,v of current_counts
+                    have_ec[v[ec_column]]=1
 
-            have_ec = {}
-            for k,v of current_annot
-                have_ec[v['EC_NUMBER']]=1
-
-            data.forEach (row) ->
-                num=0
-                for ec in row.ec.split(" ").filter((s) -> s.length>0)
-                    num++ if have_ec[ec]
-                if num>0
-                    opts += "<option value='#{row.code}'>#{row.title} (#{num})</option>"
-            $('select#kegg').html(opts)
-        )
+                data.forEach (row) ->
+                    num=0
+                    for ec in row.ec.split(" ").filter((s) -> s.length>0)
+                        num++ if have_ec[ec]
+                    if num>0
+                        opts += "<option value='#{row.code}'>#{row.title} (#{num})</option>"
+                $('select#kegg').html(opts)
+            )
     )
 
 num_loading = 0
@@ -508,6 +494,7 @@ init = () ->
         window.location = script("query=config")
     id_col = settings['id_column']
     info_columns = settings['info_columns'] || []
+    ec_column = settings['ec_column'] || null
 
     $('a.config').attr('href', script("query=config"))
 
@@ -534,8 +521,7 @@ init = () ->
     # Select some samples
     init_select = settings['init_select'] || []
     $.each(init_select, (i,name) ->
-        cl = name.replace(/\./g, '\\.')
-        $("div.#{cl}").addClass('selected')
+        $("div[class='#{name}']").addClass('selected')
     )
     $('#files div.selected:first').addClass('primary')
     update_samples()

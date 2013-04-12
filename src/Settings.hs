@@ -6,6 +6,7 @@ module Settings
 
     , createSettings
     , get_replicates, get_counts_file, get_counts_skip, get_user_settings
+    , get_id_column, get_info_columns, get_ec_column
     ) where
 
 import Control.Applicative
@@ -107,6 +108,15 @@ initSettings code = let userSettings = [("replicates", showJSON ([] :: [String])
                                 , created = error "Must set created"
                                 , user_settings = makeObj' userSettings
                                 }
+
+get_id_column :: Settings -> String
+get_id_column settings = fromResult $ valFromObj "id_column" $ user_settings settings
+
+get_ec_column :: Settings -> String
+get_ec_column settings = fromResult $ valFromObj "ec_column" $ user_settings settings
+
+get_info_columns :: Settings -> [String]
+get_info_columns settings = fromResult $ valFromObj "info_columns" $ user_settings settings
 
 get_replicates :: Settings -> [(String,[String])]
 get_replicates settings = fromJSObject $ fromResult $ valFromObj "replicates" $ user_settings settings
