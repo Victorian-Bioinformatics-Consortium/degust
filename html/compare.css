@@ -1,6 +1,4 @@
 
-body { padding-top: 60px; }
-
 .selected { background-color: #ddd; }
 .primary { border: 2px solid #d99; }
 #files .pri { font-size: 8pt; float: right; display: none; color: #d99; padding-right: 2px; }

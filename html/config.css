@@ -12,3 +12,4 @@ body { padding-top: 60px; }
 .conditions { border: 1px solid #aaa; border-radius: 5px; padding: 0 3px; }
 
 .view { float: right; }
+.del-condition { float: right; }

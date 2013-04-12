@@ -382,7 +382,7 @@ update_flags = () ->
     show_expr = $('#plot-expr-cb').is(":checked")
     show_ave_fc = $('#plot-avgfc-cb').is(":checked")
     show_counts = $('#show-counts-cb').is(":checked")
-    annot_genes_only = $('#2annot-genes-cb').is(":checked")
+    annot_genes_only = $('#annot-genes-cb').is(":checked")
     pval_colour = $('#pval-col-cb').is(":checked")
 
 current_annot = {}

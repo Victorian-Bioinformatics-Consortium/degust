@@ -1,18 +1,68 @@
 <html>
   <head profile="http://www.w3.org/2005/10/profile">
     <link rel="icon" type="image/png" href="favicon.png"/>
+
+    <!-- Boostrap CSS -->
+    <link href="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/css/bootstrap-combined.min.css" rel="stylesheet">
+
+    <link rel="stylesheet" href="common.css" type="text/css"/>
+
+    <!-- jQuery -->
+    <script type="text/javascript" src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.8.2.min.js"></script>
+    <script type="text/javascript" src="http://code.jquery.com/ui/1.9.1/jquery-ui.js"></script>
+
+    <!-- Bootstrap -->
+    <script src="//netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/js/bootstrap.min.js"></script>
   </head>
 
   <body>
-    <h1>Upload</h1>
+    <div class="navbar navbar-inverse navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="brand" href="../">DGE-Vis : Upload</a>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li><a href="#about-modal" data-toggle="modal">About</a></li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
 
-    Upload a CSV or tab-separated file of your RNA-Seq data.  One row per gene, and one column per replicate.
+    <div class="container">
+      <h1>Upload</h1>
 
-    <form name="upload" action="r-json.cgi" method="post" enctype="multipart/form-data">
-      <input type="hidden" name="query" value="upload"/>
-      <input type="file" name="filename" />
-      <input type="submit" value="Send" />
-    </form>
+      Upload a CSV or tab-separated file of your RNA-Seq data.  One row per gene, and one column per replicate.
+
+      <form name="upload" action="r-json.cgi" method="post" enctype="multipart/form-data">
+        <input type="hidden" name="query" value="upload"/>
+        <input type="file" name="filename" />
+        <input type="submit" value="Send" />
+      </form>
+    </div>
+
+
+    <!-- Modal -->
+    <div id="about-modal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>
+        <h3 id="myModalLabel">About DGE-Vis</h3>
+      </div>
+      <div class="modal-body">
+        <p>DGE-Vis : Visualize and explore RNA-seq differential gene-expression data.</p>
+        <p>Visit the <a href='http://vicbioinformatics.com/software.dge-vis.shtml'>DGE-Vis project page</a>
+        <p>Written by: <a href='mailto:david.powell@monash.edu'>David R. Powell</a></p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" data-dismiss="modal" aria-hidden="true">Close</button>
+      </div>
+    </div>
+
   </body>
 </html>
 
