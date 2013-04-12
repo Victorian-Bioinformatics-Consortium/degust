@@ -71,6 +71,9 @@ grid = null
 kegg = null
 heatmap = null
 
+id_col = null       # Column used for the ID
+info_columns = []   # Columns used to display info about the genes
+
 annot_to_html = (obj) ->
     res=""
     for k,v of obj
@@ -81,7 +84,7 @@ kegg_mouseover = (obj) ->
     ec = obj.id
     d = []
     for row in current_data
-        d.push(row) if ec_number(row.Feature) == ec
+        d.push(row) if ec_number(row[id_col]) == ec
     parcoords.highlight(d)
     #gridUpdateData(d)
 
@@ -124,10 +127,10 @@ init_chart = () ->
         i = grid.getCellFromEvent(e).row
         d = dataView.getItem(i)
         parcoords.highlight([d])
-        annot = current_annot[d.Feature]
+        annot = current_annot[d[id_col]]
         if annot != undefined
             $('#gene-info').html(annot_to_html(annot))
-            kegg.highlight(ec_number(d.Feature))
+            kegg.highlight(ec_number(d[id_col]))
     )
     grid.onMouseLeave.subscribe( (e,args) ->
         parcoords.unhighlight()
@@ -135,7 +138,7 @@ init_chart = () ->
         kegg.unhighlight()
     )
     grid.onDblClick.subscribe( (e,args) ->
-          feature = grid.getDataItem(args.row).Feature
+          feature = grid.getDataItem(args.row)[id_col]
           window.open("http://www.ncbi.nlm.nih.gov/protein?term=#{feature}", '_blank')
           window.focus()
     )
@@ -156,7 +159,7 @@ init_chart = () ->
         mouseover: (d) ->
             parcoords.highlight([d])
             msg = ""
-            for k in ["Feature", "product"]
+            for k in info_columns
               msg += "<span class='lbl'>#{k}: </span><span>#{d[k]}</span>"
             $('#heatmap-info').html(msg)
         mouseout:  (d) ->
@@ -198,7 +201,7 @@ gridUpdateData = (data, columns) ->
 grid_include = (key) -> (!show_ave_fc && fc_col(key)) ||
                         (show_ave_fc && ave_fc_col(key)) ||
                         (show_expr && expr_col(key)) ||
-                        key==pval_col || key=='Feature' || key=='product'
+                        key==pval_col || (key in info_columns)
 
 update_grid = (data) ->
   column_keys = d3.keys(data[0])
@@ -215,10 +218,6 @@ update_grid = (data) ->
           else if m.name==pval_col
               pval=Number(val)
               if pval<0.01 then pval.toExponential(2) else pval.toFixed(2)
-          else if m.name=='Feature'
-              val += " (#{row.gene})" if row.gene
-              val += " *" if ec_number(row.Feature)
-              val
           else
               val
   )
@@ -231,7 +230,7 @@ fc_div = (n, column, row) ->
     countStr = ""
     if show_counts
         counts = []
-        for k,v of current_counts[row.Feature]
+        for k,v of current_counts[row[id_col]]
             counts.push(v) if k.indexOf(colName)==0
         countStr = "<span class='counts'>(#{counts})</span>"
     "<div class='#{colour}'>#{n.toFixed(2)}#{countStr}</div>"
@@ -254,9 +253,10 @@ kegg_filter = []
 h_runfilters = null
 
 tabFilter = (item) ->
-  searchStr == "" ||
-       item.Feature.toLowerCase().indexOf(searchStr)>=0 ||
-       item.product.toLowerCase().indexOf(searchStr)>=0
+    return true if searchStr == ""
+    for col in info_columns
+        return true if item[col].toLowerCase().indexOf(searchStr)>=0
+    false
 
 pcFilter = (item) ->
     if fcThreshold>0
@@ -349,7 +349,7 @@ init_slider = () ->
 calc_kegg_colours = (data) ->
     ec_dirs = {}
     for row in current_data
-        ec = ec_number(row.Feature)
+        ec = ec_number(row[id_col])
         continue if !ec
         first=true
         for k,v of row
@@ -391,13 +391,13 @@ current_counts = {}
 request_init_data = () ->
     d3.csv(script('query=counts'), (data) ->
         data.forEach (row) ->
-          current_counts[row.Feature] = row
+          current_counts[row[id_col]] = row
         #console.log current_counts
     )
 
     d3.csv(script('query=annot'), (data) ->
         data.forEach (row) ->
-            current_annot[row.Feature] = row
+            current_annot[row[id_col]] = row
 
         d3.tsv(script('query=kegg_titles'), (data) ->
             opts = "<option value=''>--- No pathway selected ---</option>"
@@ -441,9 +441,15 @@ request_data = (columns) ->
             if expr_col(k)
                 pri_col = k
                 break
+        ids = {}
         data.forEach (row, i) ->
             # slickgrid needs each data element to have an id
-            row.id = row.Feature || i
+            if ids[row[id_col]]
+                # TODO:  Duplicate ID raise a warning somewhere
+                row.id = i
+            else
+                row.id = row[id_col] || i
+            ids[row.id] = 1
 
             # Format numbers as numbers!
             for k,v of row
@@ -498,6 +504,11 @@ update_data = (data) ->
     parcoords.brush()   # Reset any brushes that were in place
 
 init = () ->
+    if !settings['id_column']
+        window.location = script("query=config")
+    id_col = settings['id_column']
+    info_columns = settings['info_columns'] || []
+
     $('a.config').attr('href', script("query=config"))
 
     fdrThreshold = settings['fdrThreshold'] if settings['fdrThreshold'] != undefined

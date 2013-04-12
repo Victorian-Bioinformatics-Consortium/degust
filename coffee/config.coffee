@@ -28,18 +28,17 @@ warnings = () ->
     if !mod_settings.id_column
         $('div.id-column').addClass('error')
         $('div.id-column .help-inline').text('You must specify a unique ID column')
-
-
-    dups=false
-    ids = {}
-    $.each(asRows, (i,x) ->
-        v = x[mod_settings.id_column]
-        dups = true if ids[v]
-        ids[v]=1
-    )
-    if dups
-        $('div.id-column').addClass('error')
-        $('div.id-column .help-inline').text('ID column contains duplicates')
+    else
+        dups=false
+        ids = {}
+        $.each(asRows, (i,x) ->
+            v = x[mod_settings.id_column]
+            dups = true if ids[v]
+            ids[v]=1
+        )
+        if dups
+            $('div.id-column').addClass('error')
+            $('div.id-column .help-inline').text('ID column contains duplicates')
 
 save = () ->
     mod_settings.name = $("input.name").val()
@@ -88,6 +87,15 @@ update_data = () ->
     $('select.id-column').html("<option value=''>--- Not selected ---</option>" + opts)
     if mod_settings.id_column
         $("select.id-column option[value='#{mod_settings.id_column}']").attr('selected','selected')
+
+    $('select.ec-column').html("<option value=''>--- Optional ---</option>" + opts)
+    if mod_settings.ec_column
+        $("select.ec-column option[value='#{mod_settings.ec_column}']").attr('selected','selected')
+
+    $('select.info-columns').html(opts)
+    info_columns = mod_settings.info_columns || []
+    $.each(info_columns, (i,col) -> $("select.info-columns option[value='#{col}']").attr('selected','selected'))
+    $("select.info-columns").multiselect('refresh')
 
     $('select#hide-columns').html(opts)
     to_hide = mod_settings.hide_columns || []
@@ -208,6 +216,21 @@ init = () ->
         mod_settings.id_column = $("select.id-column option:selected").val()
         warnings()
     )
+    $('select.ec-column').change(() ->
+        mod_settings.ec_column = $("select.ec-column option:selected").val()
+        warnings()
+    )
+
+    $('select.info-columns').change(() ->
+        info=[]
+        $("select.info-columns option:selected").each (i,e) -> info.push($(e).val())
+        mod_settings.info_columns = info
+    )
+    $("select.info-columns").multiselect(
+        noneSelectedText: '-- None selected --'
+        selectedList: 4
+    )
+
     $('select#hide-columns').change(() ->
         hide=[]
         $("select#hide-columns option:selected").each (i,e) -> hide.push($(e).val())
