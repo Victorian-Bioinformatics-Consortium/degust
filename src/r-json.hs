@@ -10,7 +10,7 @@
 
 import Prelude hiding (catch)
 import Control.Applicative ((<$>))
-import Data.Maybe (fromJust,fromMaybe)
+import Data.Maybe (fromJust,fromMaybe,maybeToList)
 import Data.List
 import Data.List.Split
 import Network.CGI
@@ -234,7 +234,8 @@ instance ToText Int where toText = toText . show
 
 getCountsR :: Settings -> FilePath -> String
 getCountsR settings file =
-    let extra_cols = nub $ get_id_column settings : get_ec_column settings : get_info_columns settings
+    let extra_cols = nub $ get_id_column settings : get_info_columns settings ++
+                           maybeToList (get_ec_column settings)
     in
   T.unpack . toLazyText $ [text|
   #{initR settings}

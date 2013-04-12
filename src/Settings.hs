@@ -1,6 +1,6 @@
 module Settings
     ( Settings
-    , fromResult
+    , fromOk
     , strToCode, codeToStr, settingsFile, annotFile
     , readSettings, writeUserSettings, getCode
 
@@ -66,7 +66,7 @@ readSettings :: Code -> IO Settings
 readSettings code = do
   str <- Prelude.readFile $ settingsFile code
   let ss = decode str
-  return $ fromResult ss
+  return $ fromOk ss
 
 writeUserSettings :: Settings -> JSObject JSValue -> IO ()
 writeUserSettings settings userSettings = do
@@ -95,8 +95,13 @@ makeObj' lst = toJSObject $ map (\(a,b) -> (a,showJSON b)) lst
 getCode :: Settings -> Code
 getCode settings = code settings
 
-fromResult (Ok r) = r
-fromResult x = error $ "json parse failure : "++show x
+fromOk :: Show t => Result t -> t
+fromOk (Ok r) = r
+fromOk x = error $ "json parse failure : "++show x
+
+fromResult :: t -> Result t -> t
+fromResult _ (Ok r) = r
+fromResult x _ = x
 
 ----------------------------------------------------------------------
 initSettings :: Code -> Settings
@@ -110,22 +115,22 @@ initSettings code = let userSettings = [("replicates", showJSON ([] :: [String])
                                 }
 
 get_id_column :: Settings -> String
-get_id_column settings = fromResult $ valFromObj "id_column" $ user_settings settings
+get_id_column settings = fromOk $ valFromObj "id_column" $ user_settings settings
 
-get_ec_column :: Settings -> String
-get_ec_column settings = fromResult $ valFromObj "ec_column" $ user_settings settings
+get_ec_column :: Settings -> Maybe String
+get_ec_column settings = fromResult Nothing $ valFromObj "ec_column" $ user_settings settings
 
 get_info_columns :: Settings -> [String]
-get_info_columns settings = fromResult $ valFromObj "info_columns" $ user_settings settings
+get_info_columns settings = fromResult [] $ valFromObj "info_columns" $ user_settings settings
 
 get_replicates :: Settings -> [(String,[String])]
-get_replicates settings = fromJSObject $ fromResult $ valFromObj "replicates" $ user_settings settings
+get_replicates settings = fromJSObject $ fromOk $ valFromObj "replicates" $ user_settings settings
 
 get_counts_file :: Settings -> FilePath
 get_counts_file s = countsFile $ getCode s
 
 get_counts_skip :: Settings -> Int
-get_counts_skip s = fromResult $ valFromObj "skip" $ user_settings s
+get_counts_skip s = fromOk $ valFromObj "skip" $ user_settings s
 
 get_user_settings :: Settings -> JSObject JSValue
 get_user_settings s = user_settings s
