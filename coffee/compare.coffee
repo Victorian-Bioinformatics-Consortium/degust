@@ -215,14 +215,20 @@ update_grid = (data) ->
 
   gridUpdateData(data, columns)
 
+#FIXME - Better handling of these column names.  Annoying R renames them
+to_R_name = (str) -> str.replace(/-|:/g, '.')
+
 fc_div = (n, column, row) ->
     colour = if n>0.1 then "pos" else if n<-0.1 then "neg" else ""
     colName = column.substring(column.indexOf(' ')+1)
     countStr = ""
     if show_counts
         counts = []
-        for k,v of current_counts[row[id_col]]
-            counts.push(v) if k.indexOf(colName)==0
+        for col, arr of settings.replicates
+            if colName == to_R_name(col)
+                for k in arr
+                    v = current_counts[row.id][to_R_name(k)]
+                    counts.push(v)
         countStr = "<span class='counts'>(#{counts})</span>"
     "<div class='#{colour}'>#{n.toFixed(2)}#{countStr}</div>"
 
