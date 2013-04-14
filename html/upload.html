@@ -37,13 +37,31 @@
     <div class="container">
       <h1>Upload</h1>
 
-      Upload a CSV or tab-separated file of your RNA-Seq data.  One row per gene, and one column per replicate.
+      Upload a CSV or tab-separated file of your RNA-Seq data.  One row per gene, and one column of read counts per replicate.
 
       <form name="upload" action="r-json.cgi" method="post" enctype="multipart/form-data">
         <input type="hidden" name="query" value="upload"/>
         <input type="file" name="filename" />
         <input type="submit" value="Send" />
       </form>
+
+      <h3>CSV File Format</h3>
+      The requirements for the uploaded file:
+      <ul>
+        <li>Must be in CSV (or tab-separated) format
+        <li>Must have a single header row defining with a unique name for each column
+        <li>Must have a column with unique identifiers for each gene (an ID column)
+        <li>Must have 2 or more replicates per condition, and 2 or more conditions
+        <li>May optionally have an <a href="http://en.wikipedia.org/wiki/Enzyme_Commission_number">EC Number</a> column to display genes on Kegg pathways
+        <li>May optionally have information columns to be displayed in the gene table
+      </ul>
+      <h4>Example CSV File</h4>
+      <pre>
+        Gene ID, control rep1, control rep2, treatment A rep1, treatment A rep2, EC Number
+        gene001, 60, 40, 200, 220, 3.1.-.-
+        gene002, 0, 4, 20, 30,
+        gene003, 600, 633, 200, 220, 2.7.8.-
+      </pre>
     </div>
 
 
