@@ -76,7 +76,7 @@
           <div class="control-group">
             <label class="control-label" for="name">Name</label>
             <div class="controls">
-              <input class='name' type="text" name="name" placeholder="Unnamed"/>
+              <input class='name' type="text" name="name" placeholder="Unnamed" title="Optional: Give your experiment a name" data-placement='right' />
             </div>
           </div>
           <div class="control-group">
@@ -94,26 +94,26 @@
           <div class="id-column control-group">
             <label class="control-label">ID column</label>
             <div class="controls">
-              <select class="id-column"></select>
+              <select class="id-column" title="Column name with gene identifiers.  Note each id be unique in your count file" data-placement='right'></select>
               <span class="help-inline"></span>
             </div>
           </div>
           <div class="control-group">
             <label class="control-label">Info columns</label>
             <div class="controls">
-              <select class="info-columns" multiple="multiple"></select>
+              <select class="info-columns" multiple="multiple" title="Columns to include in the gene-list table" data-placement='right'></select>
             </div>
           </div>
           <div class="control-group">
             <label class="control-label">EC Number column</label>
             <div class="controls">
-              <select class="ec-column"></select>
+              <select class="ec-column" title="Column containing EC numbers for each gene, used to display Kegg pathways" data-placement='right'></select>
             </div>
           </div>
           <div class="control-group">
             <label class="control-label">Hide columns</label>
             <div class="controls">
-              <select id="hide-columns" multiple="multiple"></select>
+              <select id="hide-columns" multiple="multiple" title="Columns to hide from the table below.  Only used to hide columns on this page and ease configuration" data-placement='right'></select>
             </div>
           </div>
 
@@ -130,20 +130,20 @@
               <input class="control-label col-name" placeholder="Condition Name"/>
               <div class="controls">
                 <select class="columns" multiple="multiple"></select>
-                <input type="checkbox" class="init-select">Inital selection</input>
+                <input type="checkbox" class="init-select"/>
                 <button type="button" class="del-condition">&times;</button>
               </div>
             </div>
           </div>
 
           <div class="control-group">
-            <button type="button" id="add-condition" class="btn">Add condition</button>
+            <button type="button" id="add-condition" class="btn" title="Add a new condition or treatment" data-placement='right'>Add condition</button>
           </div>
 
           <div class="control-group">
             <button type="submit" id="save" class="btn btn-primary">Save changes</button>
             <button type="button" id="cancel" class="btn">Revert</button>
-            <a class="view btn btn-inverse" href="#">View</a> 
+            <a class="view btn btn-inverse" href="#" title="View main page.  Note unsaved configuration will be lost" data-placement='right'>View</a> 
          </div>
         </div>
       </div>

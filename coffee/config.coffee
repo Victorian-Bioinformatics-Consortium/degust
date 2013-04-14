@@ -251,3 +251,4 @@ init = () ->
 
 
 $(document).ready(() -> init() )
+$(document).ready(() -> $('[title]').tooltip())
