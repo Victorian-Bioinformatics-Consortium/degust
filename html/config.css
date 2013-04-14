@@ -13,3 +13,6 @@ body { padding-top: 60px; }
 
 .view { float: right; }
 .del-condition { float: right; }
+
+.init-select {margin-left: 15px; }
+.init-select span {font-size: smaller; }

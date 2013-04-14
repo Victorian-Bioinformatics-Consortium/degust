@@ -150,7 +150,7 @@ create_condition_widget = (name, selected, is_init) ->
         noneSelectedText: '-- None selected --'
         selectedList: 4
     )
-    $('.init-select',cond).prop('checked', is_init)
+    $('.init-select input',cond).prop('checked', is_init)
 
     $(".condition-group").append(cond)
 
@@ -169,6 +169,7 @@ create_condition_widget = (name, selected, is_init) ->
         inp = $("input.col-name",cond)
         inp.data('edited', inp.val()!="")
     )
+    return cond
 
 # Return the longest common prefix of the list of strings passed in
 common_prefix = (lst) ->
@@ -192,7 +193,7 @@ conditions_to_settings = () ->
         $('select.columns option:selected',e).each( (j,opt) -> lst.push($(opt).val()))
         name = $('.col-name',e).val() || "Cond #{i+1}"
         c[name] = lst
-        init_select.push(name) if $('.init-select',e).is(':checked')
+        init_select.push(name) if $('.init-select input',e).is(':checked')
     )
     mod_settings.replicates = c
     mod_settings.init_select = init_select
@@ -244,7 +245,9 @@ init = () ->
     )
 
     $('#add-condition').click(() ->
-        create_condition_widget("", [])
+        w = create_condition_widget("", [])
+        if $('.condition:not(.template)').length <= 2
+            $('.init-select input',w).prop('checked',true)
     )
 
     $('.del-condition').click(del_condition_widget)
