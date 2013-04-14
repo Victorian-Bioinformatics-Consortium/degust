@@ -7,6 +7,7 @@ module Settings
     , createSettings
     , get_replicates, get_counts_file, get_counts_skip, get_user_settings
     , get_id_column, get_info_columns, get_ec_column
+    , is_locked
     ) where
 
 import Control.Applicative
@@ -125,6 +126,9 @@ get_info_columns settings = fromResult [] $ valFromObj "info_columns" $ user_set
 
 get_replicates :: Settings -> [(String,[String])]
 get_replicates settings = fromJSObject $ fromOk $ valFromObj "replicates" $ user_settings settings
+
+is_locked :: Settings -> Bool
+is_locked settings = fromResult False $ valFromObj "locked" $ user_settings settings
 
 get_counts_file :: Settings -> FilePath
 get_counts_file s = countsFile $ getCode s

@@ -194,13 +194,16 @@ doUpload = do
 saveSettings :: CGI CGIResult
 saveSettings = do
     oldSettings <- findSettings
-    jsonString <- getInput "settings"
-    let mNew = decode $ fromMaybe (error "No data") jsonString
-    case mNew of
-      Error e -> logMsg ("ERR:"++e) >> outputMethodNotAllowed [""]
-      Ok new -> do liftIO $ writeUserSettings oldSettings new
-                   setHeader "Content-type" "text/json"
-                   output "{\"result\": \"ok!\"}"
+    if is_locked oldSettings
+    then logMsg ("ERR: settings are locked") >> outputMethodNotAllowed [""]
+    else do
+        jsonString <- getInput "settings"
+        let mNew = decode $ fromMaybe (error "No data") jsonString
+        case mNew of
+          Error e -> logMsg ("ERR:"++e) >> outputMethodNotAllowed [""]
+          Ok new -> do liftIO $ writeUserSettings oldSettings new
+                       setHeader "Content-type" "text/json"
+                       output "{\"result\": \"ok!\"}"
 
 runR :: (Settings -> FilePath -> String) -> CGI String
 runR script = do

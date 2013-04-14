@@ -502,7 +502,10 @@ init = () ->
     info_columns = settings['info_columns'] || []
     ec_column = settings['ec_column'] || null
 
-    $('a.config').attr('href', script("query=config"))
+    if settings['locked']
+        $('a.config').hide()
+    else
+        $('a.config').attr('href', script("query=config"))
 
     fdrThreshold = settings['fdrThreshold'] if settings['fdrThreshold'] != undefined
     fcThreshold  = settings['fcThreshold']  if settings['fcThreshold'] != undefined
