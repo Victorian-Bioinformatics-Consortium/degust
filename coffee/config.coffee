@@ -71,6 +71,7 @@ update_data = () ->
     return if !data
 
     $("input.name").val(mod_settings.name || "")
+    $(".exp-name").text(mod_settings.name || "Unnamed")
 
     asRows = null
     switch csv_or_tab()

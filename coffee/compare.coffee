@@ -507,6 +507,8 @@ init = () ->
     else
         $('a.config').attr('href', script("query=config"))
 
+    $(".exp-name").text(settings.name || "Unnamed")
+
     fdrThreshold = settings['fdrThreshold'] if settings['fdrThreshold'] != undefined
     fcThreshold  = settings['fcThreshold']  if settings['fcThreshold'] != undefined
 
