@@ -250,7 +250,7 @@ getCountsR settings file =
 toRStringList :: [String] -> String
 toRStringList ls = intercalate "," . map (\col -> "'"++repl col++"'") $ ls
   where
-    repl str = map (\c -> if c `elem` "-:" then '.' else c) str
+    repl str = map (\c -> if c `elem` "-: " then '.' else c) str
 
 -- | Build an R list of the columns
 columns settings = let columns = concatMap snd $ get_replicates settings

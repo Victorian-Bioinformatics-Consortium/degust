@@ -216,7 +216,7 @@ update_grid = (data) ->
   gridUpdateData(data, columns)
 
 #FIXME - Better handling of these column names.  Annoying R renames them
-to_R_name = (str) -> str.replace(/-|:/g, '.')
+to_R_name = (str) -> str.replace(/-|:| /g, '.')
 
 fc_div = (n, column, row) ->
     colour = if n>0.1 then "pos" else if n<-0.1 then "neg" else ""
@@ -500,7 +500,7 @@ init = () ->
         window.location = script("query=config")
     id_col = settings['id_column']
     info_columns = settings['info_columns'] || []
-    ec_column = settings['ec_column'] || null
+    ec_column = if settings['ec_column'] then to_R_name(settings['ec_column']) else null
 
     if settings['locked']
         $('a.config').hide()

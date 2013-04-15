@@ -119,7 +119,8 @@ get_id_column :: Settings -> String
 get_id_column settings = fromOk $ valFromObj "id_column" $ user_settings settings
 
 get_ec_column :: Settings -> Maybe String
-get_ec_column settings = fromResult Nothing $ valFromObj "ec_column" $ user_settings settings
+get_ec_column settings = let r = fromResult "" $ valFromObj "ec_column" $ user_settings settings
+                         in if null r then Nothing else Just r
 
 get_info_columns :: Settings -> [String]
 get_info_columns settings = fromResult [] $ valFromObj "info_columns" $ user_settings settings
