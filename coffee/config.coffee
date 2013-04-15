@@ -43,6 +43,7 @@ warnings = () ->
 save = () ->
     mod_settings.name = $("input.name").val()
     conditions_to_settings()
+    mod_settings.fmt = csv_or_tab()
 
 
     $('#saving-modal').modal({'backdrop': 'static', 'keyboard' : false})

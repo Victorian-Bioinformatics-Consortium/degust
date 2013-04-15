@@ -277,11 +277,12 @@ contMatrix settings (c1:cs) =  "matrix(data=c("++intercalate "," (concat allCols
 
 -- | Common R setup code
 initR settings =
-  T.unpack . toLazyText $ [text|
+    let sep_char = case get_csv_format settings of {"TAB" -> "\\t" ; "CSV" -> ","; _ -> ","} :: String
+    in T.unpack . toLazyText $ [text|
   library(limma)
   library(edgeR)
 
-  x<-read.delim('#{get_counts_file settings}',skip=#{get_counts_skip settings})
+  x<-read.delim('#{get_counts_file settings}',skip=#{get_counts_skip settings}, sep="#{sep_char}")
   counts <- x[,#{columns settings}]
   design <- #{design settings}
  |] ()
