@@ -327,7 +327,7 @@ clusteringR settings cs file =
   library(seriation)
   d <- dist(fit$coefficients[,c(#{toRStringList cs})])
   c <- list(hclust = hclust(d))
-  s <- seriate(d, method='OLO', control=c)
+  s <- seriate(d, method='PCA', control=c)
   order <- get_order(s[[1]])
   write.csv(list(id=fit$genes$Feature[order]), file="#{file}", row.names=FALSE)
   |] ()
