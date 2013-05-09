@@ -252,7 +252,8 @@ h_runfilters = null
 tabFilter = (item) ->
     return true if searchStr == ""
     for col in info_columns
-        return true if item[col].toLowerCase().indexOf(searchStr)>=0
+        str = item[col]
+        return true if str && str.toLowerCase().indexOf(searchStr)>=0
     false
 
 pcFilter = (item) ->
