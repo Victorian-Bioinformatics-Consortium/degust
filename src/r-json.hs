@@ -20,7 +20,7 @@ import Control.Concurrent.MVar (newEmptyMVar,putMVar,readMVar,MVar)
 import System.IO.Unsafe (unsafePerformIO)
 import Control.Exception (try, handle, IOException, catch)
 import System.Exit (ExitCode(..))
-import System.IO.Strict (hGetContents, readFile)
+import qualified System.IO.Strict as SIO (run, hGetContents, readFile)
 import System.IO (openTempFile, hClose, hPutStr, hPutStrLn, stderr)
 import System.Process
 import System.Directory (removeFile)
@@ -87,7 +87,7 @@ cached typ act = do
   output out2
   where
     getFile :: FilePath -> IO (Either IOException String)
-    getFile = try . System.IO.Strict.readFile
+    getFile = try . SIO.run . SIO.readFile
 
 -- | Return an HTML page with a substitution for SETTINGS
 getPage :: FilePath -> CGI CGIResult
@@ -217,13 +217,13 @@ runR script = do
     hClose hIn
     (_,out,err,pid) <- runInteractiveProcess "Rscript" ["--vanilla",inF] Nothing
                              (Just [("R_LIBS_SITE","/bio/sw/R:")])
-    forkIO $ do str <- hGetContents err
+    forkIO $ do str <- SIO.run $ SIO.hGetContents err
                 case str of {"" -> return (); x -> writeFile errFname x}
                 hClose err
 
     exCode <- waitForProcess pid
 
-    out <- hGetContents hOut
+    out <- SIO.run $ SIO.hGetContents hOut
 
     when (exCode == ExitSuccess && not debug) $
        mapM_ delFile [inF, outF, errFname]
@@ -327,7 +327,7 @@ clusteringR settings cs file =
   library(seriation)
   d <- dist(fit$coefficients[,c(#{toRStringList cs})])
   c <- list(hclust = hclust(d))
-  s <- seriate(d, method='PCA', control=c)
+  s <- seriate(d, method='OLO', control=c)
   order <- get_order(s[[1]])
   write.csv(list(id=fit$genes$Feature[order]), file="#{file}", row.names=FALSE)
   |] ()
