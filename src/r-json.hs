@@ -131,7 +131,7 @@ getAnnot = do
     settings <- findSettings
     liftIO $ Prelude.readFile $ annotFile $ getCode settings
 
-getWithFields :: (Settings -> [String] -> FilePath -> String) -> CGI String
+getWithFields :: (Settings -> [Int] -> FilePath -> String) -> CGI String
 getWithFields act = do jsonString <- getInput "fields"
                        let flds = decode $ fromMaybe (error "No fields") jsonString
                        case flds of
@@ -246,11 +246,9 @@ getCountsR settings file =
   write.csv(counts, file="#{file}", row.names=FALSE)
  |] ()
 
--- | Convert the array of column names into an R list (remember to replace magic characters in the column name)
-toRStringList :: [String] -> String
-toRStringList ls = intercalate "," . map (\col -> "'"++repl col++"'") $ ls
-  where
-    repl str = map (\c -> if c `elem` "-: " then '.' else c) str
+-- | Convert the array of column indexes into an R list (remember to replace magic characters in the column name)
+toRStringList :: [Int] -> String
+toRStringList ls = intercalate "," . map show $ ls
 
 -- | Build an R list of the columns
 columns settings = let columns = concatMap snd $ get_replicates settings
@@ -259,7 +257,7 @@ columns settings = let columns = concatMap snd $ get_replicates settings
 -- | Build the R design matrix
 design settings = "matrix(data=c("++intercalate "," (concat allCols)++")"
                   ++ ", nrow="++show (length columns)++", ncol="++show (length reps)
-                  ++ ", dimnames = list(c(), c("++toRStringList (map fst reps)++")))"
+                  ++ ")"
   where
     columns = concatMap snd $ get_replicates settings
     reps = get_replicates settings
@@ -267,6 +265,7 @@ design settings = "matrix(data=c("++intercalate "," (concat allCols)++")"
     allCols = map (oneCol . snd) reps
 
 -- | Build an R contrast matrix
+contMatrix :: Settings -> [Int] -> String
 contMatrix settings (c1:cs) =  "matrix(data=c("++intercalate "," (concat allCols)++")"
                   ++ ", nrow="++show (length conditions)++", ncol="++show (length cs)
                   ++ ", dimnames = list(c(), c("++toRStringList cs++")))"
@@ -287,7 +286,7 @@ initR settings =
   design <- #{design settings}
  |] ()
 
-dgeR :: Settings -> [String] -> FilePath -> String
+dgeR :: Settings -> [Int] -> FilePath -> String
 dgeR settings cs file =
     T.unpack . toLazyText $ [text|
   #{initR settings}

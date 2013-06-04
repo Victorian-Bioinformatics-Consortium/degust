@@ -7,6 +7,7 @@ reset_settings = () ->
 data = null
 grid = null
 asRows = null
+column_keys = null
 
 init_table = () ->
     options =
@@ -25,7 +26,7 @@ warnings = () ->
     $('div.id-column .help-inline').text('')
     $('div.id-column').removeClass('error')
 
-    if !mod_settings.id_column
+    if mod_settings.id_column=='' || mod_settings.id_column<0
         $('div.id-column').addClass('error')
         $('div.id-column .help-inline').text('You must specify a unique ID column')
     else
@@ -44,7 +45,6 @@ save = () ->
     mod_settings.name = $("input.name").val()
     conditions_to_settings()
     mod_settings.fmt = csv_or_tab()
-
 
     $('#saving-modal').modal({'backdrop': 'static', 'keyboard' : false})
     $('#saving-modal .modal-body').html("Saving...")
@@ -76,18 +76,18 @@ update_data = () ->
 
     asRows = null
     switch csv_or_tab()
-        when 'TAB' then asRows = d3.tsv.parse(data)
-        when 'CSV' then asRows = d3.csv.parse(data)
+        when 'TAB' then asRows = d3.tsv.parseRows(data)
+        when 'CSV' then asRows = d3.csv.parseRows(data)
         else asRows = []
 
-    column_keys = d3.keys(asRows[0])
+    [column_keys,asRows...] = asRows
 
     opts = ""
     $.each(column_keys, (i, col) ->
-        opts += "<option value='#{col}'>#{col}</option>"
+        opts += "<option value='#{i}'>#{col}</option>"
     )
     $('select.id-column').html("<option value=''>--- Not selected ---</option>" + opts)
-    if mod_settings.id_column
+    if mod_settings.id_column>=0
         $("select.id-column option[value='#{mod_settings.id_column}']").attr('selected','selected')
 
     $('select.ec-column').html("<option value=''>--- Optional ---</option>" + opts)
@@ -107,16 +107,16 @@ update_data = () ->
     update_table()
 
     $('.condition:not(.template)').remove()
-    for n,lst of mod_settings.replicates
-        create_condition_widget(n, lst, n in (mod_settings['init_select'] || []))
+    for r in mod_settings.replicates
+        [n,lst] = r
+        create_condition_widget(mod_settings.replicate_names[n] || 'Unknown', lst, n in (mod_settings['init_select'] || []))
 
 update_table = () ->
     mod_settings.hide_columns ||= []
-    column_keys = d3.keys(asRows[0])
-    columns = column_keys.filter((key,i) -> key not in mod_settings.hide_columns ).map((key,i) ->
+    columns = column_keys.filter((key,i) -> i not in mod_settings.hide_columns ).map((key,i) ->
         id: key
         name: key
-        field: key
+        field: i
         sortable: false
     )
 
@@ -140,11 +140,10 @@ create_condition_widget = (name, selected, is_init) ->
 
     $("input.col-name",cond).val(name) if name
 
-    column_keys = d3.keys(asRows[0])
     opts = ""
     $.each(column_keys, (i, col) ->
-        sel = if col in selected then 'selected="selected"' else ''
-        opts += "<option value='#{col}' #{sel}>#{col}</option>"
+        sel = if i in selected then 'selected="selected"' else ''
+        opts += "<option value='#{i}' #{sel}>#{col}</option>"
     )
     $("select.columns",cond).html(opts)
     $("select.columns",cond).multiselect(
@@ -160,7 +159,10 @@ create_condition_widget = (name, selected, is_init) ->
         inp = $("input.col-name",cond)
         if inp.val()=="" || !inp.data('edited')
             lst = []
-            $('select.columns option:selected',cond).each( (j,opt) -> lst.push($(opt).val()))
+            $('select.columns option:selected',cond).each( (j,opt) ->
+                n = column_keys[$(opt).val()]
+                lst.push(n)
+            )
             inp.val(common_prefix(lst))
     )
 
@@ -187,17 +189,20 @@ del_condition_widget = (e) ->
     $(e.target).parents(".condition").remove()
 
 conditions_to_settings = () ->
-    c = {}
+    c = []
     init_select = []
+    mod_settings.replicate_names = []
     $('.condition:not(.template)').each( (i,e) ->
         lst = []
-        $('select.columns option:selected',e).each( (j,opt) -> lst.push($(opt).val()))
+        $('select.columns option:selected',e).each( (j,opt) -> lst.push( +$(opt).val()) )
         name = $('.col-name',e).val() || "Cond #{i+1}"
-        c[name] = lst
+        mod_settings.replicate_names.push(name)
+        c.push([i, lst])
         init_select.push(name) if $('.init-select input',e).is(':checked')
     )
     mod_settings.replicates = c
     mod_settings.init_select = init_select
+    mod_settings.column_names = column_keys
 
 init = () ->
     reset_settings()
@@ -216,11 +221,13 @@ init = () ->
     $('.view').attr('href', script())
 
     $('select.id-column').change(() ->
-        mod_settings.id_column = $("select.id-column option:selected").val()
+        mod_settings.id_column = +$("select.id-column option:selected").val()
         warnings()
     )
     $('select.ec-column').change(() ->
         mod_settings.ec_column = $("select.ec-column option:selected").val()
+        if mod_settings.ec_column == ''
+            delete mod_settings.ec_column
         warnings()
     )
 
