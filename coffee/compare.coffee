@@ -37,7 +37,7 @@ colour_cat20 = d3.scale.category20().domain([1..20])
 
 unknown_colour = 16
 ec_code = (id) ->
-    return unknown_colour if !ec_column || !current_counts[id][ec_column]
+    return unknown_colour if ec_column==undefined || !current_counts[id][ec_column]
     ec = current_counts[id][ec_column]
     Number(ec[0])
 
@@ -46,7 +46,7 @@ colour_by_ec = (d) -> colour_cat20(ec_code(d.id))
 colour_by_pval = (d) -> blue_to_brown(d[pval_col])
 
 ec_number = (id) ->
-    if ec_column && current_counts[id][ec_column]
+    if ec_column!=undefined && current_counts[id][ec_column]
         return current_counts[id][ec_column]
     else
         ""
@@ -263,7 +263,7 @@ pcFilter = (item) ->
         return false if !keep
 
     return false if item[pval_col] > fdrThreshold
-    return false if annot_genes_only && (!ec_colum || !current_counts[item.id][ec_column])
+    return false if annot_genes_only && (ec_column!=undefined || !current_counts[item.id][ec_column])
 
     # TODO - this is a very inefficient place to filter on ec.  Disabled for now.  Remove?
     # ec_codes = $('.ec-filter .selected').map((i,d) -> $(d).data('code'))
@@ -393,7 +393,9 @@ request_init_data = () ->
             current_counts[row[id_col]] = row
             # console.log current_counts
 
-        if ec_column
+        if ec_column==undefined
+            $('.kegg-filter').hide()
+        else
             d3.tsv(script('query=kegg_titles'), (data) ->
                 opts = "<option value=''>--- No pathway selected ---</option>"
 
