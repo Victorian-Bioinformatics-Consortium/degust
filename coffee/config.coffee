@@ -90,18 +90,18 @@ update_data = () ->
     if mod_settings.id_column>=0
         $("select.id-column option[value='#{mod_settings.id_column}']").attr('selected','selected')
 
-    $('select.ec-column').html("<option value=''>--- Optional ---</option>" + opts)
-    if mod_settings.ec_column
+    $('select.ec-column').html("<option value='-1'>--- Optional ---</option>" + opts)
+    if mod_settings.hasOwnProperty('ec_column')
         $("select.ec-column option[value='#{mod_settings.ec_column}']").attr('selected','selected')
 
     $('select.info-columns').html(opts)
     info_columns = mod_settings.info_columns || []
-    $.each(info_columns, (i,col) -> $("select.info-columns option[value='#{col}']").attr('selected','selected'))
+    $.each(info_columns, (i,col) -> $("select.info-columns option[value='#{i}']").attr('selected','selected'))
     $("select.info-columns").multiselect('refresh')
 
     $('select#hide-columns').html(opts)
     to_hide = mod_settings.hide_columns || []
-    $.each(to_hide, (i,col) -> $("select#hide-columns option[value='#{col}']").attr('selected','selected'))
+    $.each(to_hide, (i,col) -> $("select#hide-columns option[value='#{i}']").attr('selected','selected'))
     $("select#hide-columns").multiselect('refresh')
 
     update_table()
@@ -198,7 +198,7 @@ conditions_to_settings = () ->
         name = $('.col-name',e).val() || "Cond #{i+1}"
         mod_settings.replicate_names.push(name)
         c.push([i, lst])
-        init_select.push(name) if $('.init-select input',e).is(':checked')
+        init_select.push(i) if $('.init-select input',e).is(':checked')
     )
     mod_settings.replicates = c
     mod_settings.init_select = init_select
@@ -225,15 +225,15 @@ init = () ->
         warnings()
     )
     $('select.ec-column').change(() ->
-        mod_settings.ec_column = $("select.ec-column option:selected").val()
-        if mod_settings.ec_column == ''
+        mod_settings.ec_column = +$("select.ec-column option:selected").val()
+        if mod_settings.ec_column == -1
             delete mod_settings.ec_column
         warnings()
     )
 
     $('select.info-columns').change(() ->
         info=[]
-        $("select.info-columns option:selected").each (i,e) -> info.push($(e).val())
+        $("select.info-columns option:selected").each (i,e) -> info.push(+$(e).val())
         mod_settings.info_columns = info
     )
     $("select.info-columns").multiselect(
@@ -243,7 +243,7 @@ init = () ->
 
     $('select#hide-columns').change(() ->
         hide=[]
-        $("select#hide-columns option:selected").each (i,e) -> hide.push($(e).val())
+        $("select#hide-columns option:selected").each (i,e) -> hide.push(+$(e).val())
         mod_settings.hide_columns = hide
         update_table()
     )
