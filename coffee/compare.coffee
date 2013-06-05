@@ -17,12 +17,12 @@ select_sample = (e) ->
 
 update_samples= () ->
            cols = []
-           $('#files div.selected a.file').each (i, n) ->
-                name = $(n).html()
+           $('#files div.selected').each (i, n) ->
+                rep_id = $(n).data('rep')
                 if $(n).parent('div').hasClass('primary')
-                    cols.unshift(name)
+                    cols.unshift(rep_id)
                 else
-                    cols.push(name)
+                    cols.push(rep_id)
            request_data(cols)
 
 blue_to_brown = d3.scale.linear()
@@ -215,9 +215,6 @@ update_grid = (data) ->
 
   gridUpdateData(data, columns)
 
-#FIXME - Better handling of these column names.  Annoying R renames them
-to_R_name = (str) -> str.replace(/-|:| /g, '.')
-
 fc_div = (n, column, row) ->
     colour = if n>0.1 then "pos" else if n<-0.1 then "neg" else ""
     colName = column.substring(column.indexOf(' ')+1)
@@ -386,10 +383,15 @@ update_flags = () ->
 current_counts = {}
 
 request_init_data = () ->
-    d3.csv(script('query=counts'), (data) ->
-        data.forEach (row) ->
-          current_counts[row[id_col]] = row
-        # console.log current_counts
+    d3.text(script("query=counts"), "text/csv", (dat,err) ->
+        if err
+            $('div.container').text("ERROR : #{err}")
+            return
+        data = d3.csv.parseRows(dat)
+        data.forEach (row, i) ->
+            return if i<=0
+            current_counts[row[id_col]] = row
+            # console.log current_counts
 
         if ec_column
             d3.tsv(script('query=kegg_titles'), (data) ->
@@ -497,11 +499,11 @@ update_data = (data) ->
     parcoords.brush()   # Reset any brushes that were in place
 
 init = () ->
-    if !settings['id_column']
+    if settings.id_column < 0
         window.location = script("query=config")
     id_col = settings['id_column']
     info_columns = settings['info_columns'] || []
-    ec_column = if settings['ec_column'] then to_R_name(settings['ec_column']) else null
+    ec_column = settings['ec_column']
 
     if settings['locked']
         $('a.config').hide()
@@ -513,13 +515,14 @@ init = () ->
     fdrThreshold = settings['fdrThreshold'] if settings['fdrThreshold'] != undefined
     fcThreshold  = settings['fcThreshold']  if settings['fcThreshold'] != undefined
 
-    order = settings['order'] || Object.keys(settings.replicates)
-    $.each(order, (i, name) ->
-      $("#files").append(
-        "<div class='#{name}'>"+
-        "  <a class='file' href='#' title='Select this condition' data-placement='right'>#{name}</a>"+
-        "  <a class='pri' href='#' title='Make primary condition' data-placement='right'>pri</a>" +
-        "</div>")
+    $.each(settings.replicates, (i, rep) ->
+        name = settings.replicate_names[i]
+        div = $("<div class='rep_#{i}'>"+
+                "  <a class='file' href='#' title='Select this condition' data-placement='right'>#{name}</a>"+
+                "  <a class='pri' href='#' title='Make primary condition' data-placement='right'>pri</a>" +
+                "</div>")
+        $("#files").append(div)
+        div.data('rep',i)
     )
     $("#files a.file").click(select_sample)
     $("#files a.pri").click(select_primary)
@@ -532,8 +535,8 @@ init = () ->
 
     # Select some samples
     init_select = settings['init_select'] || []
-    $.each(init_select, (i,name) ->
-        $("div[class='#{name}']").addClass('selected')
+    $.each(init_select, (i,sel) ->
+        $("div[class='rep_#{i}']").addClass('selected')
     )
     $('#files div.selected:first').addClass('primary')
     update_samples()

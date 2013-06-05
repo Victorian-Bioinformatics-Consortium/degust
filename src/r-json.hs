@@ -3,7 +3,7 @@
 {-# LANGUAGE QuasiQuotes, OverloadedStrings, TemplateHaskell #-}
 
 {- Test on the command line:
-      QUERY_STRING=query=counts ./r-json.hs
+      QUERY_STRING=query=code=2456dfc6c20a6ff4b43129fd6ac00ac5&query=counts ./r-json.hs
       QUERY_STRING=query=dge ./r-json.hs
       QUERY_STRING=query=kegg_titles ./r-json.hs
 -}
@@ -242,17 +242,17 @@ getCountsR settings file =
     in
   T.unpack . toLazyText $ [text|
   #{initR settings}
-  counts <- cbind(x[,c(#{toRStringList extra_cols})], counts)
+  counts <- cbind(x[,c(#{colsToRList extra_cols})], counts)
   write.csv(counts, file="#{file}", row.names=FALSE)
  |] ()
 
--- | Convert the array of column indexes into an R list (remember to replace magic characters in the column name)
-toRStringList :: [Int] -> String
-toRStringList ls = intercalate "," . map show $ ls
+-- | Convert the array of column indexes (0-based) into an R list (1-based)
+colsToRList :: [Int] -> String
+colsToRList ls = intercalate "," . map (show . (+1)) $ ls
 
 -- | Build an R list of the columns
 columns settings = let columns = concatMap snd $ get_replicates settings
-                   in "c("++toRStringList columns++")"
+                   in "c("++colsToRList columns++")"
 
 -- | Build the R design matrix
 design settings = "matrix(data=c("++intercalate "," (concat allCols)++")"
@@ -268,7 +268,7 @@ design settings = "matrix(data=c("++intercalate "," (concat allCols)++")"
 contMatrix :: Settings -> [Int] -> String
 contMatrix settings (c1:cs) =  "matrix(data=c("++intercalate "," (concat allCols)++")"
                   ++ ", nrow="++show (length conditions)++", ncol="++show (length cs)
-                  ++ ", dimnames = list(c(), c("++toRStringList cs++")))"
+                  ++ ", dimnames = list(c(), c("++colsToRList cs++")))"
   where
     conditions = map fst $ get_replicates settings
     oneCol col = map (\c -> if c==col then "1" else if c==c1 then "-1" else "0") conditions
@@ -303,8 +303,8 @@ dgeR settings cs file =
 
   out <- topTable(fit2, n=Inf)
 
-  abs_vals <- fit$coefficients[,c(#{toRStringList cs})]
-  colnames(abs_vals) <- paste("ABS", colnames(abs_vals))
+  abs_vals <- fit$coefficients[,c(#{colsToRList cs})]
+  colnames(abs_vals) <- paste("ABS", c(#{colsToRList cs}))
   abs_vals <- data.frame(Feature=fit$genes$Feature, abs_vals)
 
   out2 <- merge(abs_vals, out[, c('Feature', 'product', 'gene', 'AveExpr', 'adj.P.Val')])
@@ -324,7 +324,7 @@ clusteringR settings cs file =
 
   # Cluster ordering...
   library(seriation)
-  d <- dist(fit$coefficients[,c(#{toRStringList cs})])
+  d <- dist(fit$coefficients[,c(#{colsToRList cs})])
   c <- list(hclust = hclust(d))
   s <- seriate(d, method='OLO', control=c)
   order <- get_order(s[[1]])
