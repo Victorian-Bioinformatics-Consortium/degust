@@ -74,6 +74,8 @@ heatmap = null
 id_col = null       # Column used for the ID
 info_columns = []   # Columns used to display info about the genes
 ec_column = null    # Column (if any) with EC number
+column_names = []   # Column names
+counts_lookup = []  # Hash from column name to replicate raw counts
 
 kegg_mouseover = (obj) ->
     ec = obj.id
@@ -192,11 +194,13 @@ gridUpdateData = (data, columns) ->
 grid_include = (key) -> (!show_ave_fc && fc_col(key)) ||
                         (show_ave_fc && ave_fc_col(key)) ||
                         (show_expr && expr_col(key)) ||
-                        key==pval_col || (key in info_columns)
+                        key==pval_col
 
 update_grid = (data) ->
-  column_keys = d3.keys(data[0])
-  columns = column_keys.filter((key,i) -> grid_include(key)).map((key,i) ->
+  column_keys = info_columns.map((key) -> column_names[key])
+  d3.keys(data[0]).forEach( (col) -> if grid_include(col) then column_keys.push(col) )
+
+  columns = column_keys.map((key) ->
       id: key
       name: key
       field: key
@@ -220,12 +224,7 @@ fc_div = (n, column, row) ->
     colName = column.substring(column.indexOf(' ')+1)
     countStr = ""
     if show_counts
-        counts = []
-        for col, arr of settings.replicates
-            if colName == to_R_name(col)
-                for k in arr
-                    v = current_counts[row.id][to_R_name(k)]
-                    counts.push(v)
+        counts = counts_lookup[colName].map((c) -> current_counts[row.id][c])
         countStr = "<span class='counts'>(#{counts})</span>"
     "<div class='#{colour}'>#{n.toFixed(2)}#{countStr}</div>"
 
@@ -387,9 +386,14 @@ request_init_data = () ->
         if err
             $('div.container').text("ERROR : #{err}")
             return
-        data = d3.csv.parseRows(dat)
+        data = null
+        if settings.csv_format
+            data = d3.csv.parseRows(dat)
+        else
+            data = d3.tsv.parseRows(dat)
+
         data.forEach (row, i) ->
-            return if i<=0
+            return if i<=settings.skip
             current_counts[row[id_col]] = row
             # console.log current_counts
 
@@ -435,17 +439,24 @@ request_data = (columns) ->
         done_loading()
         pri_col = ""
         for k,v of data[0]
-            if expr_col(k)
+            # Find primary replicate column
+            if expr_col(k) && pri_col==""
                 pri_col = k
-                break
+
+            # Create a lookup from column name to replicate counts
+            if expr_col(k)
+                rep_num = k.substring(4)-1
+                if rep_num != settings.replicates[rep_num][0]
+                    console.log("BAD Replicate column")
+                kStem = settings.replicate_names[rep_num]
+                counts_lookup[kStem] = settings.replicates[rep_num][1]
+
         ids = {}
         data.forEach (row, i) ->
             # slickgrid needs each data element to have an id
-            if ids[row[id_col]]
+            if ids[row.id]
                 # TODO:  Duplicate ID raise a warning somewhere
                 row.id = i
-            else
-                row.id = row[id_col] || i
             ids[row.id] = 1
 
             # Format numbers as numbers!
@@ -454,9 +465,14 @@ request_data = (columns) ->
             # Create FC columns
             for k,v of row
                 if expr_col(k)
-                    kStem = k.substring(4)
+                    rep_num = k.substring(4)-1
+                    kStem = settings.replicate_names[rep_num]
                     row["FC #{kStem}"]  = row[k] - row[pri_col]
                     row["AFC #{kStem}"] = row[k] - row[ave_expr_col]
+
+            # Attach info columns
+            for col in info_columns
+                row[column_names[col]] = current_counts[row.id][col]
 
         current_data = data
         update_data(current_data)
@@ -506,6 +522,7 @@ init = () ->
     id_col = settings['id_column']
     info_columns = settings['info_columns'] || []
     ec_column = settings['ec_column']
+    column_names = settings['column_names']
 
     if settings['locked']
         $('a.config').hide()

@@ -62,7 +62,7 @@ doQuery = do query <- getInput "query"
                Just "config" -> getPage "config.html"
                Just "csv" -> getCSV
                Just "dge" -> cached "text/csv" getDGE
-               Just "counts" -> cached "text/csv" getCounts
+               Just "counts" -> getCounts
                Just "annot" -> cached "text/csv" getAnnot
                Just "kegg_titles" -> cached "text/csv" getKeggTitles
                Just "clustering" -> cached "text/csv" getClustering
@@ -110,6 +110,13 @@ getCSV = do
     bsLines = BS.split (BS.head "\n")
     bsUnlines = BS.intercalate "\n"
 
+getCounts :: CGI CGIResult
+getCounts = do
+    settings <- findSettings
+    setHeader "Content-type" "text/csv"
+    counts <- liftIO $ BS.readFile (get_counts_file settings)
+    outputFPS counts
+
 getJSSettings :: CGI CGIResult
 getJSSettings = do
     settings <- findSettings
@@ -122,9 +129,6 @@ getDGE = getWithFields dgeR
 
 getClustering :: CGI String
 getClustering = getWithFields clusteringR
-
-getCounts :: CGI String
-getCounts = runR getCountsR
 
 getAnnot :: CGI String
 getAnnot = do
@@ -288,12 +292,13 @@ initR settings =
 
 dgeR :: Settings -> [Int] -> FilePath -> String
 dgeR settings cs file =
-    T.unpack . toLazyText $ [text|
+    let id_col = [get_id_column settings]
+    in T.unpack . toLazyText $ [text|
   #{initR settings}
 
   nf <- calcNormFactors(counts)
   y<-voom(counts, design, plot=FALSE,lib.size=colSums(counts)*nf)
-  y$genes <- x[c('Feature', 'product', 'gene')]
+  y$genes <- data.frame(id=x[,#{colsToRList id_col}])
 
   cont.matrix <- #{contMatrix settings cs}
 
@@ -305,20 +310,21 @@ dgeR settings cs file =
 
   abs_vals <- fit$coefficients[,c(#{colsToRList cs})]
   colnames(abs_vals) <- paste("ABS", c(#{colsToRList cs}))
-  abs_vals <- data.frame(Feature=fit$genes$Feature, abs_vals)
+  abs_vals <- data.frame(id=fit$genes[,1], abs_vals)
 
-  out2 <- merge(abs_vals, out[, c('Feature', 'product', 'gene', 'AveExpr', 'adj.P.Val')])
+  out2 <- merge(abs_vals, out[, c('id', 'AveExpr', 'adj.P.Val')])
 
   write.csv(out2, file="#{file}", row.names=FALSE,na='')
  |] ()
 
 clusteringR settings cs file =
-    T.unpack . toLazyText $ [text|
+    let id_col = [get_id_column settings]
+    in T.unpack . toLazyText $ [text|
   #{initR settings}
 
   nf <- calcNormFactors(counts)
   y<-voom(counts, design, plot=FALSE,lib.size=colSums(counts)*nf)
-  y$genes <- x[c('Feature', 'product')]
+  y$genes <- data.frame(id=x[,#{colsToRList id_col}])
 
   fit <- lmFit(y,design)
 
@@ -328,5 +334,5 @@ clusteringR settings cs file =
   c <- list(hclust = hclust(d))
   s <- seriate(d, method='OLO', control=c)
   order <- get_order(s[[1]])
-  write.csv(list(id=fit$genes$Feature[order]), file="#{file}", row.names=FALSE)
+  write.csv(list(id=fit$genes[order,1]), file="#{file}", row.names=FALSE)
   |] ()
