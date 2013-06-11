@@ -5,7 +5,7 @@ select_primary = (e) ->
            $('#files .primary').removeClass('primary')
            $(el).addClass('primary')
            $(el).removeClass('selected')
-           select(e)
+           select_sample(e)
 
 select_sample = (e) ->
            el = $(e.target).parent('div')
