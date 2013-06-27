@@ -37,19 +37,20 @@ colour_cat20 = d3.scale.category20().domain([1..20])
 
 unknown_colour = 16
 ec_code = (id) ->
-    return unknown_colour if ec_column==undefined || !current_counts[id][ec_column]
-    ec = current_counts[id][ec_column]
+    ec = g_data.get_ec_value(id)
+    return unknown_colour if !ec
     Number(ec[0])
 
-colour_by_ec = (d) -> colour_cat20(ec_code(d.id))
+colour_by_ec = (col) ->
+    (d) -> colour_cat20(ec_code(d.id))
 
-colour_by_pval = (d) -> blue_to_brown(d[pval_col])
+colour_by_pval = (col) ->
+    (d) -> blue_to_brown(d[col])
 
 ec_number = (id) ->
-    if ec_column!=undefined && current_counts[id][ec_column]
-        return current_counts[id][ec_column]
-    else
-        ""
+    ec = g_data.get_ec_value(id)
+    return "" if !ec
+    ec
 
 init_ec_legend = () ->
     ec_label = ["Oxidoreductases", "Transferases", "Hydrolases", "Lyases", "Isomerases", "Ligases"]
@@ -62,7 +63,7 @@ init_ec_legend = () ->
         entry.append $("<span></span>").html(ec[0])
         $('.ec-filter').append(entry)
         entry.on('click', ((entry_local) ->
-                              (e) -> $(entry_local).toggleClass('selected') ; update_data(current_data)
+                              (e) -> $(entry_local).toggleClass('selected') ; update_data()
                            )(entry))
 
 parcoords = null
@@ -71,17 +72,18 @@ grid = null
 kegg = null
 heatmap = null
 
-id_col = null       # Column used for the ID
 info_columns = []   # Columns used to display info about the genes
 ec_column = null    # Column (if any) with EC number
 column_names = []   # Column names
 counts_lookup = []  # Hash from column name to replicate raw counts
 
+g_data = null
+
 kegg_mouseover = (obj) ->
     ec = obj.id
     d = []
-    for row in current_data
-        d.push(row) if ec_number(row[id_col]) == ec
+    for row in g_data.get_data()
+        d.push(row) if ec_number(row.id) == ec
     parcoords.highlight(d)
     #gridUpdateData(d)
 
@@ -131,7 +133,7 @@ init_chart = () ->
         kegg.unhighlight()
     )
     grid.onDblClick.subscribe( (e,args) ->
-          feature = grid.getDataItem(args.row)[id_col]
+          feature = grid.getDataItem(args.row).id
           window.open("http://www.ncbi.nlm.nih.gov/protein?term=#{feature}", '_blank')
           window.focus()
     )
@@ -193,38 +195,41 @@ gridUpdateData = (data, columns) ->
 
 grid_include = (key) -> (!show_ave_fc && fc_col(key)) ||
                         (show_ave_fc && ave_fc_col(key)) ||
-                        (show_expr && expr_col(key)) ||
                         key==pval_col
 
 update_grid = (data) ->
-  column_keys = info_columns.map((key) -> column_names[key])
-  d3.keys(data[0]).forEach( (col) -> if grid_include(col) then column_keys.push(col) )
+    column_keys = g_data.columns_by_type('info')
+    column_keys = column_keys.concat(g_data.columns_by_type(pval_col))
+    column_keys = column_keys.concat(g_data.columns_by_type(if show_ave_fc then 'afc' else 'fc'))
+    console.log
 
-  columns = column_keys.map((key) ->
-      id: key
-      name: key
-      field: key
-      sortable: true
-      formatter: (i,c,val,m,row) ->
-          if fc_col(m.name) || ave_fc_col(m.name)
-              fc_div(val, m.name, row)
-          else if expr_col(m.name)
-              Number(val).toFixed(2)
-          else if m.name==pval_col
-              pval=Number(val)
-              if pval<0.01 then pval.toExponential(2) else pval.toFixed(2)
-          else
-              val
-  )
+    columns = column_keys.map((col) ->
+        id: col.idx
+        name: col.name
+        field: col.idx
+        sortable: true
+        formatter: (i,c,val,m,row) ->
+            if fc_col(m.name) || ave_fc_col(m.name)
+                console.log(i,c,val,m,row)
+                fc_div(val, m.name, row)
+            else if expr_col(m.name)
+                Number(val).toFixed(2)
+            else if m.name==pval_col
+                pval=Number(val)
+                if pval<0.01 then pval.toExponential(2) else pval.toFixed(2)
+            else
+                val
+    )
 
-  gridUpdateData(data, columns)
+    gridUpdateData(data, columns)
 
 fc_div = (n, column, row) ->
     colour = if n>0.1 then "pos" else if n<-0.1 then "neg" else ""
     colName = column.substring(column.indexOf(' ')+1)
     countStr = ""
+    #console.log(n,column,row)
     if show_counts
-        counts = counts_lookup[colName].map((c) -> current_counts[row.id][c])
+        counts = g_data.get_counts(colName)
         countStr = "<span class='counts'>(#{counts})</span>"
     "<div class='#{colour}'>#{n.toFixed(2)}#{countStr}</div>"
 
@@ -233,7 +238,6 @@ expr_col   = (k) -> k.indexOf("ABS.")==0
 fc_col     = (k) -> k.indexOf("FC ")==0
 ave_fc_col = (k) -> k.indexOf("AFC ")==0
 
-show_expr = false
 show_ave_fc = false
 show_counts = false
 plot_avg_exp = false
@@ -262,7 +266,7 @@ pcFilter = (item) ->
         return false if !keep
 
     return false if item[pval_col] > fdrThreshold
-    return false if annot_genes_only && (ec_column!=undefined || !current_counts[item.id][ec_column])
+    return false if annot_genes_only && !g_data.get_ec_value(id)
 
     # TODO - this is a very inefficient place to filter on ec.  Disabled for now.  Remove?
     # ec_codes = $('.ec-filter .selected').map((i,d) -> $(d).data('code'))
@@ -323,27 +327,24 @@ init_slider = () ->
                h_runfilters = window.setTimeout(parcoords.brush, 10)
                fcThreshold = v
     )
-    $('#plot-expr-cb').on("click", (e) ->
-        update_data(current_data)
-    )
     $('#plot-avgfc-cb').on("click", (e) ->
-        update_data(current_data)
+        update_data()
     )
     $('#show-counts-cb').on("click", (e) ->
         update_flags()
         grid.invalidate()
     )
     $('#annot-genes-cb').on("click", (e) ->
-        update_data(current_data)
+        update_data()
     )
     $('#pval-col-cb').on("click", (e) ->
-        update_data(current_data)
+        update_data()
     )
 
-calc_kegg_colours = (data) ->
+calc_kegg_colours = () ->
     ec_dirs = {}
-    for row in current_data
-        ec = ec_number(row[id_col])
+    for row in g_data.get_data()
+        ec = ec_number(row.id)
         continue if !ec
         first=true
         for k,v of row
@@ -363,23 +364,20 @@ kegg_selected = () ->
 
     set_filter = (ec) ->
         kegg_filter = ec
-        update_data(current_data)
+        update_data()
 
     if !code
         set_filter([])
     else
-        ec_colours = calc_kegg_colours(current_data)
+        ec_colours = calc_kegg_colours()
         kegg.load(code, ec_colours, set_filter)
         $('div#kegg-image').dialog({width:500, height:600, title: title, position: {my: "right top", at:"right top+60", of: $('body')} })
 
 update_flags = () ->
-    show_expr = $('#plot-expr-cb').is(":checked")
     show_ave_fc = $('#plot-avgfc-cb').is(":checked")
     show_counts = $('#show-counts-cb').is(":checked")
     annot_genes_only = $('#annot-genes-cb').is(":checked")
     pval_colour = $('#pval-col-cb').is(":checked")
-
-current_counts = {}
 
 request_init_data = () ->
     d3.text(script("query=counts"), "text/csv", (dat,err) ->
@@ -392,22 +390,36 @@ request_init_data = () ->
         else
             data = d3.tsv.parseRows(dat)
 
-        data.forEach (row, i) ->
-            return if i<=settings.skip
-            current_counts[row[id_col]] = row
-            # console.log current_counts
+        names = settings.column_names
+        rep_names = settings.replicate_names
+        columns = []
+        columns.push({is_id: true, column_idx: settings.id_column, name: names[settings.id_column]})
+        settings.info_columns.forEach (col) ->
+            columns.push({column_idx: col, name: names[col], type: 'info'})
 
-        if ec_column==undefined
+        settings.replicates.forEach (rep) ->
+            rep[1].forEach (col) ->
+                columns.push({type: 'counts', column_idx: col, name:names[col], parent: rep_names[rep[0]]})
+
+        if settings.ec_column != undefined
+            columns.push({type: 'ec', column_idx: settings.ec_column, name:"EC"})
+
+        g_data.add_data('counts',data[1+settings.skip..], columns)
+
+        # If there is an ec column, fill in the kegg pull down
+        ec_col = g_data.column_by_type('ec')
+        if ec_col == null
             $('.kegg-filter').hide()
         else
-            d3.tsv(script('query=kegg_titles'), (data) ->
+            d3.tsv(script('query=kegg_titles'), (ec_data) ->
                 opts = "<option value=''>--- No pathway selected ---</option>"
 
                 have_ec = {}
-                for k,v of current_counts
-                    have_ec[v[ec_column]]=1
+                dat = g_data.get_data()
+                for row of dat
+                    have_ec[row[ec_col]]=1
 
-                data.forEach (row) ->
+                ec_data.forEach (row) ->
                     num=0
                     for ec in row.ec.split(" ").filter((s) -> s.length>0)
                         num++ if have_ec[ec]
@@ -428,7 +440,6 @@ done_loading = () ->
         $('#loading').hide()
         $('#dge-pc').css('opacity',1)
 
-current_data = []
 request_data = (columns) ->
     return if columns.length <= 1
 
@@ -437,45 +448,29 @@ request_data = (columns) ->
     start_loading()
     d3.csv(req, (data) ->
         done_loading()
-        pri_col = ""
-        for k,v of data[0]
-            # Find primary replicate column
-            if expr_col(k) && pri_col==""
-                pri_col = k
 
-            # Create a lookup from column name to replicate counts
+        expression_cols = {}
+        columns = [{is_id: true, column_idx: 'id'}]
+        pri_col=null
+        d3.keys(data[0]).forEach (k, i) ->
             if expr_col(k)
+                if pri_col==null
+                     pri_col = k
                 rep_num = k.substring(4)-1
                 if rep_num != settings.replicates[rep_num][0]
                     console.log("BAD Replicate column")
-                kStem = settings.replicate_names[rep_num]
-                counts_lookup[kStem] = settings.replicates[rep_num][1]
+                name = settings.replicate_names[rep_num]
+                columns.push({column_idx: k, name: name, type: 'expr', numeric: true})
+                columns.push({name:"FC #{name}", type: 'fc', func: (r) -> r[k] - r[pri_col]})
+                columns.push({name:"AFC #{name}", type: 'afc', func: (r) -> r[k] - r[ave_expr_col]})
+            else if k==pval_col
+                columns.push({column_idx: k, name:k, type: 'pval', numeric: true})
+            else
+                columns.push({column_idx: k, name:k})
 
-        ids = {}
-        data.forEach (row, i) ->
-            # slickgrid needs each data element to have an id
-            if ids[row.id]
-                # TODO:  Duplicate ID raise a warning somewhere
-                row.id = i
-            ids[row.id] = 1
+        g_data.add_data('dge', data, columns)
 
-            # Format numbers as numbers!
-            for k,v of row
-                row[k] = Number(v) if expr_col(k) || k==pval_col || k==ave_expr_col
-            # Create FC columns
-            for k,v of row
-                if expr_col(k)
-                    rep_num = k.substring(4)-1
-                    kStem = settings.replicate_names[rep_num]
-                    row["FC #{kStem}"]  = row[k] - row[pri_col]
-                    row["AFC #{kStem}"] = row[k] - row[ave_expr_col]
-
-            # Attach info columns
-            for col in info_columns
-                row[column_names[col]] = current_counts[row.id][col]
-
-        current_data = data
-        update_data(current_data)
+        update_data()
     )
 
     req = script("query=clustering&fields=#{JSON.stringify columns}")
@@ -484,14 +479,16 @@ request_data = (columns) ->
       heatmap.redraw()
     )
 
-update_data = (data) ->
+update_data = () ->
     update_flags()
-    dims = []
-    for k,v of data[0]
-        dims.push(k) if (!show_ave_fc && fc_col(k)) || (show_expr && expr_col(k)) || (show_ave_fc && ave_fc_col(k))
 
+    data = g_data.get_data()
+    dims = g_data.columns_by_type(if show_ave_fc then 'afc' else 'fc').map (c) -> c.idx
+
+    ec_col = g_data.column_by_type('ec')
+    pval_col = g_data.column_by_type('pval')
     parcoords.data(data)
-             .color(if pval_colour then colour_by_pval else colour_by_ec)
+             .color(if pval_colour then colour_by_pval(pval_col) else colour_by_ec(ec_col))
              .dimensions(dims)
              .autoscale()
 
@@ -510,16 +507,16 @@ update_data = (data) ->
 
     update_grid(data)
 
-    heatmap.update_columns(dims, extent, pval_col)
+    #heatmap.update_columns(dims, extent, pval_col)
     #heatmap.schedule_update(data)
 
     parcoords.render()
     parcoords.brush()   # Reset any brushes that were in place
 
 init = () ->
+    g_data = new DataContainer()
     if settings.id_column < 0
         window.location = script("query=config")
-    id_col = settings['id_column']
     info_columns = settings['info_columns'] || []
     ec_column = settings['ec_column']
     column_names = settings['column_names']
