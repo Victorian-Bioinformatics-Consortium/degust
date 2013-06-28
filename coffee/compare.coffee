@@ -52,20 +52,6 @@ ec_number = (id) ->
     return "" if !ec
     ec
 
-init_ec_legend = () ->
-    ec_label = ["Oxidoreductases", "Transferases", "Hydrolases", "Lyases", "Isomerases", "Ligases"]
-    for ec,i in (["EC#{i} #{ec_label[i-1]}",i] for i in [1..6]).concat([["Unknown",unknown_colour]])
-        entry = $("<div></div>").data('code', ec[1])
-        entry.append $("<span></span>").width(15).height(2)
-                                       .css('display','inline-block')
-                                       .css('margin','0 5px 2px 0')
-                                       .css('background-color', colour_cat20(ec[1]))
-        entry.append $("<span></span>").html(ec[0])
-        $('.ec-filter').append(entry)
-        entry.on('click', ((entry_local) ->
-                              (e) -> $(entry_local).toggleClass('selected') ; update_data()
-                           )(entry))
-
 parcoords = null
 dataView = null
 grid = null
@@ -88,8 +74,6 @@ kegg_mouseover = (obj) ->
     #gridUpdateData(d)
 
 init_chart = () ->
-    init_ec_legend()
-
     parcoords = new ParCoords({elem: '#dge-pc', pcFilter: pcFilter})
 
     options =
@@ -197,8 +181,6 @@ update_grid = (data) ->
     column_keys = g_data.columns_by_type('info')
     column_keys = column_keys.concat(g_data.columns_by_type(pval_col))
     column_keys = column_keys.concat(g_data.columns_by_type(if show_ave_fc then 'afc' else 'fc'))
-    console.log
-
     columns = column_keys.map((col) ->
         id: col.idx
         name: col.name
@@ -206,7 +188,7 @@ update_grid = (data) ->
         sortable: true
         formatter: (i,c,val,m,row) ->
             if fc_col(m.name) || ave_fc_col(m.name)
-                console.log(i,c,val,m,row)
+                #console.log(i,c,val,m,row)
                 fc_div(val, m.name, row)
             else if expr_col(m.name)
                 Number(val).toFixed(2)
@@ -486,9 +468,29 @@ update_data = () ->
 
     update_grid(g_data.get_data())
 
-    #heatmap.update_columns(dims, extent, pval_col)
-    #heatmap.schedule_update(data)
+    heatmap.update_columns(dims, extent, pval_col)
+    heatmap.schedule_update(data)
 
+init_condition_selector = () ->
+    $.each(settings.replicates, (i, rep) ->
+        name = settings.replicate_names[i]
+        div = $("<div class='rep_#{i}'>"+
+                "  <a class='file' href='#' title='Select this condition' data-placement='right'>#{name}</a>"+
+                "  <a class='pri' href='#' title='Make primary condition' data-placement='right'>pri</a>" +
+                "</div>")
+        $("#files").append(div)
+        div.data('rep',i)
+    )
+    $("#files a.file").click(select_sample)
+    $("#files a.pri").click(select_primary)
+
+    # Select some samples
+    init_select = settings['init_select'] || []
+    $.each(init_select, (i,sel) ->
+        $("div[class='rep_#{i}']").addClass('selected')
+    )
+    $('#files div.selected:first').addClass('primary')
+    update_samples()
 
 init = () ->
     g_data = new DataContainer()
@@ -508,17 +510,6 @@ init = () ->
     fdrThreshold = settings['fdrThreshold'] if settings['fdrThreshold'] != undefined
     fcThreshold  = settings['fcThreshold']  if settings['fcThreshold'] != undefined
 
-    $.each(settings.replicates, (i, rep) ->
-        name = settings.replicate_names[i]
-        div = $("<div class='rep_#{i}'>"+
-                "  <a class='file' href='#' title='Select this condition' data-placement='right'>#{name}</a>"+
-                "  <a class='pri' href='#' title='Make primary condition' data-placement='right'>pri</a>" +
-                "</div>")
-        $("#files").append(div)
-        div.data('rep',i)
-    )
-    $("#files a.file").click(select_sample)
-    $("#files a.pri").click(select_primary)
     $("select#kegg").change(kegg_selected)
     init_chart()
     init_search()
@@ -526,14 +517,7 @@ init = () ->
     init_download_link()
     request_init_data()
 
-    # Select some samples
-    init_select = settings['init_select'] || []
-    $.each(init_select, (i,sel) ->
-        $("div[class='rep_#{i}']").addClass('selected')
-    )
-    $('#files div.selected:first').addClass('primary')
-    update_samples()
-
+    init_condition_selector()
 
 $(document).ready(() -> init() )
 $(document).ready(() -> $('[title]').tooltip())

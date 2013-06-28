@@ -1,6 +1,6 @@
 <html>
   <head profile="http://www.w3.org/2005/10/profile">
-    <link rel="icon" type="image/png" href="favicon.png"/>
+    <link rel="icon" type="image/png" href="images/favicon.png"/>
 
     <!-- Boostrap CSS -->
     <link href="lib/bootstrap-combined.min.css" rel="stylesheet">
@@ -13,8 +13,8 @@
     <link rel="stylesheet" href="lib/slick.grid.css" type="text/css"/>
     <link rel="stylesheet" href="lib/jquery-ui-1.8.16.custom.css" type="text/css"/>
 
-    <link rel="stylesheet" href="common.css" type="text/css"/>
-    <link rel="stylesheet" href="compare.css" type="text/css"/>
+    <link rel="stylesheet" href="css/common.css" type="text/css"/>
+    <link rel="stylesheet" href="css/compare.css" type="text/css"/>
 
     <!-- jQuery -->
     <script type="text/javascript" src="lib/jquery-1.8.2.min.js"></script>
@@ -33,12 +33,12 @@
     <script type="text/javascript" src="lib/slick.dataview.js"></script>
 
     <script type="text/javascript" src="##SETTINGS##"></script>
-    <script type="text/javascript" src="slider.js"></script>
-    <script type="text/javascript" src="data_container.js"></script>
-    <script type="text/javascript" src="parcoords.js"></script>
-    <script type="text/javascript" src="heatmap.js"></script>
-    <script type="text/javascript" src="kegg.js"></script>
-    <script type="text/javascript" src="compare.js"></script>
+    <script type="text/javascript" src="js/slider.js"></script>
+    <script type="text/javascript" src="js/data_container.js"></script>
+    <script type="text/javascript" src="js/parcoords.js"></script>
+    <script type="text/javascript" src="js/heatmap.js"></script>
+    <script type="text/javascript" src="js/kegg.js"></script>
+    <script type="text/javascript" src="js/compare.js"></script>
 
   </head>
   <body>
@@ -116,7 +116,7 @@
         </div>
 
         <div class='span6' id='expression'>
-          <div id='loading'><img src='ajax-loader.gif'></div>
+          <div id='loading'><img src='images/ajax-loader.gif'></div>
           <h3 title='Plot of log FC for each sample.  Click & drag on axes to select range.  Drag axis title to reorder columns' data-placement='bottom'>Expression</h3>
           <div id="dge-pc" class="parcoords"></div>
         </div>

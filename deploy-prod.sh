@@ -18,6 +18,9 @@ echo "Installing DGE-Vis to : $dest"
 cp src/r-json "$dest"/r-json.cgi
 
 for f in html/* coffee/*.js kegg; do cp -r "$f" "$dest"; done
+mkdir "$dest/js"
+for f in coffee/*.js; do cp -r "$f" "$dest/js"; done
+
 
 cp htaccess "$dest"/.htaccess
 

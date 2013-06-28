@@ -1,4 +1,5 @@
 src/r-json
 dist-dev/
+dist-example/
 *.o
 *.hi
