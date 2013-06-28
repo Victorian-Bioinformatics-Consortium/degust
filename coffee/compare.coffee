@@ -89,12 +89,8 @@ kegg_mouseover = (obj) ->
 
 init_chart = () ->
     init_ec_legend()
-    parcoords = d3.parcoords()("#dge-pc")
-        .alpha(0.4)
-        .reorderable()
-        .brushable() # enable brushing
 
-    parcoords.setFilter(pcFilter)
+    parcoords = new ParCoords({elem: '#dge-pc', pcFilter: pcFilter})
 
     options =
       enableCellNavigation: true
@@ -482,36 +478,17 @@ request_data = (columns) ->
 update_data = () ->
     update_flags()
 
-    data = g_data.get_data()
     dims = g_data.columns_by_type(if show_ave_fc then 'afc' else 'fc').map (c) -> c.idx
-
     ec_col = g_data.column_by_type('ec')
     pval_col = g_data.column_by_type('pval')
-    parcoords.data(data)
-             .color(if pval_colour then colour_by_pval(pval_col) else colour_by_ec(ec_col))
-             .dimensions(dims)
-             .autoscale()
+    color = if pval_colour then colour_by_pval(pval_col) else colour_by_ec(ec_col)
+    parcoords.update_data(g_data.get_data(), dims, color)
 
-    # Calculate min/max for all dimensions - Want common scale across dimensions
-    extents = []
-    parcoords.dimensions().forEach (k) ->
-        extents.push(d3.extent(data, (v) -> +v[k]))
-    extent = d3.extent(d3.merge(extents))
-
-    h = parcoords.height() - parcoords.margin().top - parcoords.margin().bottom;
-    parcoords.dimensions().forEach (k) ->
-        parcoords.yscale[k] = d3.scale.linear().domain(extent).range([h+1,1])
-
-    parcoords.createAxes().render().reorderable().brushable()
-    window.foo = parcoords
-
-    update_grid(data)
+    update_grid(g_data.get_data())
 
     #heatmap.update_columns(dims, extent, pval_col)
     #heatmap.schedule_update(data)
 
-    parcoords.render()
-    parcoords.brush()   # Reset any brushes that were in place
 
 init = () ->
     g_data = new DataContainer()
