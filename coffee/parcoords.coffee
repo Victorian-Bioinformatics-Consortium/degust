@@ -13,8 +13,11 @@ class ParCoords
         @parcoords.setFilter(@opts.pcFilter)   #FIXME - better name "pcFilter"
 
     update_data: (data, dims, extent, coloring) ->
+        dim_names = {}
+        dims.forEach (k) -> dim_names[k.idx] = k.name
         @parcoords.data(data)
              .dimensions(dims.map((c) -> c.idx))
+             .dimension_names(dim_names)
              .autoscale()
         @parcoords.color(coloring) if coloring
 
