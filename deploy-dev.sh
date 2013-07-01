@@ -11,8 +11,8 @@ ln -sf ../src/r-json.hs r-json.cgi
 
 for f in ../html/* ../src/* ../kegg; do ln -sf $f .; done
 
-mkdir js
-for f in ../coffee/*.js; do ln -sf $f js; done
+mkdir -p js
+for f in ../coffee/*.js; do ln -sf "../$f" js; done
 
 mkdir -p tmp
 mkdir -p cached

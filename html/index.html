@@ -1,20 +1,11 @@
 <html>
   <head profile="http://www.w3.org/2005/10/profile">
-    <link rel="icon" type="image/png" href="images/favicon.png"/>
+    <link rel="icon" type="image/png" href="favicon.png"/>
 
     <!-- Boostrap CSS -->
     <link href="lib/bootstrap-combined.min.css" rel="stylesheet">
 
-    <!-- D3 CSS -->
-    <link rel="stylesheet" type="text/css" href="lib/d3.parcoords.css">
-
-
-    <!-- SlickGrid CSS -->
-    <link rel="stylesheet" href="lib/slick.grid.css" type="text/css"/>
-    <link rel="stylesheet" href="lib/jquery-ui-1.8.16.custom.css" type="text/css"/>
-
     <link rel="stylesheet" href="css/common.css" type="text/css"/>
-    <link rel="stylesheet" href="css/compare.css" type="text/css"/>
 
     <!-- jQuery -->
     <script type="text/javascript" src="lib/jquery-1.8.2.min.js"></script>
@@ -22,27 +13,9 @@
 
     <!-- Bootstrap -->
     <script src="lib/bootstrap.min.js"></script>
-    <!-- D3 -->
-    <script type="text/javascript" src="lib/d3.v2.js"></script>
-    <script type="text/javascript" src="lib/d3.parcoords.js"></script>
-
-    <!-- SlickGrid -->
-    <script type="text/javascript" src="lib/jquery.event.drag-2.2.js"></script>
-    <script type="text/javascript" src="lib/slick.core.js"></script>
-    <script type="text/javascript" src="lib/slick.grid.js"></script>
-    <script type="text/javascript" src="lib/slick.dataview.js"></script>
-
-    <script type="text/javascript" src="settings.js"></script>
-    <script type="text/javascript" src="js/slider.js"></script>
-    <script type="text/javascript" src="js/data_container.js"></script>
-    <script type="text/javascript" src="js/parcoords.js"></script>
-    <script type="text/javascript" src="js/heatmap.js"></script>
-    <script type="text/javascript" src="js/kegg.js"></script>
-    <script type="text/javascript" src="js/compare.js"></script>
 
   </head>
   <body>
-
     <div class="navbar navbar-inverse navbar-fixed-top">
       <div class="navbar-inner">
         <div class="container">
@@ -51,99 +24,45 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
-          <a class="brand" href="#">DGE-Vis : <span class='exp-name'>unnamed</span></a>
+          <a class="brand" href="#">DGE-Vis</a>
           <div class="nav-collapse collapse">
-            <ul class="nav pull-right">
+            <ul class="nav">
               <li><a href="#about-modal" data-toggle="modal">About</a></li>
             </ul>
           </div><!--/.nav-collapse -->
-          <div class="nav-collapse collapse">
-            <ul class="nav pull-right">
-              <li><a href="#" class="config">Configure</a></li>
-            </ul>
-          </div><!--/.nav-collapse -->
         </div>
       </div>
     </div>
 
-    <div class='container'>
-      <div class='right'>
-        <div class='filter'>
-          <h4>Options</h4>
-          <div title='Filter genes by False Discovery Rate' data-placement='left'>
-            <label>FDR cut-off</label>
-            <input class="fdr-fld" type="text" value="0.01" />
-            <div id='fdrSlider'></div>
-          </div>
-          <div title='Filter genes by absolute of the log Fold Change' data-placement='left'>
-            <label>abs log FC</label>
-            <input class="fc-fld" type="text" value="0" />
-            <div id='fcSlider'></div>
-          </div>
-          <div title='Show FC from average (vs FC from "primary" sample)' data-placement='left'>
-            <label for='plot-avgfc-cb'>FC from Avg</label>
-            <input type="checkbox" id='plot-avgfc-cb' checked>
-          </div>
-          <div title='Show raw counts in the table' data-placement='left'>
-            <label for='show-counts-cb'>Show Counts</label>
-            <input type="checkbox" id='show-counts-cb'>
-          </div>
-          <div title='Only show genes with annotation' data-placement='left'>
-            <label for='annot-genes-cb'>Annot. genes</label>
-            <input type="checkbox" id='annot-genes-cb'>
-          </div>
-          <div title='Colour lines by p-value instead of by EC' data-placement='left'>
-            <label for='pval-col-cb'>p-val colour</label>
-            <input type="checkbox" id='pval-col-cb' checked>
-          </div>
+    <div class="container">
+      <div class="hero-unit">
+        <div id='beta'>
+          <img src='images/beta-testing-image.png'/>
         </div>
-
-        <div class='filter kegg-filter'>
-          <h4>Kegg Pathway</h4>
-          <select id='kegg'></select>
-        </div>
+        <h1>DGE-Vis</h1>
+        <p>DGE-Vis : Perform RNA-seq analysis and visualisation</p>
+        <p>Simply upload a CSV file of read counts for each replicate; then view your DGE data</p>
+        <p><a href="upload.html" class="btn btn-primary btn-large">Upload your counts file &raquo;</a></p>
       </div>
 
-      <div class='filter ec-group' title='Click a group to filter genes by EC group' data-placement='left'>
-        <h4>EC Group</h4>
-        <div class='ec-filter'></div>
-      </div>
-
-      <div class='row'>
-        <div class='span2'>
-          <h3>Conditions</h3>
-          <div id='files'></div>
+      <!-- Example row of columns -->
+      <div class="row">
+        <div class="span4">
+          <h2>Watch a Demo</h2>
+          Watch of video of DGE-Vis in action on a real data set.
+          <p><a class="btn" href="https://www.youtube.com/watch?v=ucucQ_LtZ1g">Watch video &raquo;</a></p>
         </div>
-
-        <div class='span6' id='expression'>
-          <div id='loading'><img src='ajax-loader.gif'></div>
-          <h3 title='Plot of log FC for each sample.  Click & drag on axes to select range.  Drag axis title to reorder columns' data-placement='bottom'>Expression</h3>
-          <div id="dge-pc" class="parcoords"></div>
+        <div class="span4">
+          <h2>Play with a Demo</h2>
+          See a demo of DGE-Vis on a real data set.  See the CSV <a href="http://vicbioinformatics.com/dge-vis/example-counts.csv">counts file</a> used to create this example</a>
+          <p><a class="btn" href="http://vicbioinformatics.com/dge-vis/r-json.cgi?code=example">See demo &raquo;</a></p>
+        </div>
+        <div class="span4">
+          <h2>Get Started</h2>
+          Get started with DGE-Vis with your own data set.  Just upload a CSV counts file from your RNA-seq experiment.  Then use the web configuration pagw to define which columns gene ids, and which contain gene counts for which replicates.  
+          <p><a class="btn" href="upload.html">Get Started &raquo;</a></p>
         </div>
       </div>
-
-      <div class='row'>
-        <div id="heatmap-info"></div>
-        <div id='heatmap'></div>
-      </div>
-
-      <div class='row'>
-        <h2>Genes</h2>
-        <div>
-          <div class="tab-search">
-            Search:
-            <input type="text">
-          </div>
-          <a id='csv-download' href='#'>Download CSV</a>
-          <div id="grid-info"></div>
-        </div>
-        <div id="grid"></div>
-        <div id="gene-info"></div>
-      </div>
-
-    </div>
-
-    <div id='kegg-image'></div>
 
     <!-- Modal -->
     <div id="about-modal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
@@ -156,7 +75,7 @@
         <p>Visit the <a href='http://vicbioinformatics.com/software.dge-vis.shtml'>DGE-Vis project page</a>,
            or the <a href='https://github.com/Victorian-Bioinformatics-Consortium/dge-vis'>source code on GitHub</a>
         </p>
-        <div>Written by: <a href='mailto:david.powell@monash.edu'>David R. Powell</a></div>
+        <div>Written by <a href='http://thunking.drp.id.au/'>David R. Powell</a></div>
         <div class='supported-by'>
           Supported by <a href='http://vicbioinformatics.com/'>Victorian Bioinformatics Consortium, Monash University</a>
           and <a href='http://www.vlsci.org.au/lscc'>VLSCI's Life Sciences Computation Centre</a>
@@ -167,7 +86,5 @@
       </div>
     </div>
 
-</body>
+  </body>
 </html>
-
-
