@@ -10,6 +10,13 @@ done_loading = () ->
         $('#loading').hide()
         $('#dge-pc').css('opacity',1)
 
+msg_error = (msg,rest...) ->
+    $('div.container').text("ERROR : #{msg}")
+    console.log("ERROR : #{msg}",rest)
+
+msg_debug = (msg,rest...) ->
+    console.log("DEBUG : #{msg}",rest)
+
 class WithoutBackend
     constructor: (@settings, @process_dge_data) ->
         $('.conditions').hide()
@@ -17,8 +24,9 @@ class WithoutBackend
 
     request_init_data: (callback) ->
         d3.text(@settings.csv, "text/csv", (dat,err) =>
+            msg_debug("Downloaded csv",dat,err)
             if err
-                $('div.container').text("ERROR : #{err}")
+                msg_error(err)
                 return
             callback(dat)
 
@@ -26,7 +34,7 @@ class WithoutBackend
         )
 
     request_kegg_data: (callback) ->
-        console.log("Get KEGG data not supported without backend")
+        msg_error("Get KEGG data not supported without backend")
 
 class WithBackend
     constructor: (@settings, @process_dge_data) ->
@@ -42,30 +50,43 @@ class WithBackend
         @_init_condition_selector()
 
     request_init_data: (callback) ->
-        d3.text(@_script("query=counts"), "text/csv", (dat,err) ->
+        d3.text(@_script("query=counts"), "text/csv", (dat,err) =>
+            msg_debug("Downloaded counts",dat,err)
             if err
-                $('div.container').text("ERROR : #{err}")
+                msg_error(err)
                 return
             callback(dat)
+            @have_counts = true
+            if @after_counts
+                @after_counts()
+            @after_counts = null
         )
 
     request_kegg_data: (callback) ->
         d3.tsv(@_script('query=kegg_titles'), (ec_data) ->
+            msg_debug("Downloaded counts",dat,err)
             callback(ec_data)
         )
 
     request_dge_data: (columns) ->
         return if columns.length <= 1
 
+        #Ugly hack to ensure "Counts" are done before "DGE" - FIXME
+        if !@have_counts
+            @after_counts = () => @request_dge_data(columns)
+            return
+
         # load csv file and create the chart
         req = @_script("query=dge&fields=#{JSON.stringify columns}")
         start_loading()
-        d3.csv(req, (data) =>
+        d3.csv(req, (data, err) =>
+            msg_debug("Downloaded DGE",data,err)
             done_loading()
             @process_dge_data(data)
 
             req = @_script("query=clustering&fields=#{JSON.stringify columns}")
             d3.csv(req, (data) ->
+                msg_debug("Downloaded clustering",data,err)
                 heatmap.set_order(data.map((d) -> d.id))
                 heatmap.redraw()
             )
@@ -91,7 +112,7 @@ class WithBackend
 
     _update_samples: () ->
         cols = []
-        $('#files div.selected').each (i, n) ->
+        $('#files div.selected').each (i, n) =>
             rep_id = $(n).data('rep')
             if $(n).parent('div').hasClass('primary')
                 cols.unshift(rep_id)
@@ -100,7 +121,7 @@ class WithBackend
             @request_dge_data(cols)
 
     _init_condition_selector: () ->
-        $.each(@settings.replicates, (i, rep) ->
+        $.each(@settings.replicates, (i, rep) =>
             name = @settings.replicate_names[i]
             div = $("<div class='rep_#{i}'>"+
                     "  <a class='file' href='#' title='Select this condition' data-placement='right'>#{name}</a>"+
@@ -181,14 +202,12 @@ init_charts = () ->
     dataView.setFilter(tabFilter)
 
     dataView.onRowCountChanged.subscribe( (e, args) ->
-      #console.log("onRowCountChanged",e,args)
       grid.updateRowCount()
       grid.render()
       update_info()
     )
 
     dataView.onRowsChanged.subscribe( (e, args) ->
-      #console.log("onRowsChanged")
       grid.invalidateRows(args.rows)
       grid.render()
     )
@@ -226,7 +245,7 @@ init_charts = () ->
         mouseover: (d) ->
             parcoords.highlight([d])
             msg = ""
-            for k in info_columns
+            for k in settings.info_columns
               msg += "<span class='lbl'>#{k}: </span><span>#{d[k]}</span>"
             $('#heatmap-info').html(msg)
         mouseout:  (d) ->
@@ -263,7 +282,6 @@ gridUpdateData = (data, columns) ->
     dataView.reSort()
     dataView.endUpdate()
     grid.setColumns(columns) if columns
-    #console.log("Added #{data.length} items")
 
 grid_include = (key) -> (!show_ave_fc && fc_col(key)) ||
                         (show_ave_fc && ave_fc_col(key)) ||
@@ -280,7 +298,6 @@ update_grid = (data) ->
         sortable: true
         formatter: (i,c,val,m,row) ->
             if fc_col(m.name) || ave_fc_col(m.name)
-                #console.log(i,c,val,m,row)
                 fc_div(val, m.name, row)
             else if expr_col(m.name)
                 Number(val).toFixed(2)
@@ -297,7 +314,6 @@ fc_div = (n, column, row) ->
     colour = if n>0.1 then "pos" else if n<-0.1 then "neg" else ""
     colName = column.substring(column.indexOf(' ')+1)
     countStr = ""
-    #console.log(n,column,row)
     if show_counts
         counts = g_data.get_counts(colName)
         countStr = "<span class='counts'>(#{counts})</span>"
@@ -321,7 +337,7 @@ h_runfilters = null
 
 tabFilter = (item) ->
     return true if searchStr == ""
-    for col in info_columns
+    for col in settings.info_columns
         str = item[col]
         return true if str && str.toLowerCase().indexOf(searchStr)>=0
     false
@@ -419,7 +435,6 @@ calc_kegg_colours = () ->
         first=true
         for k,v of row
             if fc_col(k)
-                #console.log(first,k)
                 if first
                     first = false
                     continue
@@ -451,10 +466,11 @@ update_flags = () ->
 
 process_counts_data = (dat) ->
     data = null
+    msg_debug("Data",settings.csv_format,dat)
     if settings.csv_format
-        data = d3.csv.parseRows(dat)
+       data = d3.csv.parseRows(dat)
     else
-        data = d3.tsv.parseRows(dat)
+       data = d3.tsv.parseRows(dat)
 
     names = settings.column_names
     rep_names = settings.replicate_names
@@ -505,7 +521,7 @@ process_dge_data = (data) ->
                  pri_col = k
             rep_num = k.substring(4)-1
             if rep_num != settings.replicates[rep_num][0]
-                console.log("BAD Replicate column")
+                msg_error("BAD Replicate column",rep_num,settings.replicates)
             name = settings.replicate_names[rep_num]
             columns.push({column_idx: k, name: name, type: 'expr', numeric: true})
             columns.push({name:"FC #{name}", type: 'fc', func: (r) -> r[k] - r[pri_col]})
@@ -526,12 +542,15 @@ update_data = () ->
     ec_col = g_data.column_by_type('ec')
     pval_col = g_data.column_by_type('pval')
     color = if pval_colour then colour_by_pval(pval_col) else colour_by_ec(ec_col)
-    parcoords.update_data(g_data.get_data(), dims, color)
+
+    extent = ParCoords.calc_extent(g_data.get_data(), dims)
+    msg_debug("extent:",extent)
+    parcoords.update_data(g_data.get_data(), dims, extent, color)
 
     update_grid(g_data.get_data())
 
     heatmap.update_columns(dims, extent, pval_col)
-    heatmap.schedule_update(data)
+    heatmap.schedule_update(g_data.get_data())
 
 init = () ->
     g_data = new DataContainer(settings)

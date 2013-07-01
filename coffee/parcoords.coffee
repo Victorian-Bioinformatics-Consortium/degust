@@ -12,17 +12,13 @@ class ParCoords
 
         @parcoords.setFilter(@opts.pcFilter)   #FIXME - better name "pcFilter"
 
-    update_data: (data, dims, coloring) ->
+    update_data: (data, dims, extent, coloring) ->
         @parcoords.data(data)
              .dimensions(dims)
              .autoscale()
         @parcoords.color(coloring) if coloring
 
-        # Calculate min/max for all dimensions - Want common scale across dimensions
-        extents = []
-        @parcoords.dimensions().forEach (k) ->
-            extents.push(d3.extent(data, (v) -> +v[k]))
-        extent = d3.extent(d3.merge(extents))
+        extent ?= ParCoords.calc_extent(data,dims)
 
         h = @parcoords.height() - @parcoords.margin().top - @parcoords.margin().bottom;
         @parcoords.dimensions().forEach (k) =>
@@ -32,6 +28,14 @@ class ParCoords
 
         @parcoords.render()
         @parcoords.brush()   # Reset any brushes that were in place
+
+    # Static method 'calc_extent'
+    @calc_extent: (data, dims) ->
+        # Calculate min/max for all dimensions - Want common scale across dimensions
+        extents = []
+        dims.forEach (k) ->
+            extents.push(d3.extent(data, (v) -> +v[k]))
+        return d3.extent(d3.merge(extents))
 
     # These methods just pass through
     highlight: (d) -> @parcoords.highlight(d)

@@ -49,6 +49,8 @@ class DataContainer
             j=0
             for row in dat.data
                 id = row[id_column]
+                continue if id=='' || id==null
+
                 idx = @joined_id_lookup[id]
                 if idx==undefined
                     idx = @joined_data.push([])-1
