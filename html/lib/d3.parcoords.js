@@ -1,6 +1,7 @@
 d3.parcoords = function(config) {
   var __ = {
     dimensions: [],
+    dimension_names: null,
     data: [],
     brushed: false,
     mode: "default",
@@ -209,7 +210,7 @@ d3.parcoords = function(config) {
           "x": 0,
           "class": "label"
         })
-        .text(String)
+        .text(function(d) { return __.dimension_names ? __.dimension_names[d] : String(d)})
 
     flags.axes= true;
     return this;
@@ -240,7 +241,7 @@ d3.parcoords = function(config) {
           "x": 0,
           "class": "label"
         })
-        .text(String);
+        .text(function(d) { return __.dimension_names ? __.dimension_names[d] : String(d)})
 
     g_data.exit().remove();
 
