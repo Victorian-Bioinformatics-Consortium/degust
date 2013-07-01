@@ -23,23 +23,20 @@ class Heatmap
             @svg.attr('opacity',0.4)
             setTimeout((() => @update_data(@data)), 1000)
 
-    update_columns: (columns, extent, @sel_column) ->
-        @col_ids = {}
-        @col_ids[c] = i for c,i in columns
-
+    update_columns: (@columns, extent, @sel_column) ->
         @max = d3.max(extent.map(Math.abs))
         @colorScale = d3.scale.linear()
                         .domain([-@max, 0, @max])
                         .range(["red", "white", "blue"]);
 
         cols = @svg.select('#heatmap .labels').selectAll('.label')
-                   .data(d3.entries(@col_ids), (d) -> d.key)
+                   .data(@columns)
         cols.enter().append('text').attr("class","label")
         cols.exit().remove()
         cols.attr('x', @opts.label_width)
-            .attr('y', (d) => d.value * @opts.h + @opts.h/2)
+            .attr('y', (d,i) => i * @opts.h + @opts.h/2)
             .attr("text-anchor", "end")
-            .text((d) -> d.key)
+            .text((d) -> d.name)
 
     update_data: (@data) ->
         @redraw_scheduled = false
@@ -56,7 +53,7 @@ class Heatmap
                 row_ids[id]=num_kept
                 num_kept += 1
 
-        @svg.attr("width", @opts.width).attr("height", @opts.h * d3.keys(@col_ids).length)
+        @svg.attr("width", @opts.width).attr("height", @opts.h * @columns.length)
         w = d3.min([@opts.h, (@opts.width - @opts.label_width) / num_kept])
 
         #console.log("max",@max,"kept",kept_data,"num", num_kept, w)
@@ -71,8 +68,8 @@ class Heatmap
         cells = genes.selectAll(".cell")
                      .data(((d) =>
                          res=[]
-                         for k,v of @col_ids
-                             res.push {row:row_ids[d.id], col:v, score: d[k] }
+                         for i,c of @columns
+                             res.push {row:row_ids[d.id], col:i, score: d[c.idx] }
                          res),
                          (d) -> d.col)
         cells.enter().append("rect").attr('class','cell')

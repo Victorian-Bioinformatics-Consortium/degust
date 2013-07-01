@@ -245,8 +245,8 @@ init_charts = () ->
         mouseover: (d) ->
             parcoords.highlight([d])
             msg = ""
-            for k in settings.info_columns
-              msg += "<span class='lbl'>#{k}: </span><span>#{d[k]}</span>"
+            for col in g_data.columns_by_type('info')
+              msg += "<span class='lbl'>#{col.name}: </span><span>#{d[col.idx]}</span>"
             $('#heatmap-info').html(msg)
         mouseout:  (d) ->
             parcoords.unhighlight()
@@ -466,7 +466,6 @@ update_flags = () ->
 
 process_counts_data = (dat) ->
     data = null
-    msg_debug("Data",settings.csv_format,dat)
     if settings.csv_format
        data = d3.csv.parseRows(dat)
     else
@@ -538,13 +537,12 @@ process_dge_data = (data) ->
 update_data = () ->
     update_flags()
 
-    dims = g_data.columns_by_type(if show_ave_fc then 'afc' else 'fc').map (c) -> c.idx
+    dims = g_data.columns_by_type(if show_ave_fc then 'afc' else 'fc')
     ec_col = g_data.column_by_type('ec')
     pval_col = g_data.column_by_type('pval')
     color = if pval_colour then colour_by_pval(pval_col) else colour_by_ec(ec_col)
 
     extent = ParCoords.calc_extent(g_data.get_data(), dims)
-    msg_debug("extent:",extent)
     parcoords.update_data(g_data.get_data(), dims, extent, color)
 
     update_grid(g_data.get_data())

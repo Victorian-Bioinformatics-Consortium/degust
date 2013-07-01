@@ -14,7 +14,7 @@ class ParCoords
 
     update_data: (data, dims, extent, coloring) ->
         @parcoords.data(data)
-             .dimensions(dims)
+             .dimensions(dims.map((c) -> c.idx))
              .autoscale()
         @parcoords.color(coloring) if coloring
 
@@ -34,7 +34,7 @@ class ParCoords
         # Calculate min/max for all dimensions - Want common scale across dimensions
         extents = []
         dims.forEach (k) ->
-            extents.push(d3.extent(data, (v) -> +v[k]))
+            extents.push(d3.extent(data, (v) -> +v[k.idx]))
         return d3.extent(d3.merge(extents))
 
     # These methods just pass through
