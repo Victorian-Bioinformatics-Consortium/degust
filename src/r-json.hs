@@ -122,7 +122,9 @@ getJSSettings = do
     settings <- findSettings
     setHeader "Content-type" "application/javascript"
     let settingStr = encode . get_user_settings $ settings
-    output $ "window.settings = "++settingStr++"; window.my_code='"++codeToStr (getCode settings)++"';"
+    output $ "window.settings = "++settingStr++";"
+               ++"window.my_code='"++codeToStr (getCode settings)++"';"
+               ++"window.use_backend=true;"
 
 getDGE :: CGI String
 getDGE = getWithFields dgeR

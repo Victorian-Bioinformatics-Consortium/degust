@@ -1,29 +1,126 @@
-script = (params) -> "r-json.cgi?code=#{window.my_code}&#{params}"
 
-select_primary = (e) ->
-           el = $(e.target).parent('div')
-           $('#files .primary').removeClass('primary')
-           $(el).addClass('primary')
-           $(el).removeClass('selected')
-           select_sample(e)
+num_loading = 0
+start_loading = () ->
+    num_loading += 1
+    $('#loading').show()
+    $('#dge-pc').css('opacity',0.4)
+done_loading = () ->
+    num_loading -= 1
+    if num_loading==0
+        $('#loading').hide()
+        $('#dge-pc').css('opacity',1)
 
-select_sample = (e) ->
-           el = $(e.target).parent('div')
-           $(el).toggleClass('selected')
-           $('#files div:not(.selected)').removeClass('primary')
-           if $('#files div.primary').length==0
-                $('#files div.selected:first').addClass('primary')
-           update_samples()
+class WithoutBackend
+    constructor: (@settings, @process_dge_data) ->
+        $('.conditions').hide()
+        $('.config').hide()
 
-update_samples= () ->
-           cols = []
-           $('#files div.selected').each (i, n) ->
-                rep_id = $(n).data('rep')
-                if $(n).parent('div').hasClass('primary')
-                    cols.unshift(rep_id)
-                else
-                    cols.push(rep_id)
-           request_data(cols)
+    request_init_data: (callback) ->
+        d3.text(@settings.csv, "text/csv", (dat,err) =>
+            if err
+                $('div.container').text("ERROR : #{err}")
+                return
+            callback(dat)
+
+            @process_dge_data(d3.csv.parse(dat))     # FIXME: Need a better abstraction than repeating this!
+        )
+
+    request_kegg_data: (callback) ->
+        console.log("Get KEGG data not supported without backend")
+
+class WithBackend
+    constructor: (@settings, @process_dge_data) ->
+        if @settings.id_column < 0
+            window.location = @_script("query=config")
+
+        $('.conditions').show()
+        if @settings['locked']
+            $('a.config').hide()
+        else
+            $('a.config').show()
+            $('a.config').attr('href', @_script("query=config"))
+        @_init_condition_selector()
+
+    request_init_data: (callback) ->
+        d3.text(@_script("query=counts"), "text/csv", (dat,err) ->
+            if err
+                $('div.container').text("ERROR : #{err}")
+                return
+            callback(dat)
+        )
+
+    request_kegg_data: (callback) ->
+        d3.tsv(@_script('query=kegg_titles'), (ec_data) ->
+            callback(ec_data)
+        )
+
+    request_dge_data: (columns) ->
+        return if columns.length <= 1
+
+        # load csv file and create the chart
+        req = @_script("query=dge&fields=#{JSON.stringify columns}")
+        start_loading()
+        d3.csv(req, (data) =>
+            done_loading()
+            @process_dge_data(data)
+
+            req = @_script("query=clustering&fields=#{JSON.stringify columns}")
+            d3.csv(req, (data) ->
+                heatmap.set_order(data.map((d) -> d.id))
+                heatmap.redraw()
+            )
+        )
+
+    _script: (params) ->
+        "r-json.cgi?code=#{window.my_code}&#{params}"
+
+    _select_primary: (e) ->
+        el = $(e.target).parent('div')
+        $('#files .primary').removeClass('primary')
+        $(el).addClass('primary')
+        $(el).removeClass('selected')
+        @_select_sample(e)
+
+    _select_sample: (e) ->
+        el = $(e.target).parent('div')
+        $(el).toggleClass('selected')
+        $('#files div:not(.selected)').removeClass('primary')
+        if $('#files div.primary').length==0
+            $('#files div.selected:first').addClass('primary')
+        @_update_samples()
+
+    _update_samples: () ->
+        cols = []
+        $('#files div.selected').each (i, n) ->
+            rep_id = $(n).data('rep')
+            if $(n).parent('div').hasClass('primary')
+                cols.unshift(rep_id)
+            else
+                cols.push(rep_id)
+            @request_dge_data(cols)
+
+    _init_condition_selector: () ->
+        $.each(@settings.replicates, (i, rep) ->
+            name = @settings.replicate_names[i]
+            div = $("<div class='rep_#{i}'>"+
+                    "  <a class='file' href='#' title='Select this condition' data-placement='right'>#{name}</a>"+
+                    "  <a class='pri' href='#' title='Make primary condition' data-placement='right'>pri</a>" +
+                    "</div>")
+            $("#files").append(div)
+            div.data('rep',i)
+        )
+        $("#files a.file").click((e) => @_select_sample(e))
+        $("#files a.pri").click((e) => @_select_primary(e))
+
+        # Select some samples
+        init_select = @settings['init_select'] || []
+        $.each(init_select, (i,sel) ->
+            $("div[class='rep_#{i}']").addClass('selected')
+        )
+        $('#files div.selected:first').addClass('primary')
+        @_update_samples()
+
+
 
 blue_to_brown = d3.scale.linear()
   .domain([0,1])
@@ -58,11 +155,6 @@ grid = null
 kegg = null
 heatmap = null
 
-info_columns = []   # Columns used to display info about the genes
-ec_column = null    # Column (if any) with EC number
-column_names = []   # Column names
-counts_lookup = []  # Hash from column name to replicate raw counts
-
 g_data = null
 
 kegg_mouseover = (obj) ->
@@ -73,7 +165,7 @@ kegg_mouseover = (obj) ->
     parcoords.highlight(d)
     #gridUpdateData(d)
 
-init_chart = () ->
+init_charts = () ->
     parcoords = new ParCoords({elem: '#dge-pc', pcFilter: pcFilter})
 
     options =
@@ -357,105 +449,75 @@ update_flags = () ->
     annot_genes_only = $('#annot-genes-cb').is(":checked")
     pval_colour = $('#pval-col-cb').is(":checked")
 
-request_init_data = () ->
-    d3.text(script("query=counts"), "text/csv", (dat,err) ->
-        if err
-            $('div.container').text("ERROR : #{err}")
-            return
-        data = null
-        if settings.csv_format
-            data = d3.csv.parseRows(dat)
+process_counts_data = (dat) ->
+    data = null
+    if settings.csv_format
+        data = d3.csv.parseRows(dat)
+    else
+        data = d3.tsv.parseRows(dat)
+
+    names = settings.column_names
+    rep_names = settings.replicate_names
+    columns = []
+    columns.push({is_id: true, column_idx: settings.id_column, name: names[settings.id_column]})
+    settings.info_columns.forEach (col) ->
+        columns.push({column_idx: col, name: names[col], type: 'info'})
+
+    settings.replicates.forEach (rep) ->
+        rep[1].forEach (col) ->
+            columns.push({type: 'counts', column_idx: col, name:names[col], parent: rep_names[rep[0]]})
+
+    if settings.ec_column != undefined
+        columns.push({type: 'ec', column_idx: settings.ec_column, name:"EC"})
+
+    g_data.add_data('counts',data[1+settings.skip..], columns)
+
+    # If there is an ec column, fill in the kegg pull down
+    ec_col = g_data.column_by_type('ec')
+    if ec_col == null
+        $('.kegg-filter').hide()
+    else
+        g_backend.get_kegg_data(process_kegg_data)
+
+process_kegg_data = (ec_data) ->
+    opts = "<option value=''>--- No pathway selected ---</option>"
+
+    have_ec = {}
+    dat = g_data.get_data()
+    for row of dat
+        have_ec[row[ec_col]]=1
+
+    ec_data.forEach (row) ->
+        num=0
+        for ec in row.ec.split(" ").filter((s) -> s.length>0)
+            num++ if have_ec[ec]
+        if num>0
+            opts += "<option value='#{row.code}'>#{row.title} (#{num})</option>"
+    $('select#kegg').html(opts)
+
+process_dge_data = (data) ->
+    expression_cols = {}
+    columns = [{is_id: true, column_idx: 'id'}]
+    pri_col=null
+    d3.keys(data[0]).forEach (k, i) ->
+        if expr_col(k)
+            if pri_col==null
+                 pri_col = k
+            rep_num = k.substring(4)-1
+            if rep_num != settings.replicates[rep_num][0]
+                console.log("BAD Replicate column")
+            name = settings.replicate_names[rep_num]
+            columns.push({column_idx: k, name: name, type: 'expr', numeric: true})
+            columns.push({name:"FC #{name}", type: 'fc', func: (r) -> r[k] - r[pri_col]})
+            columns.push({name:"AFC #{name}", type: 'afc', func: (r) -> r[k] - r[ave_expr_col]})
+        else if k==pval_col
+            columns.push({column_idx: k, name:k, type: 'pval', numeric: true})
         else
-            data = d3.tsv.parseRows(dat)
+            columns.push({column_idx: k, name:k})
 
-        names = settings.column_names
-        rep_names = settings.replicate_names
-        columns = []
-        columns.push({is_id: true, column_idx: settings.id_column, name: names[settings.id_column]})
-        settings.info_columns.forEach (col) ->
-            columns.push({column_idx: col, name: names[col], type: 'info'})
+    g_data.add_data('dge', data, columns)
 
-        settings.replicates.forEach (rep) ->
-            rep[1].forEach (col) ->
-                columns.push({type: 'counts', column_idx: col, name:names[col], parent: rep_names[rep[0]]})
-
-        if settings.ec_column != undefined
-            columns.push({type: 'ec', column_idx: settings.ec_column, name:"EC"})
-
-        g_data.add_data('counts',data[1+settings.skip..], columns)
-
-        # If there is an ec column, fill in the kegg pull down
-        ec_col = g_data.column_by_type('ec')
-        if ec_col == null
-            $('.kegg-filter').hide()
-        else
-            d3.tsv(script('query=kegg_titles'), (ec_data) ->
-                opts = "<option value=''>--- No pathway selected ---</option>"
-
-                have_ec = {}
-                dat = g_data.get_data()
-                for row of dat
-                    have_ec[row[ec_col]]=1
-
-                ec_data.forEach (row) ->
-                    num=0
-                    for ec in row.ec.split(" ").filter((s) -> s.length>0)
-                        num++ if have_ec[ec]
-                    if num>0
-                        opts += "<option value='#{row.code}'>#{row.title} (#{num})</option>"
-                $('select#kegg').html(opts)
-            )
-    )
-
-num_loading = 0
-start_loading = () ->
-    num_loading += 1
-    $('#loading').show()
-    $('#dge-pc').css('opacity',0.4)
-done_loading = () ->
-    num_loading -= 1
-    if num_loading==0
-        $('#loading').hide()
-        $('#dge-pc').css('opacity',1)
-
-request_data = (columns) ->
-    return if columns.length <= 1
-
-    # load csv file and create the chart
-    req = script("query=dge&fields=#{JSON.stringify columns}")
-    start_loading()
-    d3.csv(req, (data) ->
-        done_loading()
-
-        expression_cols = {}
-        columns = [{is_id: true, column_idx: 'id'}]
-        pri_col=null
-        d3.keys(data[0]).forEach (k, i) ->
-            if expr_col(k)
-                if pri_col==null
-                     pri_col = k
-                rep_num = k.substring(4)-1
-                if rep_num != settings.replicates[rep_num][0]
-                    console.log("BAD Replicate column")
-                name = settings.replicate_names[rep_num]
-                columns.push({column_idx: k, name: name, type: 'expr', numeric: true})
-                columns.push({name:"FC #{name}", type: 'fc', func: (r) -> r[k] - r[pri_col]})
-                columns.push({name:"AFC #{name}", type: 'afc', func: (r) -> r[k] - r[ave_expr_col]})
-            else if k==pval_col
-                columns.push({column_idx: k, name:k, type: 'pval', numeric: true})
-            else
-                columns.push({column_idx: k, name:k})
-
-        g_data.add_data('dge', data, columns)
-
-        update_data()
-    )
-
-    req = script("query=clustering&fields=#{JSON.stringify columns}")
-    d3.csv(req, (data) ->
-      heatmap.set_order(data.map((d) -> d.id))
-      heatmap.redraw()
-    )
+    update_data()
 
 update_data = () ->
     update_flags()
@@ -471,39 +533,13 @@ update_data = () ->
     heatmap.update_columns(dims, extent, pval_col)
     heatmap.schedule_update(data)
 
-init_condition_selector = () ->
-    $.each(settings.replicates, (i, rep) ->
-        name = settings.replicate_names[i]
-        div = $("<div class='rep_#{i}'>"+
-                "  <a class='file' href='#' title='Select this condition' data-placement='right'>#{name}</a>"+
-                "  <a class='pri' href='#' title='Make primary condition' data-placement='right'>pri</a>" +
-                "</div>")
-        $("#files").append(div)
-        div.data('rep',i)
-    )
-    $("#files a.file").click(select_sample)
-    $("#files a.pri").click(select_primary)
-
-    # Select some samples
-    init_select = settings['init_select'] || []
-    $.each(init_select, (i,sel) ->
-        $("div[class='rep_#{i}']").addClass('selected')
-    )
-    $('#files div.selected:first').addClass('primary')
-    update_samples()
-
 init = () ->
-    g_data = new DataContainer()
-    if settings.id_column < 0
-        window.location = script("query=config")
-    info_columns = settings['info_columns'] || []
-    ec_column = settings['ec_column']
-    column_names = settings['column_names']
+    g_data = new DataContainer(settings)
 
-    if settings['locked']
-        $('a.config').hide()
+    if window.use_backend
+        g_backend = new WithBackend(settings, process_dge_data)
     else
-        $('a.config').attr('href', script("query=config"))
+        g_backend = new WithoutBackend(settings, process_dge_data)
 
     $(".exp-name").text(settings.name || "Unnamed")
 
@@ -511,13 +547,13 @@ init = () ->
     fcThreshold  = settings['fcThreshold']  if settings['fcThreshold'] != undefined
 
     $("select#kegg").change(kegg_selected)
-    init_chart()
+
+    init_charts()
     init_search()
     init_slider()
     init_download_link()
-    request_init_data()
 
-    init_condition_selector()
+    g_backend.request_init_data(process_counts_data)
 
 $(document).ready(() -> init() )
 $(document).ready(() -> $('[title]').tooltip())
