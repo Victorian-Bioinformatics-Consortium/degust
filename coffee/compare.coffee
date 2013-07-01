@@ -10,13 +10,6 @@ done_loading = () ->
         $('#loading').hide()
         $('#dge-pc').css('opacity',1)
 
-msg_error = (msg,rest...) ->
-    $('div.container').text("ERROR : #{msg}")
-    console.log("ERROR : #{msg}",rest)
-
-msg_debug = (msg,rest...) ->
-    console.log("DEBUG : #{msg}",rest)
-
 class WithoutBackend
     constructor: (@settings, @process_dge_data) ->
         $('.conditions').hide()
@@ -24,7 +17,7 @@ class WithoutBackend
 
     request_init_data: (callback) ->
         d3.text(@settings.csv, "text/csv", (dat,err) =>
-            msg_debug("Downloaded csv",dat,err)
+            msg_info("Downloaded csv",dat,err)
             if err
                 msg_error(err)
                 return
@@ -51,7 +44,7 @@ class WithBackend
 
     request_init_data: (callback) ->
         d3.text(@_script("query=counts"), "text/csv", (dat,err) =>
-            msg_debug("Downloaded counts",dat,err)
+            msg_info("Downloaded counts",dat,err)
             if err
                 msg_error(err)
                 return
@@ -64,7 +57,7 @@ class WithBackend
 
     request_kegg_data: (callback) ->
         d3.tsv(@_script('query=kegg_titles'), (ec_data) ->
-            msg_debug("Downloaded counts",dat,err)
+            msg_info("Downloaded kegg : rows=#{ec_data.length}",dat,err)
             callback(ec_data)
         )
 
@@ -80,13 +73,13 @@ class WithBackend
         req = @_script("query=dge&fields=#{JSON.stringify columns}")
         start_loading()
         d3.csv(req, (data, err) =>
-            msg_debug("Downloaded DGE",data,err)
+            msg_info("Downloaded DGE : rows=#{data.length}",data,err)
             done_loading()
             @process_dge_data(data)
 
             req = @_script("query=clustering&fields=#{JSON.stringify columns}")
-            d3.csv(req, (data) ->
-                msg_debug("Downloaded clustering",data,err)
+            d3.csv(req, (data,err) ->
+                msg_info("Downloaded clustering : rows=#{data.length}",data,err)
                 heatmap.set_order(data.map((d) -> d.id))
                 heatmap.redraw()
             )
@@ -395,7 +388,7 @@ init_slider = () ->
              Slick.GlobalEditorLock.cancelCurrentEdit()
              if (fdrThreshold != v)
                window.clearTimeout(h_runfilters)
-               h_runfilters = window.setTimeout(parcoords.brush, 10)
+               h_runfilters = window.setTimeout((() -> parcoords.brush()), 10)
                fdrThreshold = v
     )
     new Slider(
@@ -410,7 +403,7 @@ init_slider = () ->
              Slick.GlobalEditorLock.cancelCurrentEdit()
              if (fcThreshold != v)
                window.clearTimeout(h_runfilters)
-               h_runfilters = window.setTimeout(parcoords.brush, 10)
+               h_runfilters = window.setTimeout((() -> parcoords.brush()), 10)
                fcThreshold = v
     )
     $('#plot-avgfc-cb').on("click", (e) ->

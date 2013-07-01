@@ -1,14 +1,3 @@
-# Need to wrap per-row data, each row is a gene (feature)
-# For a given row, need
-#   - id column - to uniquely refer to a gene
-#   - info columns - defined by the user for displaying in the table
-#   - multiple counts columns per condition - for displaying raw read counts
-#   - optional EC column - for Kegg
-# Then, for a DGE comparison
-#   - FDR column - for filtering and colouring
-#   - FC - for plotting, relative to average and absolute useful
-
-# From counts, for a given gene, need to lookup counts by DGE column
 
 # Each row (gene) has unique "id"
 # Each row has "fields".    eg. info columns, FDR, EC
@@ -28,11 +17,10 @@ class DataContainer
     add_data: (name, data, columns) ->
         @data[name] = {data: data, columns: columns}
         @join_data()
-        console.log @data
-        console.log "All",@joined_columns,@joined_data
+        msg_debug("All",@joined_columns,@joined_data)
 
     join_data: () ->
-        console.log "Joining data..."
+        msg_debug "Joining data..."
         @joined_data = []
         @joined_columns = []
         @joined_id_lookup = {}
@@ -65,7 +53,7 @@ class DataContainer
                     v = +v if col.numeric
                     @joined_data[idx].push(v)
 
-        console.log "Data joined"
+        msg_debug("Data joined")
 
 
     column_by_type: (type) ->
