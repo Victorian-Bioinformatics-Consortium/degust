@@ -21,6 +21,7 @@ class DataContainer
 
     join_data: () ->
         msg_debug "Joining data..."
+        @columns_by_type_cache = {}
         @joined_data = []
         @joined_columns = []
         @joined_id_lookup = {}
@@ -57,26 +58,27 @@ class DataContainer
 
 
     column_by_type: (type) ->
-        for n, dat of @data
-            for col in dat.columns
-                if col.type == type
-                    return col.idx
+        for col in @joined_columns
+            if col.type == type
+                return col.idx
         return null
 
     column_by_idx: (idx) ->
-        for n, dat of @data
-            for col in dat.columns
-                if col.idx == idx
-                    return col
+        for col in @joined_columns
+            if col.idx == idx
+                return col
         return null
 
     columns_by_type: (types) ->
+        return @columns_by_type_cache[types] if @columns_by_type_cache[types]
         types=[types] if !(types instanceof Array)
         res = []
-        for n, dat of @data
-            for col in dat.columns
-                res.push(col) if col.type in types
+        for col in @joined_columns
+            res.push(col) if col.type in types
+        @columns_by_type_cache[types] = res
         res
+
+    get_columns: () -> @joined_columns
 
     get_data: () -> @joined_data
 
