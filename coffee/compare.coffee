@@ -291,7 +291,7 @@ update_grid = (data) ->
         sortable: true
         formatter: (i,c,val,m,row) ->
             if col.type in ['fc','afc']
-                fc_div(val, m.name, row)
+                fc_div(val, col, row)
             else if col.type in ['pval']
                 if val<0.01 then val.toExponential(2) else val.toFixed(2)
             else
@@ -302,10 +302,10 @@ update_grid = (data) ->
 
 fc_div = (n, column, row) ->
     colour = if n>0.1 then "pos" else if n<-0.1 then "neg" else ""
-    colName = column.substring(column.indexOf(' ')+1)
     countStr = ""
     if show_counts
-        counts = g_data.get_counts(colName)
+        count_columns = g_data.assoc_column_by_type('counts',column.parent)
+        counts = count_columns.map((c) -> row[c.idx])
         countStr = "<span class='counts'>(#{counts})</span>"
     "<div class='#{colour}'>#{n.toFixed(2)}#{countStr}</div>"
 
@@ -389,7 +389,7 @@ init_slider = () ->
     new Slider(
           id: "#fcSlider"
           input_id: "input.fc-fld"
-          step_values: (Number(x.toFixed(2)) for x in [0..10] by 0.01)
+          step_values: (Number(x.toFixed(2)) for x in [0..5] by 0.01)
           val: fcThreshold
           validator: (v) ->
              n = Number(v)
@@ -511,8 +511,8 @@ process_dge_data = (data) ->
                 msg_error("BAD Replicate column",rep_num,settings.replicates)
             name = settings.replicate_names[rep_num]
             columns.push({column_idx: k, name: name, type: 'expr', numeric: true})
-            columns.push({name:"FC #{name}", type: 'fc', func: (r) -> r[k] - r[pri_col]})
-            columns.push({name:"AFC #{name}", type: 'afc', func: (r) -> r[k] - r[ave_expr_col]})
+            columns.push({name:"FC #{name}", type: 'fc', parent: name, func: (r) -> r[k] - r[pri_col]})
+            columns.push({name:"AFC #{name}", type: 'afc', parent: name, func: (r) -> r[k] - r[ave_expr_col]})
         else if k==pval_col
             columns.push({column_idx: k, name:k, type: 'pval', numeric: true})
         else
@@ -522,6 +522,7 @@ process_dge_data = (data) ->
 
     update_data()
 
+# Called whenever the data is changed, or the "checkboxes" are modified
 update_data = () ->
     update_flags()
 
@@ -535,8 +536,12 @@ update_data = () ->
 
     update_grid(g_data.get_data())
 
+    # Update the heatmap
     heatmap.update_columns(dims, extent, pval_col)
     heatmap.schedule_update(g_data.get_data())
+
+    # Ensure the parcoords brush callbacks are called (updates heatmap & table)
+    parcoords.brush()
 
 init = () ->
     g_data = new DataContainer(settings)

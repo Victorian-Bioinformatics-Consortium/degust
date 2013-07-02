@@ -78,6 +78,12 @@ class DataContainer
         @columns_by_type_cache[types] = res
         res
 
+    assoc_column_by_type: (type, parent_name) ->
+        res = []
+        for col in @joined_columns
+            res.push(col) if col.type==type && col.parent==parent_name
+        res
+
     get_columns: () -> @joined_columns
 
     get_data: () -> @joined_data
