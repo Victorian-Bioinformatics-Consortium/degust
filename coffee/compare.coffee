@@ -238,7 +238,7 @@ init_charts = () ->
         mouseover: (d) ->
             parcoords.highlight([d])
             msg = ""
-            for col in g_data.columns_by_type('info')
+            for col in g_data.columns_by_type(['info'])
               msg += "<span class='lbl'>#{col.name}: </span><span>#{d[col.idx]}</span>"
             $('#heatmap-info').html(msg)
         mouseout:  (d) ->
@@ -255,17 +255,17 @@ update_info = () ->
 comparer = (x,y) -> (if x == y then 0 else (if x > y then 1 else -1))
 
 do_sort = (args) ->
-    cname = args.sortCol.field
+    column = g_data.column_by_idx(args.sortCol.field)
     dataView.sort((r1,r2) ->
-      r = 0
-      x=r1[cname]; y=r2[cname]
-      if fc_col(cname) || ave_fc_col(cname)
-        r = comparer(Math.abs(x), Math.abs(y))
-      else if cname == pval_col || expr_col(cname)
-        r = comparer(x, y)
-      else
-        r = comparer(x,y)
-      r * (if args.sortAsc then 1 else -1)
+        r = 0
+        x=r1[column.idx]; y=r2[column.idx]
+        if column.type in ['fc','afc']
+            r = comparer(Math.abs(x), Math.abs(y))
+        else if column.type in ['pval']
+            r = comparer(x, y)
+        else
+            r = comparer(x,y)
+        r * (if args.sortAsc then 1 else -1)
     )
 
 gridUpdateData = (data, columns) ->
@@ -281,7 +281,7 @@ grid_include = (key) -> (!show_ave_fc && fc_col(key)) ||
                         key==pval_col
 
 update_grid = (data) ->
-    column_keys = g_data.columns_by_type('info')
+    column_keys = g_data.columns_by_type(['info','pval'])
     column_keys = column_keys.concat(g_data.columns_by_type(pval_col))
     column_keys = column_keys.concat(g_data.columns_by_type(if show_ave_fc then 'afc' else 'fc'))
     columns = column_keys.map((col) ->
@@ -290,13 +290,10 @@ update_grid = (data) ->
         field: col.idx
         sortable: true
         formatter: (i,c,val,m,row) ->
-            if fc_col(m.name) || ave_fc_col(m.name)
+            if col.type in ['fc','afc']
                 fc_div(val, m.name, row)
-            else if expr_col(m.name)
-                Number(val).toFixed(2)
-            else if m.name==pval_col
-                pval=Number(val)
-                if pval<0.01 then pval.toExponential(2) else pval.toFixed(2)
+            else if col.type in ['pval']
+                if val<0.01 then val.toExponential(2) else val.toFixed(2)
             else
                 val
     )

@@ -17,7 +17,7 @@ class DataContainer
     add_data: (name, data, columns) ->
         @data[name] = {data: data, columns: columns}
         @join_data()
-        msg_debug("All",@joined_columns,@joined_data)
+        msg_debug("All",@joined_columns,@joined_data,@data)
 
     join_data: () ->
         msg_debug "Joining data..."
@@ -63,11 +63,19 @@ class DataContainer
                     return col.idx
         return null
 
-    columns_by_type: (type) ->
+    column_by_idx: (idx) ->
+        for n, dat of @data
+            for col in dat.columns
+                if col.idx == idx
+                    return col
+        return null
+
+    columns_by_type: (types) ->
+        types=[types] if !(types instanceof Array)
         res = []
         for n, dat of @data
             for col in dat.columns
-                res.push(col) if col.type == type
+                res.push(col) if col.type in types
         res
 
     get_data: () -> @joined_data
