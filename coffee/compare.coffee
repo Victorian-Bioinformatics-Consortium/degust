@@ -180,7 +180,7 @@ kegg_mouseover = (obj) ->
     #gridUpdateData(d)
 
 init_charts = () ->
-    parcoords = new ParCoords({elem: '#dge-pc', pcFilter: pcFilter})
+    parcoords = new ParCoords({elem: '#dge-pc', pcFilter: parcoordsFilter})
 
     options =
       enableCellNavigation: true
@@ -332,25 +332,23 @@ tabFilter = (item) ->
         return true if str && str.toLowerCase().indexOf(searchStr)>=0
     false
 
-pcFilter = (item) ->
+# Filter to decide which rows to plot on the parallel coordinates widget
+parcoordsFilter = (row) ->
     if fcThreshold>0
         keep = false
-        for k,v of item
-          if ((!show_ave_fc && fc_col(k)) || (show_ave_fc && ave_fc_col(k))) && Math.abs(v) > fcThreshold
-            keep = true
-            break
+        col_type = if show_ave_fc then 'afc' else 'fc'
+        for col in g_data.columns_by_type(col_type)
+            if Math.abs(row[col.idx]) > fcThreshold
+                keep = true
+                break
         return false if !keep
 
-    return false if item[pval_col] > fdrThreshold
-    return false if annot_genes_only && !g_data.get_ec_value(id)
+    pval_col = g_data.columns_by_type('pval')[0]
+    return false if row[pval_col.idx] > fdrThreshold
+    #return false if annot_genes_only && !g_data.get_ec_value(id)
 
-    # TODO - this is a very inefficient place to filter on ec.  Disabled for now.  Remove?
-    # ec_codes = $('.ec-filter .selected').map((i,d) -> $(d).data('code'))
-    # if ec_codes.length>0
-    #     return ec_code(item.id) in ec_codes
-    #
     if kegg_filter.length>0
-        return ec_number(item.id) in kegg_filter
+        return ec_number(row.id) in kegg_filter
 
     true
 
