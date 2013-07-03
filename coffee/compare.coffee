@@ -144,15 +144,8 @@ blue_to_brown = d3.scale.linear()
   .interpolate(d3.interpolateLab)
 
 colour_cat20 = d3.scale.category20().domain([1..20])
-
-unknown_colour = 16
-ec_code = (id) ->
-    ec = g_data.get_ec_value(id)
-    return unknown_colour if !ec
-    Number(ec[0])
-
-colour_by_ec = (col) ->
-    (d) -> colour_cat20(ec_code(d.id))
+colour_by_ec = (ec_col) ->
+    (row) -> colour_cat20(row[ec_col])
 
 colour_by_pval = (col) ->
     (d) -> blue_to_brown(d[col])
@@ -182,13 +175,12 @@ h_runfilters = null
 
 kegg_mouseover = (obj) ->
     ec = obj.id
-    d = []
+    rows = []
     ec_col = g_data.column_by_type('ec')
     return if ec_col==null
     for row in g_data.get_data()
-        d.push(row) if row[ec_col] == ec
-    parcoords.highlight(d)
-    #gridUpdateData(d)
+        rows.push(row) if row[ec_col] == ec
+    parcoords.highlight(rows)
 
 init_charts = () ->
     parcoords = new ParCoords({elem: '#dge-pc', pcFilter: parcoordsFilter})
