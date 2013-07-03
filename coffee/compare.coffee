@@ -151,8 +151,7 @@ colour_by_pval = (col) ->
     (d) -> blue_to_brown(d[col])
 
 parcoords = null
-dataView = null
-grid = null
+gene_table = null
 kegg = null
 heatmap = null
 
@@ -182,57 +181,29 @@ kegg_mouseover = (obj) ->
         rows.push(row) if row[ec_col] == ec
     parcoords.highlight(rows)
 
+# highlight parallel coords (and/or kegg)
+gene_table_mouseover = (item) ->
+    parcoords.highlight([item])
+    ec_col = g_data.column_by_type('ec')
+    kegg.highlight(item[ec_col])
+
+gene_table_mouseout = () ->
+    parcoords.unhighlight()
+    $('#gene-info').html('')
+    kegg.unhighlight()
+
+gene_table_dblclick = (item) ->
+    window.open("http://www.ncbi.nlm.nih.gov/protein?term=#{item.id}", '_blank')
+    window.focus()
+
 init_charts = () ->
-    parcoords = new ParCoords({elem: '#dge-pc', pcFilter: parcoordsFilter})
-
-    options =
-      enableCellNavigation: true
-      enableColumnReorder: false
-      multiColumnSort: false
-      forceFitColumns: true
-
-    dataView = new Slick.Data.DataView()
-    grid = new Slick.Grid("#grid", dataView, [], options)
+    parcoords = new ParCoords({elem: '#dge-pc', pcFilter: parcoords_filter})
+    gene_table = new GeneTable({elem: '#grid', elem_info: '#grid-info', sorter: do_sort, mouseover: gene_table_mouseover, mouseout: gene_table_mouseout, dblclick: gene_table_dblclick, filter: gene_table_filter})
     kegg = new Kegg({elem: 'div#kegg-image', mouseover: kegg_mouseover, mouseout: () -> parcoords.unhighlight()})
-
-    dataView.setFilter(tabFilter)
-
-    dataView.onRowCountChanged.subscribe( (e, args) ->
-      grid.updateRowCount()
-      grid.render()
-      update_info()
-    )
-
-    dataView.onRowsChanged.subscribe( (e, args) ->
-      grid.invalidateRows(args.rows)
-      grid.render()
-    )
-
-    # highlight row in chart
-    grid.onMouseEnter.subscribe( (e,args) ->
-        i = grid.getCellFromEvent(e).row
-        d = dataView.getItem(i)
-        parcoords.highlight([d])
-        ec_col = g_data.column_by_type('ec')
-        kegg.highlight(d[ec_col])
-    )
-    grid.onMouseLeave.subscribe( (e,args) ->
-        parcoords.unhighlight()
-        $('#gene-info').html('')
-        kegg.unhighlight()
-    )
-    grid.onDblClick.subscribe( (e,args) ->
-          feature = grid.getDataItem(args.row).id
-          window.open("http://www.ncbi.nlm.nih.gov/protein?term=#{feature}", '_blank')
-          window.focus()
-    )
-
-    grid.onSort.subscribe( (e,args) -> do_sort(args) )
-    grid.onViewportChanged.subscribe( (e,args) -> update_info() )
 
     # update grid on brush
     parcoords.on("brush", (d) ->
-        gridUpdateData(d)
+        gene_table.set_data(d)
         heatmap.schedule_update(d)
     )
 
@@ -252,16 +223,11 @@ init_charts = () ->
     )
 
 
-update_info = () ->
-    view = grid.getViewport()
-    btm = d3.min [view.bottom, dataView.getLength()]
-    $('#grid-info').html("Showing #{view.top}..#{btm} of #{dataView.getLength()}")
-
 comparer = (x,y) -> (if x == y then 0 else (if x > y then 1 else -1))
 
 do_sort = (args) ->
     column = g_data.column_by_idx(args.sortCol.field)
-    dataView.sort((r1,r2) ->
+    gene_table.sort((r1,r2) ->
         r = 0
         x=r1[column.idx]; y=r2[column.idx]
         if column.type in ['fc','afc']
@@ -273,15 +239,7 @@ do_sort = (args) ->
         r * (if args.sortAsc then 1 else -1)
     )
 
-gridUpdateData = (data, columns) ->
-    grid.setColumns([]) if columns
-    dataView.beginUpdate()
-    dataView.setItems(data)
-    dataView.reSort()
-    dataView.endUpdate()
-    grid.setColumns(columns) if columns
-
-update_grid = (data) ->
+set_gene_table = (data) ->
     column_keys = g_data.columns_by_type(['info','pval'])
     column_keys = column_keys.concat(g_data.columns_by_type(if show_ave_fc then 'afc' else 'fc'))
     columns = column_keys.map((col) ->
@@ -298,7 +256,7 @@ update_grid = (data) ->
                 val
     )
 
-    gridUpdateData(data, columns)
+    gene_table.set_data(data, columns)
 
 fc_div = (n, column, row) ->
     colour = if n>0.1 then "pos" else if n<-0.1 then "neg" else ""
@@ -310,15 +268,15 @@ fc_div = (n, column, row) ->
     "<div class='#{colour}'>#{n.toFixed(2)}#{countStr}</div>"
 
 
-tabFilter = (item) ->
+gene_table_filter = (item) ->
     return true if searchStr == ""
-    for col in settings.info_columns
-        str = item[col]
+    for col in g_data.columns_by_type('info')
+        str = item[col.idx]
         return true if str && str.toLowerCase().indexOf(searchStr)>=0
     false
 
 # Filter to decide which rows to plot on the parallel coordinates widget
-parcoordsFilter = (row) ->
+parcoords_filter = (row) ->
     if fcThreshold>0
         keep = false
         col_type = if show_ave_fc then 'afc' else 'fc'
@@ -343,12 +301,12 @@ init_search = () ->
                     Slick.GlobalEditorLock.cancelCurrentEdit()
                     this.value = "" if e.which == 27     # Clear on "Esc"
                     searchStr = this.value.toLowerCase()
-                    dataView.refresh()
+                    gene_table.refresh()
 
 init_download_link = () ->
     $('a#csv-download').on('click', (e) ->
         e.preventDefault()
-        items = dataView.getItems()
+        items = gene_table.get_data()
         return if items.length==0
         keys = d3.keys(items[0])
         rows=items.map( (r) -> keys.map( (k) -> r[k] ) )
@@ -392,7 +350,7 @@ init_slider = () ->
     )
     $('#show-counts-cb').on("click", (e) ->
         update_flags()
-        grid.invalidate()
+        gene_table.invalidate()
     )
     $('#annot-genes-cb').on("click", (e) ->
         update_data()
@@ -521,7 +479,7 @@ update_data = () ->
     extent = ParCoords.calc_extent(g_data.get_data(), dims)
     parcoords.update_data(g_data.get_data(), dims, extent, color)
 
-    update_grid(g_data.get_data())
+    set_gene_table(g_data.get_data())
 
     # Update the heatmap
     heatmap.update_columns(dims, extent, pval_col)
