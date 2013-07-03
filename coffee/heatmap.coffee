@@ -4,6 +4,7 @@ class Heatmap
         @opts.width ?= 1000
         @opts.label_width ?= 120
         @opts.limit ?= @opts.width - @opts.label_width
+        @opts.redraw_delay ?= 1000
 
         @svg = d3.select(@opts.elem).append('svg')
         @svg.append('g').attr("class", "labels")
@@ -21,8 +22,12 @@ class Heatmap
         if !@redraw_scheduled
             @redraw_scheduled = true
             @svg.attr('opacity',0.4)
-            setTimeout((() => @update_data(@data)), 1000)
+            setTimeout((() => @update_data(@data)), @opts.redraw_delay)
 
+    # update_columns(columns,extent,sel_column)
+    #   columns - The DGE condition columns
+    #   extent - the total range of all columns
+    #   sel_column - column to order rendering by
     update_columns: (@columns, extent, @sel_column) ->
         @max = d3.max(extent.map(Math.abs))
         @colorScale = d3.scale.linear()
@@ -60,7 +65,7 @@ class Heatmap
 
 
         genes = @svg.select("#heatmap .genes").selectAll("g.gene")
-                    .data(d3.values(kept_data), (d) -> d.id)
+                    .data(d3.values(kept_data)) #, (d) -> d.id)
 
         genes.enter().append("g").attr("class","gene")
         genes.exit().remove()
