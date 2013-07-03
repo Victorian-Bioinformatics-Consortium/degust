@@ -221,6 +221,8 @@ init_charts = () ->
         i = grid.getCellFromEvent(e).row
         d = dataView.getItem(i)
         parcoords.highlight([d])
+        ec_col = g_data.column_by_type('ec')
+        kegg.highlight(d[ec_col])
     )
     grid.onMouseLeave.subscribe( (e,args) ->
         parcoords.unhighlight()

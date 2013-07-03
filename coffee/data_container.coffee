@@ -53,7 +53,6 @@ class DataContainer
                         v = row[col.column_idx]
                     v = +v if col.numeric
                     @joined_data[idx].push(v)
-
         msg_debug("Data joined")
 
 
