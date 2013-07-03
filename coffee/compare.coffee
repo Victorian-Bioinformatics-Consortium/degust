@@ -308,8 +308,9 @@ init_download_link = () ->
         e.preventDefault()
         items = gene_table.get_data()
         return if items.length==0
-        keys = d3.keys(items[0])
-        rows=items.map( (r) -> keys.map( (k) -> r[k] ) )
+        cols = g_data.get_columns().filter((c) -> !c.is_id)
+        keys = cols.map((c) -> c.name)
+        rows=items.map( (r) -> cols.map( (c) -> r[c.idx] ) )
         window.open("data:text/csv,"+escape(d3.csv.format([keys].concat(rows))), "file.csv")
     )
 
