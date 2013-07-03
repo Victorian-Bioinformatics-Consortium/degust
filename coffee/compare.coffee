@@ -56,8 +56,8 @@ class WithBackend
         )
 
     request_kegg_data: (callback) ->
-        d3.tsv(@_script('query=kegg_titles'), (ec_data) ->
-            msg_info("Downloaded kegg : rows=#{ec_data.length}",dat,err)
+        d3.tsv(@_script('query=kegg_titles'), (ec_data,err) ->
+            msg_info("Downloaded kegg : rows=#{ec_data.length}",ec_data,err)
             callback(ec_data)
         )
 
@@ -129,7 +129,7 @@ class WithBackend
         # Select some samples
         init_select = @settings['init_select'] || []
         $.each(init_select, (i,sel) ->
-            $("div[class='rep_#{i}']").addClass('selected')
+            $("div[class='rep_#{sel}']").addClass('selected')
         )
         $('#files div.selected:first').addClass('primary')
         @_update_samples()
@@ -140,9 +140,6 @@ blue_to_brown = d3.scale.linear()
   .domain([0,1])
   .range(["brown", "steelblue"])
   .interpolate(d3.interpolateLab)
-
-pval_col = 'adj.P.Val'
-ave_expr_col = 'AveExpr'
 
 colour_cat20 = d3.scale.category20().domain([1..20])
 
@@ -158,10 +155,8 @@ colour_by_ec = (col) ->
 colour_by_pval = (col) ->
     (d) -> blue_to_brown(d[col])
 
-ec_number = (id) ->
-    ec = g_data.get_ec_value(id)
-    return "" if !ec
-    ec
+pval_col = 'adj.P.Val'
+ave_expr_col = 'AveExpr'
 
 parcoords = null
 dataView = null
@@ -170,12 +165,29 @@ kegg = null
 heatmap = null
 
 g_data = null
+g_backend = null
+
+
+expr_col   = (k) -> k.indexOf("ABS.")==0             # Remove?
+
+show_ave_fc = false
+show_counts = false
+plot_avg_exp = false
+annot_genes_only = false
+pval_colour = false
+fdrThreshold = 1
+fcThreshold = 0
+searchStr = ""
+kegg_filter = []
+h_runfilters = null
 
 kegg_mouseover = (obj) ->
     ec = obj.id
     d = []
+    ec_col = g_data.column_by_type('ec')
+    return if ec_col==null
     for row in g_data.get_data()
-        d.push(row) if ec_number(row.id) == ec
+        d.push(row) if row[ec_col] == ec
     parcoords.highlight(d)
     #gridUpdateData(d)
 
@@ -276,10 +288,6 @@ gridUpdateData = (data, columns) ->
     dataView.endUpdate()
     grid.setColumns(columns) if columns
 
-grid_include = (key) -> (!show_ave_fc && fc_col(key)) ||
-                        (show_ave_fc && ave_fc_col(key)) ||
-                        key==pval_col
-
 update_grid = (data) ->
     column_keys = g_data.columns_by_type(['info','pval'])
     column_keys = column_keys.concat(g_data.columns_by_type(pval_col))
@@ -310,21 +318,6 @@ fc_div = (n, column, row) ->
     "<div class='#{colour}'>#{n.toFixed(2)}#{countStr}</div>"
 
 
-expr_col   = (k) -> k.indexOf("ABS.")==0
-fc_col     = (k) -> k.indexOf("FC ")==0
-ave_fc_col = (k) -> k.indexOf("AFC ")==0
-
-show_ave_fc = false
-show_counts = false
-plot_avg_exp = false
-annot_genes_only = false
-pval_colour = false
-fdrThreshold = 1
-fcThreshold = 0
-searchStr = ""
-kegg_filter = []
-h_runfilters = null
-
 tabFilter = (item) ->
     return true if searchStr == ""
     for col in settings.info_columns
@@ -348,7 +341,8 @@ parcoordsFilter = (row) ->
     #return false if annot_genes_only && !g_data.get_ec_value(id)
 
     if kegg_filter.length>0
-        return ec_number(row.id) in kegg_filter
+        ec_col = g_data.column_by_type('ec')
+        return row[ec_col] in kegg_filter
 
     true
 
@@ -417,18 +411,17 @@ init_slider = () ->
 
 calc_kegg_colours = () ->
     ec_dirs = {}
+    ec_col = g_data.column_by_type('ec')
+    return if ec_col==null
+    fc_cols = g_data.columns_by_type('fc')[1..]
     for row in g_data.get_data()
-        ec = ec_number(row.id)
+        ec = row[ec_col]
         continue if !ec
-        first=true
-        for k,v of row
-            if fc_col(k)
-                if first
-                    first = false
-                    continue
-                dir = if v>0.1 then "up" else if v<-0.1 then "down" else "same"
-                ec_dirs[ec]=dir if !ec_dirs[ec]
-                ec_dirs[ec]='mixed' if ec_dirs[ec]!=dir
+        for col in fc_cols
+            v = row[col.idx]
+            dir = if v>0.1 then "up" else if v<-0.1 then "down" else "same"
+            ec_dirs[ec]=dir if !ec_dirs[ec]
+            ec_dirs[ec]='mixed' if ec_dirs[ec]!=dir
     return ec_dirs
 
 kegg_selected = () ->
@@ -480,14 +473,14 @@ process_counts_data = (dat) ->
     if ec_col == null
         $('.kegg-filter').hide()
     else
-        g_backend.get_kegg_data(process_kegg_data)
+        g_backend.request_kegg_data(process_kegg_data)
 
 process_kegg_data = (ec_data) ->
     opts = "<option value=''>--- No pathway selected ---</option>"
 
     have_ec = {}
-    dat = g_data.get_data()
-    for row of dat
+    ec_col = g_data.column_by_type('ec')
+    for row in g_data.get_data()
         have_ec[row[ec_col]]=1
 
     ec_data.forEach (row) ->

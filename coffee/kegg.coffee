@@ -1,3 +1,5 @@
+# This class handles the drawing and highlighting of kegg pathway images
+# Images are just kegg gif images, with the xml definitions used for location of "box" highlighting
 class Kegg
     constructor: (@opts) ->
         @ec_visible = {}
