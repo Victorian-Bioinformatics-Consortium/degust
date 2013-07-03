@@ -155,6 +155,7 @@ parcoords = null
 gene_table = null
 kegg = null
 heatmap = null
+maplot = null
 
 g_data = null
 g_backend = null
@@ -199,6 +200,8 @@ gene_table_dblclick = (item) ->
 
 init_charts = () ->
     parcoords = new ParCoords({elem: '#dge-pc', filter: parcoords_filter})
+    $('#dge-pc').hide()
+    maplot = new MAPlot({elem: '#dge-ma', filter: parcoords_filter})
     gene_table = new GeneTable({elem: '#grid', elem_info: '#grid-info', sorter: do_sort, mouseover: gene_table_mouseover, mouseout: gene_table_mouseout, dblclick: gene_table_dblclick, filter: gene_table_filter})
     kegg = new Kegg({elem: 'div#kegg-image', mouseover: kegg_mouseover, mouseout: () -> parcoords.unhighlight()})
 
@@ -480,6 +483,7 @@ update_data = () ->
 
     extent = ParCoords.calc_extent(g_data.get_data(), dims)
     parcoords.update_data(g_data.get_data(), dims, extent, color)
+    maplot.update_data(g_data.get_data(), g_data.columns_by_type('expr'), color)
 
     set_gene_table(g_data.get_data())
 
