@@ -17,6 +17,36 @@ class Heatmap
     set_order: (@order) ->
         # Nothing
 
+    # Calculate a rough ordering.  Proper clustering would be better!
+    _calc_order: () ->
+        t1 = new Date()
+        msg_debug("calc order")
+        used = {0: true}
+        order=[0]
+        while order.length < @data.length
+            row = @data[order[order.length-1]]
+            best_i = best_d = null
+            for i in [0..@data.length-1]
+                continue if used[i]
+                r = @data[i]
+                d = @_dist(row,r)
+                if !best_d or d<best_d
+                    best_d = d
+                    best_i = i
+            order.push(best_i)
+            used[best_i] = true
+        @order = order.map((i) => @data[i].id)
+        msg_debug("done.  took=#{new Date()-t1}ms",order,@order)
+
+    # Distance calc for 2 genes.
+    _dist: (r1,r2) ->
+        s = 0
+        for c in @columns
+            v = r1[c.idx]-r2[c.idx]
+            s += v*v
+            #s = d3.max([s,v])
+        s
+
     schedule_update: (data) ->
         @data=data if data
         scheduler.schedule('heatmap', () => @update_data(@data))
@@ -40,6 +70,8 @@ class Heatmap
             .attr('y', (d,i) => i * @opts.h + @opts.h/2)
             .attr("text-anchor", "end")
             .text((d) -> d.name)
+
+        @_calc_order() if @data.length<4000
 
     update_data: (@data) ->
         @redraw_scheduled = false
