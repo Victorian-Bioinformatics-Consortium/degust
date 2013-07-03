@@ -10,7 +10,7 @@ class ParCoords
             .reorderable()
             .brushable() # enable brushing
 
-        @parcoords.setFilter(@opts.pcFilter)   #FIXME - better name "pcFilter"
+        @parcoords.setFilter(@opts.filter)
 
     update_data: (data, dims, extent, coloring) ->
         dim_names = {}
