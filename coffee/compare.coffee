@@ -105,13 +105,15 @@ class WithBackend
 
     _update_samples: () ->
         cols = []
-        $('#files div.selected').each (i, n) =>
+        # Create a list of conditions that are selected, ensure the "primary" condition is first
+        $('#files div.selected').each( (i, n) =>
             rep_id = $(n).data('rep')
-            if $(n).parent('div').hasClass('primary')
+            if $(n).hasClass('primary')
                 cols.unshift(rep_id)
             else
                 cols.push(rep_id)
-            @request_dge_data(cols)
+        )
+        @request_dge_data(cols)
 
     _init_condition_selector: () ->
         $.each(@settings.replicates, (i, rep) =>
@@ -154,9 +156,6 @@ colour_by_ec = (col) ->
 
 colour_by_pval = (col) ->
     (d) -> blue_to_brown(d[col])
-
-pval_col = 'adj.P.Val'
-ave_expr_col = 'AveExpr'
 
 parcoords = null
 dataView = null
@@ -290,7 +289,6 @@ gridUpdateData = (data, columns) ->
 
 update_grid = (data) ->
     column_keys = g_data.columns_by_type(['info','pval'])
-    column_keys = column_keys.concat(g_data.columns_by_type(pval_col))
     column_keys = column_keys.concat(g_data.columns_by_type(if show_ave_fc then 'afc' else 'fc'))
     columns = column_keys.map((col) ->
         id: col.idx
@@ -496,7 +494,11 @@ process_dge_data = (data) ->
     columns = [{is_id: true, column_idx: 'id'}]
     pri_col=null
     d3.keys(data[0]).forEach (k, i) ->
-        if expr_col(k)
+        if k=='adj.P.Val'     # FIXME - shouldn't be hardcoded!
+            columns.push({column_idx: k, name:k, type: 'pval', numeric: true})
+        else if k=='id'
+            # Do nothing, already added
+        else if expr_col(k)
             if pri_col==null
                  pri_col = k
             rep_num = k.substring(4)-1
@@ -505,9 +507,7 @@ process_dge_data = (data) ->
             name = settings.replicate_names[rep_num]
             columns.push({column_idx: k, name: name, type: 'expr', numeric: true})
             columns.push({name:"FC #{name}", type: 'fc', parent: name, func: (r) -> r[k] - r[pri_col]})
-            columns.push({name:"AFC #{name}", type: 'afc', parent: name, func: (r) -> r[k] - r[ave_expr_col]})
-        else if k==pval_col
-            columns.push({column_idx: k, name:k, type: 'pval', numeric: true})
+            columns.push({name:"AFC #{name}", type: 'afc', parent: name, func: (r) -> r[k] - r['AveExpr']})  # FIXME - shouldn't have hardcoded column name
         else
             columns.push({column_idx: k, name:k})
 
