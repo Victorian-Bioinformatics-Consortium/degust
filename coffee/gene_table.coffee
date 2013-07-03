@@ -54,16 +54,24 @@ class GeneTable
         @dataView.getItems()
 
     set_data: (data, columns) ->
-        @grid.setColumns([]) if columns
+        if columns
+            scheduler.schedule_now('gene_table', () => @set_data_now(data, columns))
+        else
+            scheduler.schedule('gene_table', () => @set_data_now(data))
+
+    set_data_now: (data, columns) ->
         @dataView.beginUpdate()
+        @grid.setColumns([]) if columns
         @dataView.setItems(data)
         @dataView.reSort()
         @dataView.endUpdate()
         @grid.setColumns(columns) if columns
 
+    # Refresh the view.  Call this when the filter changes
     refresh: () ->
         @dataView.refresh()
 
+    # Redraw the table, use when the content of cells has changed
     invalidate: () ->
         @grid.invalidate()
 

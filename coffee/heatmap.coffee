@@ -15,14 +15,12 @@ class Heatmap
         @redraw_scheduled = false
 
     set_order: (@order) ->
+        # Nothing
 
-    redraw: () -> @schedule_update(@data)
-
-    schedule_update: (@data) ->
-        if !@redraw_scheduled
-            @redraw_scheduled = true
-            @svg.attr('opacity',0.4)
-            setTimeout((() => @update_data(@data)), @opts.redraw_delay)
+    schedule_update: (data) ->
+        @data=data if data
+        scheduler.schedule('heatmap', () => @update_data(@data))
+        @svg.attr('opacity',0.4)
 
     # update_columns(columns,extent,sel_column)
     #   columns - The DGE condition columns

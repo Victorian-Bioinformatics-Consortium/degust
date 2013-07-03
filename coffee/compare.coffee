@@ -81,7 +81,7 @@ class WithBackend
             d3.csv(req, (data,err) ->
                 msg_info("Downloaded clustering : rows=#{data.length}",data,err)
                 heatmap.set_order(data.map((d) -> d.id))
-                heatmap.redraw()
+                heatmap.schedule_update()
             )
         )
 
