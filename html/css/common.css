@@ -4,3 +4,6 @@ body { padding-top: 60px; }
 div#beta { position: relative; height: 0}
 #beta img { position: relative; width: 150px; top: -67px; left: -90px;}
 .supported-by { font-size: 10px; }
+
+div#forkme { position: relative; height: 0 }
+#forkme img { position: absolute; top: -60px; right: -60px; border 0; }
