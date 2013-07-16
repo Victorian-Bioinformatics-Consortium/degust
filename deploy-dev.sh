@@ -2,7 +2,7 @@
 
 dest=dist-dev
 
-(cd coffee ; coffee -c .)
+coffee -o html/js -c coffee
 
 mkdir -p "$dest"
 cd "$dest"
@@ -10,9 +10,6 @@ cd "$dest"
 ln -sf ../src/r-json.hs r-json.cgi
 
 for f in ../html/* ../src/* ../kegg; do ln -sf $f .; done
-
-mkdir -p js
-for f in ../coffee/*.js; do ln -sf "../$f" js; done
 
 mkdir -p tmp
 mkdir -p cached

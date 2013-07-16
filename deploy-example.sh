@@ -2,15 +2,12 @@
 
 dest=dist-example
 
-(cd coffee ; coffee -c .)
+coffee -o html/js -c coffee
 
 mkdir -p "$dest"
 cd "$dest"
 
-for f in ../html/{css,lib,images} ../kegg; do ln -sf $f .; done
-
-mkdir -p js
-for f in ../coffee/*.js; do ln -sf "../$f" js; done
+for f in ../html/{css,lib,images,js} ../kegg; do ln -sf $f .; done
 
 sed -e 's/##SETTINGS##/settings.js/' ../html/compare.html > index.html
 cp -f ../examples/settings.js settings.js
