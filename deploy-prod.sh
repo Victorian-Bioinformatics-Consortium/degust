@@ -12,7 +12,7 @@ fi
 
 echo "Installing DGE-Vis to : $dest"
 
-(cd coffee ; coffee -c .)
+coffee -o "$dest"/js -c coffee
 
 (cd src/ ; ghc -O2 --make r-json)
 cp src/r-json "$dest"/r-json.cgi
@@ -26,3 +26,5 @@ mkdir -p "$dest"/tmp
 mkdir -p "$dest"/cached
 mkdir -p "$dest"/user-files
 
+
+echo "Ensure '$dest/{tmp,cached,user-files}' is writable by the web server user"
