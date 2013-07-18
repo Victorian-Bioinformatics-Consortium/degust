@@ -16,7 +16,6 @@ class WithoutBackend
         $('.config').hide()
 
     request_init_data: (callback) ->
-        start_loading()
         d3.text(@settings.csv, "text/csv", (dat,err) =>
             msg_info("Downloaded csv",dat,err)
             if err
@@ -25,7 +24,6 @@ class WithoutBackend
             callback(dat)
 
             @process_dge_data(d3.csv.parse(dat))     # FIXME: Need a better abstraction than repeating this!
-            done_loading()
         )
 
     request_kegg_data: (callback) ->
@@ -161,6 +159,8 @@ heatmap = null
 g_data = null
 g_backend = null
 
+
+expr_col   = (k) -> k.indexOf("ABS.")==0             # Remove?
 
 show_ave_fc = false
 show_counts = false
@@ -455,26 +455,21 @@ process_dge_data = (data) ->
     expression_cols = {}
     columns = [{is_id: true, column_idx: 'id'}]
     pri_col=null
-
-    fdr_col      = (k,i) -> if settings.fdr then settings.fdr==i else k=='adj.P.Val'
-    ave_expr_col = if settings.ave_expr then settings.column_names[settings.ave_expr] else 'AveExpr'
-    expr_col     = (k,i) -> if settings.expr? (i in settings.expr) else k.indexOf("ABS.")==0
-
     d3.keys(data[0]).forEach (k, i) ->
-        if fdr_col(k,i)
+        if k=='adj.P.Val'     # FIXME - shouldn't be hardcoded!
             columns.push({column_idx: k, name:k, type: 'pval', numeric: true})
         else if k=='id'
             # Do nothing, already added
-        else if expr_col(k, i)
+        else if expr_col(k)
             if pri_col==null
                  pri_col = k
-            rep_num = k.substring(4)-1   # FIXME.  get from settings!
+            rep_num = k.substring(4)-1
             if rep_num != settings.replicates[rep_num][0]
                 msg_error("BAD Replicate column",rep_num,settings.replicates)
             name = settings.replicate_names[rep_num]
             columns.push({column_idx: k, name: name, type: 'expr', numeric: true})
             columns.push({name:"FC #{name}", type: 'fc', parent: name, func: (r) -> r[k] - r[pri_col]})
-            columns.push({name:"AFC #{name}", type: 'afc', parent: name, func: (r) -> r[k] - r[ave_expr_col]})
+            columns.push({name:"AFC #{name}", type: 'afc', parent: name, func: (r) -> r[k] - r['AveExpr']})  # FIXME - shouldn't have hardcoded column name
         else
             columns.push({column_idx: k, name:k})
 
