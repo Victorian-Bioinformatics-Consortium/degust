@@ -38,7 +38,7 @@ div.filter { font-size: 8pt; border: 1px solid #aaa; border-radius: 5px; backgro
 .neg  { background-color: #fdd; }
 
 #expression { position: relative; }
-#loading { position: absolute; top: 100px; left: 250px; display: none;}
+#loading { position: absolute; top: 100px; left: 250px; }
 
 #gene-info { font-size: 9pt; height: 5em;}
 #gene-info .lbl { width: 100px; font-weight: bold; display: inline-block;}
