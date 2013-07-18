@@ -1,6 +1,6 @@
 window.settings = {
   name: "Basic Example",
-  csv: "basic.csv",
+  csv: "basic-example.csv",
   csv_format: true,
 
   skip: 0,

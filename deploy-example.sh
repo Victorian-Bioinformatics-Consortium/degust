@@ -1,5 +1,6 @@
 #!/bin/sh
 
+src=$1
 dest=dist-example
 
 coffee -o html/js -c coffee
@@ -10,7 +11,9 @@ cd "$dest"
 for f in ../html/{css,lib,images,js} ../kegg; do ln -sf $f .; done
 
 sed -e 's/##SETTINGS##/settings.js/' ../html/compare.html > index.html
-cp -f ../examples/settings.js settings.js
+cp -f ../examples/${src}settings.js settings.js
+cp -f ../examples/${src}example.csv .
+cp -f ../html/*.js .
 
 echo "Linked files to '$dest'.  Now run (cd $dest; python -mSimpleHTTPServer 8040)"
 
