@@ -16,6 +16,7 @@ class WithoutBackend
         $('.config').hide()
 
     request_init_data: (callback) ->
+        start_loading()
         d3.text(@settings.csv, "text/csv", (dat,err) =>
             msg_info("Downloaded csv",dat,err)
             if err
@@ -24,6 +25,7 @@ class WithoutBackend
             callback(dat)
 
             @process_dge_data(d3.csv.parse(dat))     # FIXME: Need a better abstraction than repeating this!
+            done_loading()
         )
 
     request_kegg_data: (callback) ->
