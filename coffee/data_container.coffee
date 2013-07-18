@@ -62,6 +62,12 @@ class DataContainer
                 return col.idx
         return null
 
+    column_by_name: (name) ->
+        for col in @joined_columns
+            if col.name == name
+                return col.idx
+        return null
+
     column_by_idx: (idx) ->
         for col in @joined_columns
             if col.idx == idx

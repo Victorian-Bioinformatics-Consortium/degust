@@ -31,7 +31,11 @@
     <script type="text/javascript" src="lib/slick.core.js"></script>
     <script type="text/javascript" src="lib/slick.grid.js"></script>
     <script type="text/javascript" src="lib/slick.dataview.js"></script>
+    
+    <!-- Dalliance -->
+    <script type="text/javascript" src="http://www.biodalliance.org/canvas/dalliance-compiled.js"></script>
 
+    <!-- DGE-Vis -->
     <script type="text/javascript" src="##SETTINGS##"></script>
     <script type="text/javascript" src="js/util.js"></script>
     <script type="text/javascript" src="js/slider.js"></script>
@@ -41,6 +45,7 @@
     <script type="text/javascript" src="js/heatmap.js"></script>
     <script type="text/javascript" src="js/kegg.js"></script>
     <script type="text/javascript" src="js/compare.js"></script>
+    <script type="text/javascript" src="setup-dalliance.js"></script>
 
   </head>
   <body>
@@ -138,6 +143,10 @@
         <div id="gene-info"></div>
       </div>
 
+      
+      <div class='row'>
+        <div id='svgHolder'>Dalliance goes here...</div>
+      </div>
     </div>
 
     <div id='kegg-image'></div>

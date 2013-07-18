@@ -197,9 +197,17 @@ gene_table_dblclick = (item) ->
     window.open("http://www.ncbi.nlm.nih.gov/protein?term=#{item.id}", '_blank')
     window.focus()
 
+gene_table_click = (item) ->
+    chr = item[g_data.column_by_name('chrom')]
+    start = +item[g_data.column_by_name('start')]-200
+    end = +item[g_data.column_by_name('end')]+200
+
+    dalliance_br.setLocation(chr.substring(3),start,end)
+    console.log(chr,start,end)
+
 init_charts = () ->
     parcoords = new ParCoords({elem: '#dge-pc', filter: parcoords_filter})
-    gene_table = new GeneTable({elem: '#grid', elem_info: '#grid-info', sorter: do_sort, mouseover: gene_table_mouseover, mouseout: gene_table_mouseout, dblclick: gene_table_dblclick, filter: gene_table_filter})
+    gene_table = new GeneTable({elem: '#grid', elem_info: '#grid-info', sorter: do_sort, mouseover: gene_table_mouseover, mouseout: gene_table_mouseout, click: gene_table_click, dblclick: gene_table_dblclick, filter: gene_table_filter})
     kegg = new Kegg({elem: 'div#kegg-image', mouseover: kegg_mouseover, mouseout: () -> parcoords.unhighlight()})
 
     # update grid on brush

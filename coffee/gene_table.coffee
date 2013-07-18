@@ -4,6 +4,7 @@
 #   elem_info: selector for element to put in paging info
 #   mouseover: callback for row mouse-over
 #   mouserout: callback for row mouse-out
+#   click: callback for row click
 #   dblclick: callback for row double-click
 class GeneTable
     constructor: (@opts) ->
@@ -42,6 +43,10 @@ class GeneTable
         if @opts.mouseout
             @grid.onMouseLeave.subscribe( (e,args) =>
                 @opts.mouseout()
+            )
+        if @opts.click
+            @grid.onClick.subscribe( (e,args) =>
+                @opts.click(@grid.getDataItem(args.row))
             )
         if @opts.dblclick
             @grid.onDblClick.subscribe( (e,args) =>
