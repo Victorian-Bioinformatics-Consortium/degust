@@ -23,7 +23,7 @@ d3.parcoords = function(config) {
     __.height = selection[0][0].clientHeight;
 
     // canvas data layers
-    ["extents", "shadows", "marks", "foreground", "highlight"].forEach(function(layer) {
+    ["extents", "shadows", "marks", "foreground2", "foreground1", "highlight"].forEach(function(layer) {
       canvas[layer] = selection
         .append("canvas")
         .attr("class", layer)[0][0];
@@ -64,8 +64,8 @@ d3.parcoords = function(config) {
 
   // side effects for setters
   var side_effects = d3.dispatch.apply(this,d3.keys(__))
-    .on("composite", function(d) { ctx.foreground.globalCompositeOperation = d.value; })
-    .on("alpha", function(d) { ctx.foreground.globalAlpha = d.value; })
+    .on("composite", function(d) { ctx.foreground2.globalCompositeOperation = ctx.foreground1.globalCompositeOperation = d.value; })
+    .on("alpha", function(d) { ctx.foreground2.globalAlpha = ctx.foreground1.globalAlpha = d.value; })
     .on("width", function(d) { pc.resize(); })
     .on("height", function(d) { pc.resize(); })
     .on("margin", function(d) { pc.resize(); })
@@ -112,10 +112,11 @@ d3.parcoords = function(config) {
         .attr("height", h()+2)
 
     // default styles, needs to be set when canvas width changes
-    ctx.foreground.strokeStyle = __.color;
-    ctx.foreground.lineWidth = 1.4;
-    ctx.foreground.globalCompositeOperation = __.composite;
-    ctx.foreground.globalAlpha = __.alpha;
+    ctx.foreground2.strokeStyle = ctx.foreground1.strokeStyle = __.color;
+    ctx.foreground2.lineWidth = ctx.foreground1.lineWidth = 1.4;
+    ctx.foreground2.globalCompositeOperation = ctx.foreground1.globalCompositeOperation = __.composite;
+    ctx.foreground2.globalAlpha = ctx.foreground1.globalAlpha = __.alpha;
+
     ctx.highlight.lineWidth = 3;
     ctx.shadows.strokeStyle = "#dadada";
     ctx.extents.strokeStyle = "rgba(140,140,140,0.25)";
@@ -133,9 +134,9 @@ d3.parcoords = function(config) {
     __.filter = f;
   }
 
-  var rqueue = d3.renderQueue(path_foreground)
+  var rqueue = d3.renderQueue(path_foreground1, path_foreground2)
     .rate(50)
-    .clear(function() { pc.clear('foreground'); });
+    .clear(function() { pc.clear('foreground1'); pc.clear('foreground2'); });
 
   pc.render = function() {
     // try to autodetect dimensions and create scales
@@ -149,11 +150,12 @@ d3.parcoords = function(config) {
   };
 
   pc.render.default = function() {
-    pc.clear('foreground');
+    pc.clear('foreground1');
+    pc.clear('foreground2');
     if (__.brushed) {
-      __.brushed.forEach(path_foreground);
+      __.brushed.forEach(path_foreground1);
     } else {
-      __.data.forEach(path_foreground);
+      __.data.forEach(path_foreground1);
     }
   };
 
@@ -357,7 +359,8 @@ d3.parcoords = function(config) {
   // highlight an array of data
   pc.highlight = function(data) {
     pc.clear("highlight");
-    d3.select(canvas.foreground).classed("faded", true);
+    d3.select(canvas.foreground1).classed("faded", true);
+    d3.select(canvas.foreground2).classed("faded", true);
     data.forEach(path_highlight);
     events.highlight.call(this,data);
     return this;
@@ -366,7 +369,8 @@ d3.parcoords = function(config) {
   // clear highlighting
   pc.unhighlight = function(data) {
     pc.clear("highlight");
-    d3.select(canvas.foreground).classed("faded", false);
+    d3.select(canvas.foreground1).classed("faded", false);
+    d3.select(canvas.foreground2).classed("faded", false);
     return this;
   };
 
@@ -461,8 +465,12 @@ d3.parcoords = function(config) {
       });
   };
 
-  function path_foreground(d) {
-    return color_path(d, ctx.foreground);
+  function path_foreground1(d) {
+    return color_path(d, ctx.foreground1);
+  };
+
+  function path_foreground2(d) {
+    return color_path(d, ctx.foreground2);
   };
 
   function path_highlight(d) {
@@ -514,9 +522,10 @@ d3.parcoords.adjacent_pairs = function(arr) {
   return ret;
 };
 
-d3.renderQueue = (function(func) {
+d3.renderQueue = (function(func1,func2) {
   var _queue = [],                  // data to be rendered
-      _rate = 10,                 // number of calls per frame
+      _first_rate = 100,
+      _rate = 10,                   // number of calls per frame
       _invalidate = function() {},  // invalidate last render queue
       _clear = function() {};       // clearing function
 
@@ -524,6 +533,12 @@ d3.renderQueue = (function(func) {
     if (data) rq.data(data);
     _invalidate();
     _clear();
+
+    var first = _queue.splice(0,_first_rate);
+    first.reverse();     // Want most significant on top
+    first.map(func1);
+    _queue.reverse();    // Want most significant on top of "foreground2"
+
     rq.render();
   };
 
@@ -537,7 +552,7 @@ d3.renderQueue = (function(func) {
       if (!valid) return true;
       if (!_queue.length) return true;
       var chunk = _queue.splice(0,_rate);
-      chunk.map(func);
+      chunk.map(func2);
       timer_frame(doFrame);
     }
 

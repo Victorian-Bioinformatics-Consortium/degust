@@ -9,6 +9,7 @@ class ParCoords
             .alpha(0.4)
             .reorderable()
             .brushable() # enable brushing
+            .mode('queue')
 
         @parcoords.setFilter(@opts.filter)
 
