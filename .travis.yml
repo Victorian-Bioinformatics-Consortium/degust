@@ -1,0 +1,12 @@
+
+before_install:
+  - npm install coffee-script
+
+before_script:
+  - coffee -c -o tests/js/js-build coffee
+  - coffee -c -o tests/js/js-build tests/js
+
+script: 
+  ./test-js.sh
+
+  
