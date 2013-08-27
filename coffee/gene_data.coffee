@@ -4,7 +4,7 @@
 # Each row has "conditions"
 # Each condition has "fields".  eg. AFC, FC, [counts]
 # A "column" definition.
-#   column_idx: integer/string    -- integer if data is array of arrays, string is array of object
+#   idx: integer/string    -- integer if data is array of arrays, string is array of object
 #   name: string
 #   parent: string  -- Allow columns to have a "parent" column.  Use for counts to real column
 #   type: string -- Known types: FDR, Abs (absolute expression), FC (fold-change relative to pri), AFC (fold-change relative to average), Avg (Average expression)
@@ -14,18 +14,16 @@
 class GeneData
     constructor: (@data,@columns) ->
         @columns_by_type_cache = {}
-        @_data_to_obj()
+        @_process_data()
         @_calc_fc()
 
 
-    # Ensure the data array is an array of objects
-    _data_to_obj: () ->
-        return if !(@data instanceof Array)
-        for d,i in @data
-            obj = {}
-            for v,j in d
-                obj[j] = v if v?
-            @data[i] = obj
+    # Ensure numbers are numbers!
+    _process_data: () ->
+        for d in @data
+            for c in @columns
+                if c.type in ['afc','fc','abs','avg','fdr','count']
+                    d[c.idx] = +d[c.idx]
         null
 
     # Given Abs and pri, calculate FC relative to pri for each condition
@@ -43,30 +41,30 @@ class GeneData
         if pri && abs_cols.length > 0
             new_cols = {}
             for c in abs_cols
-                n = {column_idx: "fc - #{c.column_idx}", name: c.name, type: 'fc'}
-                new_cols[c.column_idx] = n
+                n = {idx: "fc - #{c.idx}", name: c.name, type: 'fc'}
+                new_cols[c.idx] = n
                 @columns.push n
             for d in @data
                 for c in abs_cols
-                    d[new_cols[c.column_idx]] = d[c.column_idx] - d[pri]
+                    d[new_cols[c.idx].idx] = d[c.idx] - d[pri.idx]
 
         avg = @column_by_type('avg')
         # Calculate AFC columns relative to average
         if avg && abs_cols.length > 0
             new_cols = {}
             for c in abs_cols
-                n = {column_idx: "afc - #{c.column_idx}", name: c.name, type: 'afc'}
-                new_cols[c.column_idx] = n
+                n = {idx: "afc - #{c.idx}", name: c.name, type: 'afc'}
+                new_cols[c.idx] = n
                 @columns.push n
             for d in @data
                 for c in abs_cols
-                    d[new_cols[c.column_idx]] = d[c.column_idx] - d[avg]
+                    d[new_cols[c.idx].idx] = d[c.idx] - d[avg]
 
     # Returns a columns index (or null)
     column_by_type: (type) ->
         for col in @columns
             if col.type == type
-                return col.column_idx
+                return col.idx
         return null
 
     # Returns a list of column definitions
@@ -77,6 +75,13 @@ class GeneData
         for col in @columns
             res.push(col) if col.type in types
         @columns_by_type_cache[types] = res
+        res
+
+    # Lookup columns by the parent.  Used for find replicate 'count' columns
+    assoc_column_by_type: (type, parent_name) ->
+        res = []
+        for col in @columns
+            res.push(col) if col.type==type && col.parent==parent_name
         res
 
     #get_columns: () -> @columns
