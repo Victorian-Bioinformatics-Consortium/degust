@@ -1,4 +1,10 @@
 
+dbls_equal = (arr1, arr2) ->
+    return false if arr1.length != arr2.length
+    for v,i in arr1
+        return false if Math.abs( v-arr2[i] )>1e-3
+    return true
+
 module('util')
 test('util', () ->
      ok(msg_info, "testing msg_info")
@@ -14,7 +20,7 @@ test('empty gene_data', () ->
 )
 
 asyncTest( "csv gene_data", () ->
-    expect( 6 )
+    expect( 8 )
     cols = [{idx: 'id', name: "id"}
             {idx: 'adj.P.Val', name: 'FDR', type: 'fdr'}
             {idx: 'ABS.1', name: 'Cond 1', type: 'abs', is_pri: true}
@@ -24,12 +30,21 @@ asyncTest( "csv gene_data", () ->
 
     d3.csv("test1.csv", (d) ->
         gd = new GeneData(d, cols)
+        row1 = gd.get_data()[0]
+
         equal(gd.get_data().length, 49, "expected data length")
         equal(gd.column_by_type('fdr'), 'adj.P.Val', "Find FDR column")
         equal(gd.columns_by_type('abs').length, 2, "Find ABS columns")
         equal(gd.columns_by_type('fc').length, 2, "Computed 2 FC columns")
         equal(gd.columns_by_type('afc').length, 2, "Computed 2 AFC columns")
         equal(gd.assoc_column_by_type('count','Cond 1').length, 0, "No parent columns")
+
+        fc_cols = gd.columns_by_type('fc')
+        ok(dbls_equal(fc_cols.map((c) -> row1[c.idx]), [0,0.0546]), "Expected FC values")
+
+        afc_cols = gd.columns_by_type('afc')
+        ok(dbls_equal(afc_cols.map((c) -> row1[c.idx]), [-0.0417, 0.0129], "Expected AFC values"))
+
         start()
     )
 )
