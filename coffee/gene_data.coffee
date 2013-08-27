@@ -14,8 +14,19 @@
 class GeneData
     constructor: (@data,@columns) ->
         @columns_by_type_cache = {}
+        @_data_to_obj()
         @_calc_fc()
 
+
+    # Ensure the data array is an array of objects
+    _data_to_obj: () ->
+        return if !(@data instanceof Array)
+        for d,i in @data
+            obj = {}
+            for v,j in d
+                obj[j] = v if v?
+            @data[i] = obj
+        null
 
     # Given Abs and pri, calculate FC relative to pri for each condition
     # Given Abs and Avg, calculate AFC relative to average
@@ -30,22 +41,26 @@ class GeneData
 
         # Calculate FC columns relative to primary
         if pri && abs_cols.length > 0
+            new_cols = {}
             for c in abs_cols
-                new_col = {column_idx: @columns.length, name: c.name, type: 'fc'}
-                @columns.push new_col
-            for d in data
+                n = {column_idx: "fc - #{c.column_idx}", name: c.name, type: 'fc'}
+                new_cols[c.column_idx] = n
+                @columns.push n
+            for d in @data
                 for c in abs_cols
-                    d.push( d[c.column_idx] - d[pri] )
+                    d[new_cols[c.column_idx]] = d[c.column_idx] - d[pri]
 
         avg = @column_by_type('avg')
         # Calculate AFC columns relative to average
         if avg && abs_cols.length > 0
+            new_cols = {}
             for c in abs_cols
-                new_col = {column_idx: @columns.length, name: c.name, type: 'afc'}
-                @columns.push new_col
-            for d in data
+                n = {column_idx: "afc - #{c.column_idx}", name: c.name, type: 'afc'}
+                new_cols[c.column_idx] = n
+                @columns.push n
+            for d in @data
                 for c in abs_cols
-                    d.push( d[c.column_idx] - d[avg] )
+                    d[new_cols[c.column_idx]] = d[c.column_idx] - d[avg]
 
     # Returns a columns index (or null)
     column_by_type: (type) ->
