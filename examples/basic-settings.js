@@ -3,14 +3,10 @@ window.settings = {
   csv: "basic-example.csv",
   csv_format: true,
 
-  skip: 0,
-  id_column: 0,
-  column_names: ["id","ABS.1","ABS.2","AveExpr","adj.P.Val"],
-  info_columns: [0],
-  ave_expr: [3],
-  expr: [1,2],
-  fdr_col: 4,
-
-  replicates: [[0,[]], [1,[]]],
-  replicate_names: ["Cond 1", "Cond 2"],
+  columns: [{idx: 'id', name: "id"},
+            {idx: 'adj.P.Val', name: 'FDR', type: 'fdr'},
+            {idx: 'ABS.1', name: 'Cond 1', type: 'abs', is_pri: true},
+            {idx: 'ABS.2', name: 'Cond 2', type: 'abs'},
+            {idx: 'AveExpr', name: 'Avg Expr', type: 'avg'},
+           ]
 };

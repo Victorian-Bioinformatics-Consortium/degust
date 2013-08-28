@@ -1,5 +1,5 @@
 
-# Each row (gene) has unique "id"
+# Each row (gene) has unique "id"  - given one of doesn't exist
 # Each row has "fields".    eg. info columns, FDR, EC
 # Each row has "conditions"
 # Each condition has "fields".  eg. AFC, FC, [counts]
@@ -17,10 +17,11 @@ class GeneData
         @_process_data()
         @_calc_fc()
 
-
     # Ensure numbers are numbers!
+    # Add an "id" to each row.
     _process_data: () ->
-        for d in @data
+        for d,i in @data
+            #d.id = i if !d.id?
             for c in @columns
                 if c.type in ['afc','fc','abs','avg','fdr','count']
                     d[c.idx] = +d[c.idx]
@@ -65,6 +66,13 @@ class GeneData
         for col in @columns
             if col.type == type
                 return col.idx
+        return null
+
+    # Lookup a column by index
+    column_by_idx: (idx) ->
+        for col in @columns
+            if col.idx == idx
+                return col
         return null
 
     # Returns a list of column definitions

@@ -20,7 +20,7 @@ test('empty gene_data', () ->
 )
 
 asyncTest( "csv gene_data", () ->
-    expect( 8 )
+    expect( 9 )
     cols = [{idx: 'id', name: "id"}
             {idx: 'adj.P.Val', name: 'FDR', type: 'fdr'}
             {idx: 'ABS.1', name: 'Cond 1', type: 'abs', is_pri: true}
@@ -33,6 +33,7 @@ asyncTest( "csv gene_data", () ->
         row1 = gd.get_data()[0]
 
         equal(gd.get_data().length, 49, "expected data length")
+        deepEqual(gd.column_by_idx('ABS.1'), cols[2], "Column idx lookup")
         equal(gd.column_by_type('fdr'), 'adj.P.Val', "Find FDR column")
         equal(gd.columns_by_type('abs').length, 2, "Find ABS columns")
         equal(gd.columns_by_type('fc').length, 2, "Computed 2 FC columns")
@@ -50,7 +51,7 @@ asyncTest( "csv gene_data", () ->
 )
 
 asyncTest( "assoc columns gene_data", () ->
-    expect( 2 )
+    expect( 3 )
     cols = [{idx: 'Feature', name: "id"}
             {idx: 'adj.P.Val', name: 'FDR', type: 'fdr'}
             {idx: 'ABS.1', name: 'Cond 1', type: 'abs', is_pri: true}
@@ -69,6 +70,8 @@ asyncTest( "assoc columns gene_data", () ->
 
         equal(count_cols.length, 3, "Parent columns")
         deepEqual(counts, [53,31,54], "Counts correct values")
+
+        ok(row1.id != null, "Created an id column")
 
         start()
     )

@@ -15,16 +15,20 @@ class WithoutBackend
         $('.conditions').hide()
         $('.config').hide()
 
-    request_init_data: (callback) ->
+    request_init_data: () ->
         start_loading()
         d3.text(@settings.csv, "text/csv", (dat,err) =>
             msg_info("Downloaded csv",dat,err)
             if err
                 msg_error(err)
                 return
-            callback(dat)
 
-            @process_dge_data(d3.csv.parse(dat))     # FIXME: Need a better abstraction than repeating this!
+            if settings.csv_format
+               data = d3.csv.parse(dat)
+            else
+               data = d3.tsv.parse(dat)
+            @process_dge_data(data)
+
             done_loading()
         )
 
@@ -160,6 +164,7 @@ heatmap = null
 
 g_data = null
 g_backend = null
+requested_kegg = false
 
 
 show_ave_fc = false
@@ -233,7 +238,7 @@ do_sort = (args) ->
         x=r1[column.idx]; y=r2[column.idx]
         if column.type in ['fc','afc']
             r = comparer(Math.abs(x), Math.abs(y))
-        else if column.type in ['pval']
+        else if column.type in ['fdr']
             r = comparer(x, y)
         else
             r = comparer(x,y)
@@ -241,7 +246,7 @@ do_sort = (args) ->
     )
 
 set_gene_table = (data) ->
-    column_keys = g_data.columns_by_type(['info','pval'])
+    column_keys = g_data.columns_by_type(['info','fdr'])
     column_keys = column_keys.concat(g_data.columns_by_type(if show_ave_fc then 'afc' else 'fc'))
     columns = column_keys.map((col) ->
         id: col.idx
@@ -251,7 +256,7 @@ set_gene_table = (data) ->
         formatter: (i,c,val,m,row) ->
             if col.type in ['fc','afc']
                 fc_div(val, col, row)
-            else if col.type in ['pval']
+            else if col.type in ['fdr']
                 if val<0.01 then val.toExponential(2) else val.toFixed(2)
             else
                 val
@@ -287,7 +292,7 @@ parcoords_filter = (row) ->
                 break
         return false if !keep
 
-    pval_col = g_data.columns_by_type('pval')[0]
+    pval_col = g_data.columns_by_type('fdr')[0]
     return false if row[pval_col.idx] > fdrThreshold
     #return false if annot_genes_only && !g_data.get_ec_value(id)
 
@@ -398,36 +403,11 @@ update_flags = () ->
     pval_colour = $('#pval-col-cb').is(":checked")
 
 process_counts_data = (dat) ->
-    data = null
-    if settings.csv_format
-       data = d3.csv.parseRows(dat)
-    else
-       data = d3.tsv.parseRows(dat)
-
-    names = settings.column_names
-    rep_names = settings.replicate_names
-    columns = []
-    columns.push({is_id: true, column_idx: settings.id_column, name: names[settings.id_column]})
-    settings.info_columns.forEach (col) ->
-        columns.push({column_idx: col, name: names[col], type: 'info'})
-
-    settings.replicates.forEach (rep) ->
-        rep[1].forEach (col) ->
-            columns.push({type: 'counts', column_idx: col, name:names[col], parent: rep_names[rep[0]]})
-
-    if settings.ec_column != undefined
-        columns.push({type: 'ec', column_idx: settings.ec_column, name:"EC"})
-
-    g_data.add_data('counts',data[1+settings.skip..], columns)
-
     # If there is an ec column, fill in the kegg pull down
-    ec_col = g_data.column_by_type('ec')
-    if ec_col == null
-        $('.kegg-filter').hide()
-    else
-        g_backend.request_kegg_data(process_kegg_data)
 
 process_kegg_data = (ec_data) ->
+    return if requested_kegg
+    requested_kegg = true
     opts = "<option value=''>--- No pathway selected ---</option>"
 
     have_ec = {}
@@ -444,33 +424,13 @@ process_kegg_data = (ec_data) ->
     $('select#kegg').html(opts)
 
 process_dge_data = (data) ->
-    expression_cols = {}
-    columns = [{is_id: true, column_idx: 'id'}]
-    pri_col=null
+    g_data = new GeneData(data, settings.columns)
 
-    fdr_col      = (k,i) -> if settings.fdr then settings.fdr==i else k=='adj.P.Val'
-    ave_expr_col = if settings.ave_expr then settings.column_names[settings.ave_expr] else 'AveExpr'
-    expr_col     = (k,i) -> if settings.expr? (i in settings.expr) else k.indexOf("ABS.")==0
-
-    d3.keys(data[0]).forEach (k, i) ->
-        if fdr_col(k,i)
-            columns.push({column_idx: k, name:k, type: 'pval', numeric: true})
-        else if k=='id'
-            # Do nothing, already added
-        else if expr_col(k, i)
-            if pri_col==null
-                 pri_col = k
-            rep_num = k.substring(4)-1   # FIXME.  get from settings!
-            if rep_num != settings.replicates[rep_num][0]
-                msg_error("BAD Replicate column",rep_num,settings.replicates)
-            name = settings.replicate_names[rep_num]
-            columns.push({column_idx: k, name: name, type: 'expr', numeric: true})
-            columns.push({name:"FC #{name}", type: 'fc', parent: name, func: (r) -> r[k] - r[pri_col]})
-            columns.push({name:"AFC #{name}", type: 'afc', parent: name, func: (r) -> r[k] - r[ave_expr_col]})
-        else
-            columns.push({column_idx: k, name:k})
-
-    g_data.add_data('dge', data, columns)
+    ec_col = g_data.column_by_type('ec')
+    if ec_col == null
+        $('.kegg-filter').hide()
+    else if !requested_kegg
+        g_backend.request_kegg_data(process_kegg_data)
 
     update_data()
 
@@ -480,7 +440,7 @@ update_data = () ->
 
     dims = g_data.columns_by_type(if show_ave_fc then 'afc' else 'fc')
     ec_col = g_data.column_by_type('ec')
-    pval_col = g_data.column_by_type('pval')
+    pval_col = g_data.column_by_type('fdr')
     color = if pval_colour then colour_by_pval(pval_col) else colour_by_ec(ec_col)
 
     extent = ParCoords.calc_extent(g_data.get_data(), dims)
@@ -496,7 +456,7 @@ update_data = () ->
     parcoords.brush()
 
 init = () ->
-    g_data = new DataContainer(settings)
+    g_data = new GeneData([],[])
 
     if window.use_backend
         g_backend = new WithBackend(settings, process_dge_data)
@@ -515,7 +475,7 @@ init = () ->
     init_slider()
     init_download_link()
 
-    g_backend.request_init_data(process_counts_data)
+    g_backend.request_init_data()
 
 $(document).ready(() -> init() )
 $(document).ready(() -> $('[title]').tooltip())
