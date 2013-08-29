@@ -170,8 +170,6 @@ requested_kegg = false
 show_ave_fc = false
 show_counts = false
 plot_avg_exp = false
-annot_genes_only = false
-pval_colour = false
 fdrThreshold = 1
 fcThreshold = 0
 searchStr = ""
@@ -294,7 +292,6 @@ parcoords_filter = (row) ->
 
     pval_col = g_data.columns_by_type('fdr')[0]
     return false if row[pval_col.idx] > fdrThreshold
-    #return false if annot_genes_only && !g_data.get_ec_value(id)
 
     if kegg_filter.length>0
         ec_col = g_data.column_by_type('ec')
@@ -359,12 +356,6 @@ init_slider = () ->
         update_flags()
         gene_table.invalidate()
     )
-    $('#annot-genes-cb').on("click", (e) ->
-        update_data()
-    )
-    $('#pval-col-cb').on("click", (e) ->
-        update_data()
-    )
 
 calc_kegg_colours = () ->
     ec_dirs = {}
@@ -399,8 +390,6 @@ kegg_selected = () ->
 update_flags = () ->
     show_ave_fc = $('#plot-avgfc-cb').is(":checked")
     show_counts = $('#show-counts-cb').is(":checked")
-    annot_genes_only = $('#annot-genes-cb').is(":checked")
-    pval_colour = $('#pval-col-cb').is(":checked")
 
 process_counts_data = (dat) ->
     # If there is an ec column, fill in the kegg pull down
@@ -441,7 +430,7 @@ update_data = () ->
     dims = g_data.columns_by_type(if show_ave_fc then 'afc' else 'fc')
     ec_col = g_data.column_by_type('ec')
     pval_col = g_data.column_by_type('fdr')
-    color = if pval_colour then colour_by_pval(pval_col) else colour_by_ec(ec_col)
+    color = colour_by_pval(pval_col)
 
     extent = ParCoords.calc_extent(g_data.get_data(), dims)
     parcoords.update_data(g_data.get_data(), dims, extent, color)
