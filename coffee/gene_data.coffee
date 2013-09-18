@@ -18,8 +18,10 @@ class GeneData
         msg_debug 'data',@data
 
 
-    set_relative: (@relative) ->
-        @_calc_fc()
+    set_relative: (relative) ->
+        if relative != @relative
+            @relative = relative
+            @_calc_fc()
 
     # Ensure numbers are numbers!
     # Add an "id" to each row.

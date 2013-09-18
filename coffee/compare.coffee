@@ -439,12 +439,12 @@ update_flags = () ->
 update_data = () ->
     update_flags()
 
+    # Set the 'relative' column
     fc_relative = $('select#fc-relative option:selected').val()
     if fc_relative<0
         fc_relative = 'avg'
     else
         fc_relative = g_data.columns_by_type(['fc','primary'])[fc_relative]
-    console.log fc_relative
     g_data.set_relative(fc_relative)
 
     dims = g_data.columns_by_type('fc_calc')
