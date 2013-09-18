@@ -39,7 +39,9 @@ class ParCoords
         extents = []
         dims.forEach (k) ->
             extents.push(d3.extent(data, (v) -> +v[k.idx]))
-        return d3.extent(d3.merge(extents))
+        extent = d3.extent(d3.merge(extents))
+        # Just a bit larger than the extent (so can be brushed over)
+        return extent.map((v) -> v*1.05)
 
     # These methods just pass through
     highlight: (d) -> @parcoords.highlight(d)

@@ -10,6 +10,9 @@ done_loading = () ->
         $('#loading').hide()
         $('#dge-pc').css('opacity',1)
 
+html_escape = (str) ->
+    $('<div/>').text(str).html()
+
 class WithoutBackend
     constructor: (@settings, @process_dge_data) ->
         $('.conditions').hide()
@@ -17,7 +20,7 @@ class WithoutBackend
 
     request_init_data: () ->
         start_loading()
-        d3.text(@settings.csv, "text/csv", (dat,err) =>
+        d3.text(@settings.csv_file, "text/csv", (dat,err) =>
             msg_info("Downloaded csv",dat,err)
             if err
                 msg_error(err)
@@ -169,7 +172,6 @@ requested_kegg = false
 
 show_ave_fc = false
 show_counts = false
-plot_avg_exp = false
 fdrThreshold = 1
 fcThreshold = 0
 searchStr = ""
@@ -234,7 +236,7 @@ do_sort = (args) ->
     gene_table.sort((r1,r2) ->
         r = 0
         x=r1[column.idx]; y=r2[column.idx]
-        if column.type in ['fc','afc']
+        if column.type in ['fc_calc']
             r = comparer(Math.abs(x), Math.abs(y))
         else if column.type in ['fdr']
             r = comparer(x, y)
@@ -245,14 +247,14 @@ do_sort = (args) ->
 
 set_gene_table = (data) ->
     column_keys = g_data.columns_by_type(['info','fdr'])
-    column_keys = column_keys.concat(g_data.columns_by_type(if show_ave_fc then 'afc' else 'fc'))
+    column_keys = column_keys.concat(g_data.columns_by_type('fc_calc'))
     columns = column_keys.map((col) ->
         id: col.idx
         name: col.name
         field: col.idx
         sortable: true
         formatter: (i,c,val,m,row) ->
-            if col.type in ['fc','afc']
+            if col.type in ['fc_calc']
                 fc_div(val, col, row)
             else if col.type in ['fdr']
                 if val<0.01 then val.toExponential(2) else val.toFixed(2)
@@ -266,7 +268,7 @@ fc_div = (n, column, row) ->
     colour = if n>0.1 then "pos" else if n<-0.1 then "neg" else ""
     countStr = ""
     if show_counts
-        count_columns = g_data.assoc_column_by_type('counts',column.parent)
+        count_columns = g_data.assoc_column_by_type('count',column.name)
         counts = count_columns.map((c) -> row[c.idx])
         countStr = "<span class='counts'>(#{counts})</span>"
     "<div class='#{colour}'>#{n.toFixed(2)}#{countStr}</div>"
@@ -283,7 +285,7 @@ gene_table_filter = (item) ->
 parcoords_filter = (row) ->
     if fcThreshold>0
         keep = false
-        col_type = if show_ave_fc then 'afc' else 'fc'
+        col_type = 'fc_calc'
         for col in g_data.columns_by_type(col_type)
             if Math.abs(row[col.idx]) > fcThreshold
                 keep = true
@@ -349,7 +351,7 @@ init_slider = () ->
                h_runfilters = window.setTimeout((() -> parcoords.brush()), 10)
                fcThreshold = v
     )
-    $('#plot-avgfc-cb').on("click", (e) ->
+    $('#fc-relative').change((e) ->
         update_data()
     )
     $('#show-counts-cb').on("click", (e) ->
@@ -361,7 +363,7 @@ calc_kegg_colours = () ->
     ec_dirs = {}
     ec_col = g_data.column_by_type('ec')
     return if ec_col==null
-    fc_cols = g_data.columns_by_type('fc')[1..]
+    fc_cols = g_data.columns_by_type('fc_calc')[1..]
     for row in g_data.get_data()
         ec = row[ec_col]
         continue if !ec
@@ -387,10 +389,6 @@ kegg_selected = () ->
         kegg.load(code, ec_colours, set_filter)
         $('div#kegg-image').dialog({width:500, height:600, title: title, position: {my: "right top", at:"right top+60", of: $('body')} })
 
-update_flags = () ->
-    show_ave_fc = $('#plot-avgfc-cb').is(":checked")
-    show_counts = $('#show-counts-cb').is(":checked")
-
 process_counts_data = (dat) ->
     # If there is an ec column, fill in the kegg pull down
 
@@ -415,19 +413,41 @@ process_kegg_data = (ec_data) ->
 process_dge_data = (data) ->
     g_data = new GeneData(data, settings.columns)
 
-    ec_col = g_data.column_by_type('ec')
-    if ec_col == null
+    # Setup FC "relative" pulldown
+    opts = ""
+    for col,i in g_data.columns_by_type(['fc','primary'])
+        opts += "<option value='#{i}'>#{html_escape col.name}</option>"
+    opts += "<option value='-1'>Average</option>"
+    $('select#fc-relative').html(opts)
+
+    if g_data.column_by_type('ec') == null
         $('.kegg-filter').hide()
     else if !requested_kegg
         g_backend.request_kegg_data(process_kegg_data)
 
+    if g_data.columns_by_type('count').length == 0
+        $('.show-counts-opt').hide()
+    else
+        $('.show-counts-opt').show()
+
     update_data()
+
+update_flags = () ->
+    show_counts = $('#show-counts-cb').is(":checked")
 
 # Called whenever the data is changed, or the "checkboxes" are modified
 update_data = () ->
     update_flags()
 
-    dims = g_data.columns_by_type(if show_ave_fc then 'afc' else 'fc')
+    fc_relative = $('select#fc-relative option:selected').val()
+    if fc_relative<0
+        fc_relative = 'avg'
+    else
+        fc_relative = g_data.columns_by_type(['fc','primary'])[fc_relative]
+    console.log fc_relative
+    g_data.set_relative(fc_relative)
+
+    dims = g_data.columns_by_type('fc_calc')
     ec_col = g_data.column_by_type('ec')
     pval_col = g_data.column_by_type('fdr')
     color = colour_by_pval(pval_col)

@@ -4,62 +4,66 @@
 # Each row has "conditions"
 # Each condition has "fields".  eg. AFC, FC, [counts]
 # A "column" definition.
-#   idx: integer/string    -- integer if data is array of arrays, string is array of object
+#   idx: string    -- string is array of object
 #   name: string
 #   parent: string  -- Allow columns to have a "parent" column.  Use for counts to real column
-#   type: string -- Known types: FDR, Abs (absolute expression), FC (fold-change relative to pri), AFC (fold-change relative to average), Avg (Average expression)
-#   is_pri: bool -- This is the "primary" condition used for comparison.
+#   type: string -- Known types: FDR, Abs (absolute expression), FC (fold-change relative to pri), Avg (Average expression), primary (fake column to include primary condition FC are relative to)
 #
 
 class GeneData
     constructor: (@data,@columns) ->
         @columns_by_type_cache = {}
         @_process_data()
+        @set_relative( @columns_by_type('primary')[0] )
+        msg_debug 'data',@data
+
+
+    set_relative: (@relative) ->
         @_calc_fc()
 
     # Ensure numbers are numbers!
     # Add an "id" to each row.
     _process_data: () ->
         for d,i in @data
-            #d.id = i if !d.id?
+            d.id = i if !d.id?
             for c in @columns
-                if c.type in ['afc','fc','abs','avg','fdr','count']
+                if c.type in ['fc','abs','avg','fdr','count']
                     d[c.idx] = +d[c.idx]
         null
 
-    # Given Abs and pri, calculate FC relative to pri for each condition
-    # Given Abs and Avg, calculate AFC relative to average
     _calc_fc: () ->
-        abs_cols = @columns_by_type("abs")
+        @columns_by_type_cache = {}
+        primary = @columns_by_type('primary')[0]
+        @relative = primary if !@relative?
 
-        pri = null
-        for col in @columns
-            if col.is_pri
-                pri = col
-                break
+        fc_cols = @columns_by_type('fc')
+        new_cols = []
+        for col,i in @columns
+            do (col) =>
+                if col.type not in ['fc_calc']
+                    new_cols.push(col)
+                if col.type in ['fc','primary']
+                    new_cols.push(
+                        idx: "_calc_#{i}"
+                        name: col.name
+                        type: 'fc_calc'
+                        calc: (d) =>
+                            v1 = if col==primary then 0 else d[col.idx]
+                            v2 = if @relative==primary
+                                     0
+                                 else if @relative=='avg'
+                                     d3.sum(fc_cols.map((c) -> d[c.idx]))/(1+fc_cols.length)
+                                 else
+                                     d[@relative.idx]
+                            v1-v2
+                    )
 
-        # Calculate FC columns relative to primary
-        if pri && abs_cols.length > 0
-            new_cols = {}
-            for c in abs_cols
-                n = {idx: "fc - #{c.idx}", name: c.name, type: 'fc'}
-                new_cols[c.idx] = n
-                @columns.push n
-            for d in @data
-                for c in abs_cols
-                    d[new_cols[c.idx].idx] = d[c.idx] - d[pri.idx]
+        @columns = new_cols
+        for d in @data
+            for col in @columns
+                if col.type in ['fc_calc']
+                    d[col.idx] = col.calc(d)
 
-        avg = @column_by_type('avg')
-        # Calculate AFC columns relative to average
-        if avg && abs_cols.length > 0
-            new_cols = {}
-            for c in abs_cols
-                n = {idx: "afc - #{c.idx}", name: c.name, type: 'afc'}
-                new_cols[c.idx] = n
-                @columns.push n
-            for d in @data
-                for c in abs_cols
-                    d[new_cols[c.idx].idx] = d[c.idx] - d[avg]
 
     # Returns a columns index (or null)
     column_by_type: (type) ->

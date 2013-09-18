@@ -30,6 +30,7 @@ div.filter { font-size: 8pt; border: 1px solid #aaa; border-radius: 5px; backgro
 .filter label { width: 70px; text-align: right; }
 .filter input { width: 50px; }
 #fdrSlider, #fcSlider { display: inline-block; width: 50px; margin: 0 10px; font-size: 8pt}
+#fc-relative { width: 115px; height: auto; }
 .filter input.error { background-color: #fbb; }
 
 .ec-group { display: none; }
