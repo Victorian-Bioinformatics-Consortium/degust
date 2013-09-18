@@ -313,7 +313,7 @@ init_download_link = () ->
         e.preventDefault()
         items = gene_table.get_data()
         return if items.length==0
-        cols = g_data.get_columns().filter((c) -> !c.is_id)
+        cols = g_data.columns_by_type(['info','fc_calc','count'])
         keys = cols.map((c) -> c.name)
         rows=items.map( (r) -> cols.map( (c) -> r[c.idx] ) )
         window.open("data:text/csv,"+escape(d3.csv.format([keys].concat(rows))), "file.csv")
