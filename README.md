@@ -49,4 +49,12 @@ Requirements:
 
 It can be installed as an apache CGI site, or run in "dev" mode using a standalone python server.  Here we describe how to run in "dev" mode.
 
+Run tests locally
+--------------
+
+There are javascript tests which can be run locally:
+
+  coffee -c -o tests/js/js-build coffee
+  coffee -c -o tests/js/js-build tests/js
+  (cd tests/js/ ; python -mSimpleHTTPServer)
 
