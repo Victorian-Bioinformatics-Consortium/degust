@@ -67,6 +67,7 @@ div.filter { font-size: 8pt; border: 1px solid #aaa; border-radius: 5px; backgro
 
 .ui-dialog .ui-state-hover { border: 0; }
 
+#dge-ma { position: relative; }
 #dge-ma div.tooltip {
   position: absolute;
   text-align: center;

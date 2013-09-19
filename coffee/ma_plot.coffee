@@ -90,9 +90,10 @@ class MAPlot
         info += "<tr><td><b>A</b>:<td>#{fmt @a_dim(row)}"
         info += "<tr><td><b>M</b>:<td>#{fmt @m_dim(row)}"
         info += "</table>"
+        loc = d3.mouse(@svg[0][0])
         @tooltip.html(info)
-                .style("left", (d3.event.pageX - 270) + "px")
-                .style("top", (d3.event.pageY - 50) + "px")
+                .style("left", (loc[0] + 10) + "px")
+                .style("top",  (loc[1] + 15) + "px")
 
     _hide_info: () ->
         @tooltip.transition().duration(500)
