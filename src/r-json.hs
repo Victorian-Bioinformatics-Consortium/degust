@@ -267,8 +267,10 @@ columns settings = let columns = concatMap snd $ get_replicates settings
 -- | Build the R design matrix
 design settings = "matrix(data=c("++intercalate "," (concat allCols)++")"
                   ++ ", nrow="++show (length columns)++", ncol="++show (length reps)
+                  ++ ", dimnames = list(c(), c("++colsToRList conditions++"))"
                   ++ ")"
   where
+    conditions = map fst $ get_replicates settings
     columns = concatMap snd $ get_replicates settings
     reps = get_replicates settings
     oneCol vs = map (\c -> if c `elem` vs then "1" else "0") columns
@@ -338,5 +340,5 @@ clusteringR settings cs file =
   c <- list(hclust = hclust(d))
   s <- seriate(d, method='OLO', control=c)
   order <- get_order(s[[1]])
-  write.csv(list(id=fit$genes[order,1]), file="#{file}", row.names=FALSE)
+  write.csv(list(id=order), file="#{file}", row.names=FALSE)
   |] ()
