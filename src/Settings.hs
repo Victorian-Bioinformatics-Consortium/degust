@@ -8,7 +8,7 @@ module Settings
 
     , createSettings
     , get_replicates, get_counts_file, get_counts_skip, get_user_settings
-    , get_id_column, get_info_columns, get_ec_column
+    , get_info_columns, get_ec_column
     , is_locked, get_csv_format
     ) where
 
@@ -31,35 +31,29 @@ data Settings = Settings { code :: Code
                          , remote_addr :: String
                          , created :: String
                          , user_settings :: UserSettings
-                         } deriving Show
+                         , locked :: Bool -- ^ True to allow a public example
+                        } deriving Show
 
-data UserSettings = UserSettings { _id_col :: Int -- ^ Column number of ID column (0-based)
-                                 , _replicates :: [(Int, [Int])] -- ^ Definition of replicates
-                                 , _ec_col :: Maybe Int -- ^ Optional EC number column (0-based)
-                                 , _info_cols :: [Int] -- ^ Optional list of columns to include in display
-                                 , _init_select :: [Int] -- ^ Replicates to initially select in UI
+data UserSettings =
+  UserSettings { _replicates :: [(String, [String])] -- ^ Definition of replicates
+               , _ec_col :: Maybe String -- ^ Optional EC number column (0-based)
+               , _info_cols :: [String] -- ^ Optional list of columns to include in display
+               , _init_select :: [String] -- ^ Replicates to initially select in UI
 
-                                 , _skip :: Int -- ^ Number of columns to skip
-                                 , _csv_format :: Bool  -- ^ True for CSV, False for TAB
-                                 , _locked :: Bool -- ^ True to allow a public example
-                                 , _col_names :: [String]  -- ^ Not used by the backend, set from the csv file
-                                 , _replicate_names :: [String] -- ^ Not used by the backend, set by the user
-                                 , _hide :: [Int] -- ^ Used in the frontend to hide some columns
-                                 , _title :: String -- ^ Title to use in UI
-                                 } deriving Show
+               , _skip :: Int -- ^ Number of rows to skip
+               , _csv_format :: Bool  -- ^ True for CSV, False for TAB
+               , _hide :: [String] -- ^ Used in the frontend to hide some columns
+               , _title :: String -- ^ Title to use in UI
+               } deriving Show
 makeLenses ''UserSettings
 
-defUserSettings = UserSettings { _id_col = -1
-                               , _ec_col = Nothing
+defUserSettings = UserSettings { _ec_col = Nothing
                                , _info_cols = []
                                , _replicates = []
-                               , _col_names = []
-                               , _replicate_names = []
                                , _init_select = []
                                , _hide = []
                                , _csv_format = True
                                , _skip = 0
-                               , _locked = False
                                , _title = ""
                                }
 
@@ -69,6 +63,7 @@ instance JSON Settings where
                                        <*> valFromObj "remote_addr" obj
                                        <*> valFromObj "created" obj
                                        <*> valFromObj "user_settings" obj
+                                       <*> return False
     readJSON _ = Error "Expect object"
 
     -- showJSON :: Settings -> JSValue
@@ -76,6 +71,7 @@ instance JSON Settings where
                           ,("remote_addr", showJSON $ remote_addr s)
                           ,("created", showJSON $ created s)
                           ,("user_settings",showJSON $ user_settings s)
+                          ,("locked",showJSON $ locked s)
                           ]
 
 instance JSON UserSettings where
@@ -84,14 +80,10 @@ instance JSON UserSettings where
 
 user_settings_cols :: [(UserSettings -> JSObject JSValue -> Result UserSettings
                        ,UserSettings -> JSObject JSValue -> JSObject JSValue)]
-user_settings_cols = [simple "id_column" id_col
-                     ,simple "info_columns" info_cols
+user_settings_cols = [simple "info_columns" info_cols
                      ,(get_simple_f "ec_column" ec_col id, set_maybe "ec_column" ec_col)
                      ,simple "replicates" replicates
-                     ,simple "column_names" col_names
-                     ,simple "replicate_names" replicate_names
                      ,simple "csv_format" csv_format
-                     ,simple "locked" locked
                      ,simple "skip" skip
                      ,simple_with_def "init_select" init_select []
                      ,simple_with_def "hide_columns" hide []
@@ -189,22 +181,20 @@ initSettings code = Settings { code = code
                              , remote_addr = ""
                              , created = error "Must set created"
                              , user_settings = defUserSettings
+                             , locked = False
                              }
 
-get_id_column :: Settings -> Int
-get_id_column settings = user_settings settings ^. id_col
-
-get_ec_column :: Settings -> Maybe Int
+get_ec_column :: Settings -> Maybe String
 get_ec_column settings = user_settings settings ^. ec_col
 
-get_info_columns :: Settings -> [Int]
+get_info_columns :: Settings -> [String]
 get_info_columns settings = user_settings settings ^. info_cols
 
-get_replicates :: Settings -> [(Int,[Int])]
+get_replicates :: Settings -> [(String,[String])]
 get_replicates settings = user_settings settings ^. replicates
 
 is_locked :: Settings -> Bool
-is_locked settings = user_settings settings ^. locked
+is_locked settings = locked settings
 
 get_csv_format :: Settings -> String
 get_csv_format settings = if user_settings settings ^. csv_format then "CSV" else "TAB"

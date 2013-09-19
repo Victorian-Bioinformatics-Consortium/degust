@@ -30,7 +30,7 @@ class WithoutBackend
                data = d3.csv.parse(dat)
             else
                data = d3.tsv.parse(dat)
-            @process_dge_data(data)
+            @process_dge_data(data, settings.columns)
 
             done_loading()
         )
@@ -40,29 +40,15 @@ class WithoutBackend
 
 class WithBackend
     constructor: (@settings, @process_dge_data) ->
-        if @settings.id_column < 0
-            window.location = @_script("query=config")
-
         $('.conditions').show()
         if @settings['locked']
             $('a.config').hide()
         else
             $('a.config').show()
             $('a.config').attr('href', @_script("query=config"))
-        @_init_condition_selector()
 
-    request_init_data: (callback) ->
-        d3.text(@_script("query=counts"), "text/csv", (dat,err) =>
-            msg_info("Downloaded counts",dat,err)
-            if err
-                msg_error(err)
-                return
-            callback(dat)
-            @have_counts = true
-            if @after_counts
-                @after_counts()
-            @after_counts = null
-        )
+    request_init_data: () ->
+        @_init_condition_selector()
 
     request_kegg_data: (callback) ->
         d3.tsv(@_script('query=kegg_titles'), (ec_data,err) ->
@@ -73,18 +59,23 @@ class WithBackend
     request_dge_data: (columns) ->
         return if columns.length <= 1
 
-        #Ugly hack to ensure "Counts" are done before "DGE" - FIXME
-        if !@have_counts
-            @after_counts = () => @request_dge_data(columns)
-            return
-
         # load csv file and create the chart
         req = @_script("query=dge&fields=#{JSON.stringify columns}")
         start_loading()
         d3.csv(req, (data, err) =>
             msg_info("Downloaded DGE : rows=#{data.length}",data,err)
             done_loading()
-            @process_dge_data(data)
+
+            data_cols = settings.info_columns.map((n) -> {idx: n, name: n, type: 'info' })
+            pri=true
+            columns.forEach((n) ->
+                typ = if pri then 'primary' else 'fc'
+                data_cols.push({idx: n, type: typ, name: n})
+                pri=false
+            )
+            data_cols.push({idx: 'adj.P.Val', name: 'FDR', type: 'fdr'})
+
+            @process_dge_data(data, data_cols)
 
             if data.length<5000
                 req = @_script("query=clustering&fields=#{JSON.stringify columns}")
@@ -98,52 +89,35 @@ class WithBackend
     _script: (params) ->
         "r-json.cgi?code=#{window.my_code}&#{params}"
 
-    _select_primary: (e) ->
-        el = $(e.target).parent('div')
-        $('#files .primary').removeClass('primary')
-        $(el).addClass('primary')
-        $(el).removeClass('selected')
-        @_select_sample(e)
-
     _select_sample: (e) ->
         el = $(e.target).parent('div')
         $(el).toggleClass('selected')
-        $('#files div:not(.selected)').removeClass('primary')
-        if $('#files div.primary').length==0
-            $('#files div.selected:first').addClass('primary')
         @_update_samples()
 
     _update_samples: () ->
         cols = []
-        # Create a list of conditions that are selected, ensure the "primary" condition is first
+        # Create a list of conditions that are selected
         $('#files div.selected').each( (i, n) =>
-            rep_id = $(n).data('rep')
-            if $(n).hasClass('primary')
-                cols.unshift(rep_id)
-            else
-                cols.push(rep_id)
+            rep_name = $(n).data('rep')
+            cols.push(rep_name)
         )
         @request_dge_data(cols)
 
     _init_condition_selector: () ->
+        init_select = @settings['init_select'] || []
         $.each(@settings.replicates, (i, rep) =>
-            name = @settings.replicate_names[i]
+            name = rep[0]
             div = $("<div class='rep_#{i}'>"+
                     "  <a class='file' href='#' title='Select this condition' data-placement='right'>#{name}</a>"+
-                    "  <a class='pri' href='#' title='Make primary condition' data-placement='right'>pri</a>" +
                     "</div>")
             $("#files").append(div)
-            div.data('rep',i)
+            div.data('rep',name)
+
+            # Select those in init_select
+            if name in init_select
+                div.addClass('selected')
         )
         $("#files a.file").click((e) => @_select_sample(e))
-        $("#files a.pri").click((e) => @_select_primary(e))
-
-        # Select some samples
-        init_select = @settings['init_select'] || []
-        $.each(init_select, (i,sel) ->
-            $("div[class='rep_#{sel}']").addClass('selected')
-        )
-        $('#files div.selected:first').addClass('primary')
         @_update_samples()
 
 
@@ -313,7 +287,7 @@ init_download_link = () ->
         e.preventDefault()
         items = gene_table.get_data()
         return if items.length==0
-        cols = g_data.columns_by_type(['info','fc_calc','count'])
+        cols = g_data.columns_by_type(['info','fc_calc','count','fdr'])
         keys = cols.map((c) -> c.name)
         rows=items.map( (r) -> cols.map( (c) -> r[c.idx] ) )
         window.open("data:text/csv,"+escape(d3.csv.format([keys].concat(rows))), "file.csv")
@@ -410,8 +384,8 @@ process_kegg_data = (ec_data) ->
             opts += "<option value='#{row.code}'>#{row.title} (#{num})</option>"
     $('select#kegg').html(opts)
 
-process_dge_data = (data) ->
-    g_data = new GeneData(data, settings.columns)
+process_dge_data = (data, columns) ->
+    g_data = new GeneData(data, columns)
 
     # Setup FC "relative" pulldown
     opts = ""

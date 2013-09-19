@@ -23,23 +23,6 @@ init_table = () ->
 csv_or_tab = () -> $('.fmt:checked').val()
 
 warnings = () ->
-    $('div.id-column .help-inline').text('')
-    $('div.id-column').removeClass('error')
-
-    if mod_settings.id_column=='' || mod_settings.id_column<0
-        $('div.id-column').addClass('error')
-        $('div.id-column .help-inline').text('You must specify a unique ID column')
-    else
-        dups=false
-        ids = {}
-        $.each(asRows, (i,x) ->
-            v = x[mod_settings.id_column]
-            dups = true if ids[v]
-            ids[v]=1
-        )
-        if dups
-            $('div.id-column').addClass('error')
-            $('div.id-column .help-inline').text('ID column contains duplicates')
 
 save = () ->
     mod_settings.name = $("input.name").val()
@@ -49,6 +32,8 @@ save = () ->
     $('#saving-modal').modal({'backdrop': 'static', 'keyboard' : false})
     $('#saving-modal .modal-body').html("Saving...")
     $('#saving-modal .modal-footer').hide()
+
+    #console.log mod_settings
 
     $.ajax({
         type: "POST",
@@ -67,6 +52,8 @@ save = () ->
         $('#saving-modal #close-modal').click( () -> window.location = window.location)
      )
 
+col_id = (n) ->
+    column_keys.indexOf(n)
 
 update_data = () ->
     return if !data
@@ -86,22 +73,19 @@ update_data = () ->
     $.each(column_keys, (i, col) ->
         opts += "<option value='#{i}'>#{col}</option>"
     )
-    $('select.id-column').html("<option value=''>--- Not selected ---</option>" + opts)
-    if mod_settings.id_column>=0
-        $("select.id-column option[value='#{mod_settings.id_column}']").attr('selected','selected')
 
     $('select.ec-column').html("<option value='-1'>--- Optional ---</option>" + opts)
     if mod_settings.hasOwnProperty('ec_column')
-        $("select.ec-column option[value='#{mod_settings.ec_column}']").attr('selected','selected')
+        $("select.ec-column option[value='#{col_id mod_settings.ec_column}']").attr('selected','selected')
 
     $('select.info-columns').html(opts)
     info_columns = mod_settings.info_columns || []
-    $.each(info_columns, (i,col) -> $("select.info-columns option[value='#{i}']").attr('selected','selected'))
+    $.each(info_columns, (i,col) -> $("select.info-columns option[value='#{col_id col}']").attr('selected','selected'))
     $("select.info-columns").multiselect('refresh')
 
     $('select#hide-columns').html(opts)
     to_hide = mod_settings.hide_columns || []
-    $.each(to_hide, (i,col) -> $("select#hide-columns option[value='#{i}']").attr('selected','selected'))
+    $.each(to_hide, (i,col) -> $("select#hide-columns option[value='#{col_id col}']").attr('selected','selected'))
     $("select#hide-columns").multiselect('refresh')
 
     update_table()
@@ -109,7 +93,7 @@ update_data = () ->
     $('.condition:not(.template)').remove()
     for r in mod_settings.replicates
         [n,lst] = r
-        create_condition_widget(mod_settings.replicate_names[n] || 'Unknown', lst, n in (mod_settings['init_select'] || []))
+        create_condition_widget(n || 'Unknown', lst, n in (mod_settings['init_select'] || []))
 
 update_table = () ->
     mod_settings.hide_columns ||= []
@@ -142,7 +126,7 @@ create_condition_widget = (name, selected, is_init) ->
 
     opts = ""
     $.each(column_keys, (i, col) ->
-        sel = if i in selected then 'selected="selected"' else ''
+        sel = if col in selected then 'selected="selected"' else ''
         opts += "<option value='#{i}' #{sel}>#{col}</option>"
     )
     $("select.columns",cond).html(opts)
@@ -191,18 +175,15 @@ del_condition_widget = (e) ->
 conditions_to_settings = () ->
     c = []
     init_select = []
-    mod_settings.replicate_names = []
     $('.condition:not(.template)').each( (i,e) ->
         lst = []
-        $('select.columns option:selected',e).each( (j,opt) -> lst.push( +$(opt).val()) )
+        $('select.columns option:selected',e).each( (j,opt) -> lst.push( column_keys[+$(opt).val()]) )
         name = $('.col-name',e).val() || "Cond #{i+1}"
-        mod_settings.replicate_names.push(name)
-        c.push([i, lst])
-        init_select.push(i) if $('.init-select input',e).is(':checked')
+        c.push([name, lst])
+        init_select.push(name) if $('.init-select input',e).is(':checked')
     )
     mod_settings.replicates = c
     mod_settings.init_select = init_select
-    mod_settings.column_names = column_keys
 
 init = () ->
     reset_settings()
@@ -220,20 +201,18 @@ init = () ->
     $('#cancel').click(() -> reset_settings(); update_data())
     $('.view').attr('href', script())
 
-    $('select.id-column').change(() ->
-        mod_settings.id_column = +$("select.id-column option:selected").val()
-        warnings()
-    )
     $('select.ec-column').change(() ->
         mod_settings.ec_column = +$("select.ec-column option:selected").val()
         if mod_settings.ec_column == -1
             delete mod_settings.ec_column
+        else
+            mod_settings.ec_column = column_keys[mod_settings.ec_column]
         warnings()
     )
 
     $('select.info-columns').change(() ->
         info=[]
-        $("select.info-columns option:selected").each (i,e) -> info.push(+$(e).val())
+        $("select.info-columns option:selected").each (i,e) -> info.push(column_keys[+$(e).val()])
         mod_settings.info_columns = info
     )
     $("select.info-columns").multiselect(
@@ -243,7 +222,7 @@ init = () ->
 
     $('select#hide-columns').change(() ->
         hide=[]
-        $("select#hide-columns option:selected").each (i,e) -> hide.push(+$(e).val())
+        $("select#hide-columns option:selected").each (i,e) -> hide.push(column_keys[+$(e).val()])
         mod_settings.hide_columns = hide
         update_table()
     )

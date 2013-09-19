@@ -62,7 +62,6 @@ doQuery = do query <- getInput "query"
                Just "config" -> getPage "config.html"
                Just "csv" -> getCSV
                Just "dge" -> cached "text/csv" getDGE
-               Just "counts" -> getCounts
                Just "annot" -> cached "text/csv" getAnnot
                Just "kegg_titles" -> cached "text/csv" getKeggTitles
                Just "clustering" -> cached "text/csv" getClustering
@@ -110,13 +109,6 @@ getCSV = do
     bsLines = BS.split (BS.head "\n")
     bsUnlines = BS.intercalate "\n"
 
-getCounts :: CGI CGIResult
-getCounts = do
-    settings <- findSettings
-    setHeader "Content-type" "text/csv"
-    counts <- liftIO $ BS.readFile (get_counts_file settings)
-    outputFPS counts
-
 getJSSettings :: CGI CGIResult
 getJSSettings = do
     settings <- findSettings
@@ -137,7 +129,7 @@ getAnnot = do
     settings <- findSettings
     liftIO $ Prelude.readFile $ annotFile $ getCode settings
 
-getWithFields :: (Settings -> [Int] -> FilePath -> String) -> CGI String
+getWithFields :: (Settings -> [String] -> FilePath -> String) -> CGI String
 getWithFields act = do jsonString <- getInput "fields"
                        let flds = decode $ fromMaybe (error "No fields") jsonString
                        case flds of
@@ -243,7 +235,7 @@ instance ToText Int where toText = toText . show
 
 getCountsR :: Settings -> FilePath -> String
 getCountsR settings file =
-    let extra_cols = nub $ get_id_column settings : get_info_columns settings ++
+    let extra_cols = nub $ get_info_columns settings ++
                            maybeToList (get_ec_column settings)
     in
   T.unpack . toLazyText $ [text|
@@ -252,9 +244,9 @@ getCountsR settings file =
   write.csv(counts, file="#{file}", row.names=FALSE)
  |] ()
 
--- | Convert the array of column indexes (0-based) into an R list (1-based)
-colsToRList :: [Int] -> String
-colsToRList ls = intercalate "," . map (show . (+1)) $ ls
+-- | Convert the array of string columns to R array of string names
+colsToRList :: [String] -> String
+colsToRList ls = intercalate "," . map (\c -> "'"++c++"'") $ ls
 
 -- | Build an R list of the columns
 columns settings = let columns = concatMap snd $ get_replicates settings
@@ -271,7 +263,7 @@ design settings = "matrix(data=c("++intercalate "," (concat allCols)++")"
     allCols = map (oneCol . snd) reps
 
 -- | Build an R contrast matrix
-contMatrix :: Settings -> [Int] -> String
+contMatrix :: Settings -> [String] -> String
 contMatrix settings (c1:cs) =  "matrix(data=c("++intercalate "," (concat allCols)++")"
                   ++ ", nrow="++show (length conditions)++", ncol="++show (length cs)
                   ++ ", dimnames = list(c(), c("++colsToRList cs++")))"
@@ -287,20 +279,20 @@ initR settings =
   library(limma)
   library(edgeR)
 
-  x<-read.delim('#{get_counts_file settings}',skip=#{get_counts_skip settings}, sep="#{sep_char}")
+  x<-read.delim('#{get_counts_file settings}',skip=#{get_counts_skip settings}, sep="#{sep_char}", check.names=FALSE)
   counts <- x[,#{columns settings}]
   design <- #{design settings}
  |] ()
 
-dgeR :: Settings -> [Int] -> FilePath -> String
+dgeR :: Settings -> [String] -> FilePath -> String
 dgeR settings cs file =
-    let id_col = [get_id_column settings]
-    in T.unpack . toLazyText $ [text|
+  let count_cols = concatMap snd $ get_replicates settings
+  in T.unpack . toLazyText $ [text|
   #{initR settings}
 
   nf <- calcNormFactors(counts)
   y<-voom(counts, design, plot=FALSE,lib.size=colSums(counts)*nf)
-  y$genes <- data.frame(id=x[,#{colsToRList id_col}])
+  y$genes <- x[,#{colsToRList $ get_info_columns settings}]
 
   cont.matrix <- #{contMatrix settings cs}
 
@@ -310,23 +302,21 @@ dgeR settings cs file =
 
   out <- topTable(fit2, n=Inf)
 
-  abs_vals <- fit$coefficients[,c(#{colsToRList cs})]
-  colnames(abs_vals) <- paste("ABS", c(#{colsToRList cs}))
-  abs_vals <- data.frame(id=fit$genes[,1], abs_vals)
+  o <- 1:nrow(fit2$coef)
 
-  out2 <- merge(abs_vals, out[, c('id', 'AveExpr', 'adj.P.Val')])
+  out2 <- cbind(fit2$coef[o,], out[as.character(o), c('adj.P.Val','AveExpr')],
+                x[o, c(#{colsToRList $ get_info_columns settings ++ count_cols})] )
 
   write.csv(out2, file="#{file}", row.names=FALSE,na='')
  |] ()
 
 clusteringR settings cs file =
-    let id_col = [get_id_column settings]
-    in T.unpack . toLazyText $ [text|
+    T.unpack . toLazyText $ [text|
   #{initR settings}
 
   nf <- calcNormFactors(counts)
   y<-voom(counts, design, plot=FALSE,lib.size=colSums(counts)*nf)
-  y$genes <- data.frame(id=x[,#{colsToRList id_col}])
+  y$genes <- x[,#{colsToRList $ get_info_columns settings}]
 
   fit <- lmFit(y,design)
 
