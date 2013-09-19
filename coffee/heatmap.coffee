@@ -1,5 +1,6 @@
 class Heatmap
     constructor: (@opts) ->
+        @opts.h_pad ?= 20
         @opts.h ?= 50
         @opts.width ?= 1000
         @opts.label_width ?= 120
@@ -9,7 +10,7 @@ class Heatmap
         @svg = d3.select(@opts.elem).append('svg')
         @svg.append('g').attr("class", "labels")
         @svg.append('g').attr("class", "genes").attr("transform", "translate(#{opts.label_width},0)")
-        @svg.attr("width", @opts.width).attr("height", @opts.h * 2)
+        @svg.attr("width", @opts.width).attr("height", @opts.h * 2 + 10*@opts.h_pad)
 
 
         @redraw_scheduled = false
@@ -88,11 +89,12 @@ class Heatmap
                 row_ids[id]=num_kept
                 num_kept += 1
 
-        @svg.attr("width", @opts.width).attr("height", @opts.h * @columns.length)
+        @svg.attr("width", @opts.width).attr("height", @opts.h_pad + @opts.h * @columns.length)
         w = d3.min([@opts.h, (@opts.width - @opts.label_width) / num_kept])
 
         #console.log("max",@max,"kept",kept_data,"num", num_kept, w)
 
+        # @_create_brush(w)
 
         genes = @svg.select("#heatmap .genes").selectAll("g.gene")
                     .data(d3.values(kept_data)) #, (d) -> d.id)
@@ -104,7 +106,7 @@ class Heatmap
                      .data(((d) =>
                          res=[]
                          for i,c of @columns
-                             res.push {row:row_ids[d.id], col:i, score: d[c.idx] }
+                             res.push {row:row_ids[d.id], col:i, score: d[c.idx], id: d.id }
                          res),
                          (d) -> d.col)
         cells.enter().append("rect").attr('class','cell')
@@ -117,6 +119,36 @@ class Heatmap
 
         genes.on('mouseover', @opts.mouseover) if @opts.mouseover
         genes.on('mouseout', @opts.mouseout) if @opts.mouseout
+
+        #genes.on('mousedown', (e,l) -> console.log 'down', e,l)
+        #genes.on('mouseup', (e,l) -> console.log 'up', e,l)
+        #genes.on('mousemove', (e,l) -> console.log 'move', e,l)
+
+
+    # NOT IN USE - not sure how to get it right.  Interaction with parallel-coords?
+    _create_brush: (w) ->
+        # Create brush
+        x = d3.scale.identity().domain([0, (@opts.width - @opts.label_width)])
+        brush = d3.svg.brush()
+             .x(x)
+             #.extent([0,200])
+             #.on("brush", () -> console.log 'brushed', brush.extent())
+             .on("brushend", () =>
+                ex = brush.extent()
+                data = @svg.selectAll("rect.cell").data()
+                d = data.filter((d) -> d.col=='0' && ex[0]<=d.row*w && ex[1]>=d.row*w)
+                console.log "in range=",d)
+
+        @svg.select("g.brush").remove()
+        gBrush = @svg.append("g")
+             .attr("class", "brush")
+             .attr("transform", "translate(#{@opts.label_width},0)")
+             .call(brush)
+            # .call(brush.event)
+        gBrush.selectAll("rect")
+              .attr("height", 100*@opts.h_pad + @opts.h * @columns.length);
+
+
 
 
 
