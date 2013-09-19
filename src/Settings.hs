@@ -10,6 +10,7 @@ module Settings
     , get_replicates, get_counts_file, get_counts_skip, get_user_settings
     , get_info_columns, get_ec_column
     , is_locked, get_csv_format
+    , get_js_user_settings
     ) where
 
 import Control.Applicative
@@ -207,3 +208,10 @@ get_counts_skip s = user_settings s ^. skip
 
 get_user_settings :: Settings -> UserSettings
 get_user_settings s = user_settings s
+
+-- | Turn the user settings into JS.  Mostly just 'encode' but adds the 'locked' field from
+-- the outer object
+get_js_user_settings :: Settings -> String
+get_js_user_settings s = -- encode $ get_user_settings s
+    case showJSON $ get_user_settings s of
+      JSObject obj -> encode $ set_field obj "locked" (showJSON True)

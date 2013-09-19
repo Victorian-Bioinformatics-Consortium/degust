@@ -125,7 +125,7 @@ getJSSettings :: CGI CGIResult
 getJSSettings = do
     settings <- findSettings
     setHeader "Content-type" "application/javascript"
-    let settingStr = encode . get_user_settings $ settings
+    let settingStr = get_js_user_settings settings
     output $ "window.settings = "++settingStr++";"
                ++"window.my_code='"++codeToStr (getCode settings)++"';"
                ++"window.use_backend=true;"
