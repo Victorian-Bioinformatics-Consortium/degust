@@ -318,7 +318,8 @@ dgeR settings cs file =
 
   o <- 1:nrow(fit2$coef)
 
-  out2 <- cbind(fit2$coef[o,], out[as.character(o), c('adj.P.Val','AveExpr')],
+  out2 <- cbind(fit2$coef[o,,drop=FALSE],
+                out[as.character(o), c('adj.P.Val','AveExpr')],
                 x[o, c(#{colsToRList $ get_info_columns settings ++ count_cols})] )
 
   write.csv(out2, file="#{file}", row.names=FALSE,na='')
