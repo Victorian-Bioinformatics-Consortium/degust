@@ -25,12 +25,15 @@ class GeneData
 
     # Ensure numbers are numbers!
     # Add an "id" to each row.
+    # Put smallest FDR first, want these *on top* of PC charts
     _process_data: () ->
         for d,i in @data
             d.id = i if !d.id?
             for c in @columns
                 if c.type in ['fc','abs','avg','fdr','count']
                     d[c.idx] = +d[c.idx]
+        fdr_col = @column_by_type('fdr')
+        @data.sort((a,b) -> a[fdr_col] - b[fdr_col])
         null
 
     _calc_fc: () ->

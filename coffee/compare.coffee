@@ -450,7 +450,6 @@ update_flags = () ->
 
 # Called whenever the data is changed, or the "checkboxes" are modified
 update_data = () ->
-    debugger
     update_flags()
 
     # Set the 'relative' column

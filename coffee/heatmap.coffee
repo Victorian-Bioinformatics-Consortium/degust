@@ -137,7 +137,8 @@ class Heatmap
                 ex = brush.extent()
                 data = @svg.selectAll("rect.cell").data()
                 d = data.filter((d) -> d.col=='0' && ex[0]<=d.row*w && ex[1]>=d.row*w)
-                console.log "in range=",d)
+                #console.log "in range=",d
+                )
 
         @svg.select("g.brush").remove()
         gBrush = @svg.append("g")
