@@ -187,7 +187,7 @@ conditions_to_settings = () ->
 
 init = () ->
     reset_settings()
-    d3.text(script("query=csv"), "text/csv", (dat,err) ->
+    d3.text(script("query=csv"), "text/csv", (err,dat) ->
         if err
             $('div.container').text("ERROR : #{err}")
             return
