@@ -65,7 +65,7 @@ window.scheduler = new ScheduleTasks()
 
 
 
-setup_about_modal = () ->
+window.setup_about_modal = () ->
     html = "<div id='about-modal' class='modal hide fade' tabindex='-1' role='dialog' aria-labelledby='myModalLabel' aria-hidden='true'>
       <div class='modal-header'>
         <button type='button' class='close' data-dismiss='modal' aria-hidden='true'>x</button>
@@ -89,5 +89,3 @@ setup_about_modal = () ->
     </div>"
 
     $('#about-modal').replaceWith(html)
-
-$(document).ready(() -> setup_about_modal() )

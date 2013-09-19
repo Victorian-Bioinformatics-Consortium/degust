@@ -239,6 +239,6 @@ init = () ->
 
     $('.del-condition').click(del_condition_widget)
 
-
+$(document).ready(() -> setup_about_modal() )
 $(document).ready(() -> init() )
 $(document).ready(() -> $('[title]').tooltip())
