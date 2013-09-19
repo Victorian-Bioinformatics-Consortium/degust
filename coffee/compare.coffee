@@ -20,7 +20,7 @@ class WithoutBackend
 
     request_init_data: () ->
         start_loading()
-        d3.text(@settings.csv_file, "text/csv", (dat,err) =>
+        d3.text(@settings.csv_file, "text/csv", (err,dat) =>
             msg_info("Downloaded csv",dat,err)
             if err
                 msg_error(err)
@@ -51,7 +51,7 @@ class WithBackend
         @_init_condition_selector()
 
     request_kegg_data: (callback) ->
-        d3.tsv(@_script('query=kegg_titles'), (ec_data,err) ->
+        d3.tsv(@_script('query=kegg_titles'), (err,ec_data) ->
             msg_info("Downloaded kegg : rows=#{ec_data.length}",ec_data,err)
             callback(ec_data)
         )
@@ -62,7 +62,7 @@ class WithBackend
         # load csv file and create the chart
         req = @_script("query=dge&fields=#{JSON.stringify columns}")
         start_loading()
-        d3.csv(req, (data, err) =>
+        d3.csv(req, (err, data) =>
             msg_info("Downloaded DGE : rows=#{data.length}",data,err)
             done_loading()
 
@@ -82,13 +82,14 @@ class WithBackend
 
             @process_dge_data(data, data_cols)
 
-            if data.length<5000
-                req = @_script("query=clustering&fields=#{JSON.stringify columns}")
-                d3.csv(req, (data,err) ->
-                    msg_info("Downloaded clustering : rows=#{data.length}",data,err)
-                    heatmap.set_order(data.map((d) -> d.id))
-                    heatmap.schedule_update()
-                )
+            # Disable backend clustering for now - FIXME
+            # if data.length<5000
+            #     req = @_script("query=clustering&fields=#{JSON.stringify columns}")
+            #     d3.csv(req, (err, data) ->
+            #         msg_info("Downloaded clustering : rows=#{data.length}",data,err)
+            #         heatmap.set_order(data.map((d) -> d.id))
+            #         heatmap.schedule_update()
+            #     )
         )
 
     _script: (params) ->
