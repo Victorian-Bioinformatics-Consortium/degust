@@ -397,7 +397,7 @@ process_dge_data = (data, columns) ->
     opts = ""
     for col,i in g_data.columns_by_type(['fc','primary'])
         opts += "<option value='#{i}'>#{html_escape col.name}</option>"
-    opts += "<option value='-1'>Average</option>"
+    opts += "<option value='-1' selected>Average</option>"
     $('select#fc-relative').html(opts)
 
     if g_data.column_by_type('ec') == null
