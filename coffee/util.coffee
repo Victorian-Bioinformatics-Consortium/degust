@@ -89,6 +89,5 @@ setup_about_modal = () ->
     </div>"
 
     $('#about-modal').replaceWith(html)
-    console.log "replaced!"
 
 $(document).ready(() -> setup_about_modal() )

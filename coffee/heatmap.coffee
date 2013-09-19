@@ -75,6 +75,7 @@ class Heatmap
         @_calc_order() if @data.length<4000
 
     update_data: (@data) ->
+        @_calc_order() if @data.length<4000
         @redraw_scheduled = false
         @svg.attr('opacity',1)
         kept_data = {}

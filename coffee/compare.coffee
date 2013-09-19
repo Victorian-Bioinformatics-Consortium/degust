@@ -75,6 +75,8 @@ class WithBackend
             )
             data_cols.push({idx: 'adj.P.Val', name: 'FDR', type: 'fdr'})
             data_cols.push({idx: 'AveExpr', name: 'AveExpr', type: 'avg'})
+            if settings.ec_column?
+                data_cols.push({idx: settings.ec_column, name: 'EC', type: 'ec'})
             settings.replicates.forEach(([name,reps]) ->
                 reps.forEach((rep) ->
                     data_cols.push({idx: rep, name: rep, type: 'count', parent: name})
@@ -418,6 +420,7 @@ process_kegg_data = (ec_data) ->
         if num>0
             opts += "<option value='#{row.code}'>#{row.title} (#{num})</option>"
     $('select#kegg').html(opts)
+    $('.kegg-filter').show()
 
 process_dge_data = (data, columns) ->
     g_data = new GeneData(data, columns)

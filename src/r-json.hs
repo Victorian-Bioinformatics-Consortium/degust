@@ -300,7 +300,9 @@ initR settings =
 
 dgeR :: Settings -> [String] -> FilePath -> String
 dgeR settings cs file =
-  let count_cols = concatMap snd $ get_replicates settings
+  let export_cols =  get_info_columns settings
+                     ++ concatMap snd (get_replicates settings)
+                     ++ maybeToList (get_ec_column settings)
   in T.unpack . toLazyText $ [text|
   #{initR settings}
 
@@ -320,7 +322,7 @@ dgeR settings cs file =
 
   out2 <- cbind(fit2$coef[o,,drop=FALSE],
                 out[as.character(o), c('adj.P.Val','AveExpr')],
-                x[o, c(#{colsToRList $ get_info_columns settings ++ count_cols})] )
+                x[o, c(#{colsToRList export_cols})] )
 
   write.csv(out2, file="#{file}", row.names=FALSE,na='')
  |] ()
