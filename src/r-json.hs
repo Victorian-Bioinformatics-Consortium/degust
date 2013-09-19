@@ -14,7 +14,7 @@ import Data.Maybe (fromJust,fromMaybe,maybeToList)
 import Data.List
 import Data.List.Split
 import Network.CGI
-import Control.Monad (when)
+import Control.Monad (when,filterM)
 import Control.Concurrent (forkIO)
 import Control.Concurrent.MVar (newEmptyMVar,putMVar,readMVar,MVar)
 import System.IO.Unsafe (unsafePerformIO)
@@ -23,7 +23,7 @@ import System.Exit (ExitCode(..))
 import qualified System.IO.Strict as SIO (run, hGetContents, readFile)
 import System.IO (openTempFile, hClose, hPutStr, hPutStrLn, stderr)
 import System.Process
-import System.Directory (removeFile)
+import System.Directory (removeFile, doesFileExist, getModificationTime, getDirectoryContents)
 import Text.Shakespeare.Text
 import Text.Hamlet
 import Data.Text.Lazy.Encoding
@@ -37,6 +37,8 @@ import Text.Printf
 
 import Data.ByteString.Lazy (pack)
 import Data.Digest.Pure.MD5 (md5)
+
+import System.Environment (getProgName)
 
 import Utils
 import Settings
@@ -69,15 +71,25 @@ doQuery = do query <- getInput "query"
                Just "save" -> saveSettings
                x -> let msg = "Unknown query : "++show x in logMsg msg >> outputNotFound msg
 
-hash key = show . md5 . pack . map (fromIntegral . fromEnum) . show $ key
+hash :: String -> String
+hash key = show . md5 . pack . map (fromIntegral . fromEnum) $ key
 
-cached :: (MonadIO m, MonadCGI m) => String -> m String -> m CGIResult
+newest_file_time :: IO String
+newest_file_time = do
+  ts <- mapM getModificationTime =<< filterM doesFileExist =<< getDirectoryContents "."
+  -- hPrintf stderr "%s\n" (show . maximum $ ts)
+  return $ show . maximum $ ts
+
+cached :: String -> CGI String -> CGI CGIResult
 cached typ act = do
   inputs <- getInputs
-  let cache_file = "cached/"++hash inputs
+  settings <- findSettings
+  newest <- liftIO newest_file_time
+  let cache_file = "cached/"++hash (show inputs ++ show settings ++ newest)
   out <- liftIO $ getFile cache_file
   out2 <- case out of
-            Right out -> return out
+            Right out -> do -- liftIO $ hPutStrLn stderr $ "using cache"
+                            return out
             Left err -> do -- liftIO $ putStrLn $ "cache : "++show err
                      out <- act
                      liftIO $ when (not $ null out) $ writeFile cache_file out
