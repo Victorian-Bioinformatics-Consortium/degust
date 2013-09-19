@@ -308,7 +308,6 @@ dgeR settings cs file =
 
   nf <- calcNormFactors(counts)
   y<-voom(counts, design, plot=FALSE,lib.size=colSums(counts)*nf)
-  y$genes <- x[,#{colsToRList $ get_info_columns settings}]
 
   cont.matrix <- #{contMatrix settings cs}
 
@@ -333,7 +332,6 @@ clusteringR settings cs file =
 
   nf <- calcNormFactors(counts)
   y<-voom(counts, design, plot=FALSE,lib.size=colSums(counts)*nf)
-  y$genes <- x[,#{colsToRList $ get_info_columns settings}]
 
   fit <- lmFit(y,design)
 

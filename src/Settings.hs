@@ -64,7 +64,7 @@ instance JSON Settings where
                                        <*> valFromObj "remote_addr" obj
                                        <*> valFromObj "created" obj
                                        <*> valFromObj "user_settings" obj
-                                       <*> return False
+                                       <*> valFromObj "locked" obj
     readJSON _ = Error "Expect object"
 
     -- showJSON :: Settings -> JSValue
