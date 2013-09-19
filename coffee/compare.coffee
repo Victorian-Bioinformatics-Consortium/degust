@@ -142,10 +142,12 @@ colour_by_pval = (col) ->
     (d) -> blue_to_brown(d[col])
 
 parcoords = null
+ma_plot = null
+expr_plot = null    # Actually parcoords OR ma_plot depending which is active
+
 gene_table = null
 kegg = null
 heatmap = null
-maplot = null
 
 g_data = null
 g_backend = null
@@ -167,16 +169,16 @@ kegg_mouseover = (obj) ->
     return if ec_col==null
     for row in g_data.get_data()
         rows.push(row) if row[ec_col] == ec
-    parcoords.highlight(rows)
+    expr_plot.highlight(rows)
 
 # highlight parallel coords (and/or kegg)
 gene_table_mouseover = (item) ->
-    parcoords.highlight([item])
+    expr_plot.highlight([item])
     ec_col = g_data.column_by_type('ec')
     kegg.highlight(item[ec_col])
 
 gene_table_mouseout = () ->
-    parcoords.unhighlight()
+    expr_plot.unhighlight()
     $('#gene-info').html('')
     kegg.unhighlight()
 
@@ -184,19 +186,35 @@ gene_table_dblclick = (item) ->
     window.open("http://www.ncbi.nlm.nih.gov/protein?term=#{item.id}", '_blank')
     window.focus()
 
-init_charts = () ->
-    parcoords = new ParCoords({elem: '#dge-pc', filter: parcoords_filter})
+activate_parcoords = () ->
+    expr_plot = parcoords
+    $('#dge-ma').hide()
+    $('#dge-pc').show()
+    $('#select-pc').addClass('active')
+    $('#select-ma').removeClass('active')
+    update_data()
+
+activate_ma_plot = () ->
+    expr_plot = ma_plot
     $('#dge-pc').hide()
-    maplot = new MAPlot({elem: '#dge-ma', filter: parcoords_filter})
+    $('#dge-ma').show()
+    $('#select-ma').addClass('active')
+    $('#select-pc').removeClass('active')
+    update_data()
+
+init_charts = () ->
+    parcoords = new ParCoords({elem: '#dge-pc', filter: expr_filter})
+    ma_plot = new MAPlot({elem: '#dge-ma', filter: expr_filter})
+
     gene_table = new GeneTable({elem: '#grid', elem_info: '#grid-info', sorter: do_sort, mouseover: gene_table_mouseover, mouseout: gene_table_mouseout, dblclick: gene_table_dblclick, filter: gene_table_filter})
-    kegg = new Kegg({elem: 'div#kegg-image', mouseover: kegg_mouseover, mouseout: () -> parcoords.unhighlight()})
+    kegg = new Kegg({elem: 'div#kegg-image', mouseover: kegg_mouseover, mouseout: () -> expr_plot.unhighlight()})
 
     # update grid on brush
     parcoords.on("brush", (d) ->
         gene_table.set_data(d)
         heatmap.schedule_update(d)
     )
-    maplot.on("brush", (d) ->
+    ma_plot.on("brush", (d) ->
         gene_table.set_data(d)
         heatmap.schedule_update(d)
     )
@@ -206,13 +224,13 @@ init_charts = () ->
         elem: '#heatmap'
         width: $('.container').width()
         mouseover: (d) ->
-            parcoords.highlight([d])
+            expr_plot.highlight([d])
             msg = ""
             for col in g_data.columns_by_type(['info'])
               msg += "<span class='lbl'>#{col.name}: </span><span>#{d[col.idx]}</span>"
             $('#heatmap-info').html(msg)
         mouseout:  (d) ->
-            parcoords.unhighlight()
+            expr_plot.unhighlight()
             $('#heatmap-info').html("")
     )
 
@@ -270,7 +288,7 @@ gene_table_filter = (item) ->
     false
 
 # Filter to decide which rows to plot on the parallel coordinates widget
-parcoords_filter = (row) ->
+expr_filter = (row) ->
     if fcThreshold>0
         keep = false
         col_type = 'fc_calc'
@@ -307,6 +325,9 @@ init_download_link = () ->
         window.open("data:text/csv,"+escape(d3.csv.format([keys].concat(rows))), "file.csv")
     )
 
+redraw_plot = () ->
+    expr_plot.brush()
+
 init_slider = () ->
     # wire up the slider to apply the filter to the model
     new Slider(
@@ -321,7 +342,7 @@ init_slider = () ->
              Slick.GlobalEditorLock.cancelCurrentEdit()
              if (fdrThreshold != v)
                window.clearTimeout(h_runfilters)
-               h_runfilters = window.setTimeout((() -> parcoords.brush()), 10)
+               h_runfilters = window.setTimeout(redraw_plot, 10)
                fdrThreshold = v
     )
     new Slider(
@@ -336,7 +357,7 @@ init_slider = () ->
              Slick.GlobalEditorLock.cancelCurrentEdit()
              if (fcThreshold != v)
                window.clearTimeout(h_runfilters)
-               h_runfilters = window.setTimeout((() -> parcoords.brush()), 10)
+               h_runfilters = window.setTimeout(redraw_plot, 10)
                fcThreshold = v
     )
     $('#fc-relative').change((e) ->
@@ -418,13 +439,18 @@ process_dge_data = (data, columns) ->
     else
         $('.show-counts-opt').show()
 
-    update_data()
+
+    if g_data.columns_by_type(['fc','primary']).length>2
+        activate_parcoords()
+    else
+        activate_ma_plot()
 
 update_flags = () ->
     show_counts = $('#show-counts-cb').is(":checked")
 
 # Called whenever the data is changed, or the "checkboxes" are modified
 update_data = () ->
+    debugger
     update_flags()
 
     # Set the 'relative' column
@@ -441,17 +467,20 @@ update_data = () ->
     color = colour_by_pval(pval_col)
 
     extent = ParCoords.calc_extent(g_data.get_data(), dims)
-    parcoords.update_data(g_data.get_data(), dims, extent, color)
-    maplot.update_data(g_data.get_data(), g_data.columns_by_type('fc'), g_data.columns_by_type('avg'), color)
+
+    if expr_plot == parcoords
+        parcoords.update_data(g_data.get_data(), dims, extent, color)
+    else if expr_plot == ma_plot
+        ma_plot.update_data(g_data.get_data(), g_data.columns_by_type('fc'), g_data.columns_by_type('avg'), color)
 
     set_gene_table(g_data.get_data())
 
     # Update the heatmap
-    heatmap.update_columns(dims, extent, pval_col)
     heatmap.schedule_update(g_data.get_data())
+    heatmap.update_columns(dims, extent, pval_col)
 
-    # Ensure the parcoords brush callbacks are called (updates heatmap & table)
-    parcoords.brush()
+    # Ensure the brush callbacks are called (updates heatmap & table)
+    expr_plot.brush()
 
 init = () ->
     g_data = new GeneData([],[])
@@ -467,6 +496,9 @@ init = () ->
     fcThreshold  = settings['fcThreshold']  if settings['fcThreshold'] != undefined
 
     $("select#kegg").change(kegg_selected)
+
+    $('#select-pc a').click(() -> activate_parcoords())
+    $('#select-ma a').click(() -> activate_ma_plot())
 
     init_charts()
     init_search()

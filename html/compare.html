@@ -107,7 +107,10 @@
 
         <div class='span6' id='expression'>
           <div id='loading'><img src='images/ajax-loader.gif'></div>
-          <h3 title='Plot of log FC for each sample.  Click & drag on axes to select range.  Drag axis title to reorder columns' data-placement='bottom'>Expression</h3>
+          <ul class="nav nav-tabs">
+            <li id='select-pc'><a href="#">Expression : Parallel Coordinates</a></li>
+            <li id='select-ma'><a href="#">Expression : MA plot</a></li>
+          </ul>
           <div id="dge-pc" class="parcoords"></div>
           <div id="dge-ma" class="parcoords"></div>
         </div>

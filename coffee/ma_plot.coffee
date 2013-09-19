@@ -36,11 +36,11 @@ class MAPlot
                   .orient("left")
                   .ticks(5)
 
-        @brush = d3.svg.brush()
+        @mybrush = d3.svg.brush()
           .x(xScale)
           .y(yScale)
           .on("brush",  () => @_brushed())
-        @svg.call(@brush)
+        @svg.call(@mybrush)
 
         dots = @svg.selectAll("circle")
                    .data(data)
@@ -51,7 +51,7 @@ class MAPlot
             .attr("cy", (d) -> yScale(m_dim(d)))
             .on('mouseover', (d) -> console.log(d,m_dim(d),a_dim(d)))
         dots.style('fill', coloring) if coloring
-
+        @_hide_dots(dots)
 
         @svg.append("g")
             .attr("class", "axis")
@@ -63,27 +63,33 @@ class MAPlot
             .attr("transform", "translate(" + @opts.padding + ",0)")
             .call(yAxis)
 
+    _hide_dots: (dots) ->
+        dots.style('opacity', (d) => if @opts.filter(d) then 0.7 else 0.05)
+
     _brushed: () ->
         sel = @_selected()
-        console.log 'brushed', sel
+        #console.log 'brushed', sel
         @dispatch.brush(sel)
 
     _selected: () ->
-        if @brush.empty()
-            @data
+        if @mybrush.empty()
+            @data.filter((d) => @opts.filter(d))
         else
-            ex = @brush.extent()
+            ex = @mybrush.extent()
             @data.filter((d) =>
                                 y = @m_dim(d)
                                 x = @a_dim(d)
-                                x>=ex[0][0] && x<=ex[1][0] && y>=ex[0][1] && y<=ex[1][1]
+                                @opts.filter(d) && x>=ex[0][0] && x<=ex[1][0] && y>=ex[0][1] && y<=ex[1][1]
                         )
 
     # These methods just pass through
     highlight: (d) ->
+        console.log d
     unhighlight: () ->
     on: (t,func) -> @dispatch.on(t, func)
     brush: () ->
+        @_hide_dots(@svg.selectAll("circle"))
+        @_brushed()
 
 
 window.MAPlot = MAPlot
