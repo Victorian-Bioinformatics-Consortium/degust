@@ -74,6 +74,11 @@ class WithBackend
                 pri=false
             )
             data_cols.push({idx: 'adj.P.Val', name: 'FDR', type: 'fdr'})
+            settings.replicates.forEach(([name,reps]) ->
+                reps.forEach((rep) ->
+                    data_cols.push({idx: rep, name: rep, type: 'count', parent: name})
+                )
+            )
 
             @process_dge_data(data, data_cols)
 
