@@ -72,10 +72,12 @@ class Heatmap
             .attr("text-anchor", "end")
             .text((d) -> d.name)
 
-        @_calc_order() if @data.length<4000
-
     update_data: (@data) ->
-        @_calc_order() if @data.length<4000
+        if @data.length<4000
+            @_calc_order()
+        else
+            @order = null
+
         @redraw_scheduled = false
         @svg.attr('opacity',1)
         kept_data = {}
@@ -105,6 +107,9 @@ class Heatmap
 
         cells = genes.selectAll(".cell")
                      .data(((d) =>
+                         if !row_ids[d.id]?
+                             msg_info("missing row_ids[#{d.id}]")
+                             return
                          res=[]
                          for i,c of @columns
                              res.push {row:row_ids[d.id], col:i, score: d[c.idx], id: d.id }
