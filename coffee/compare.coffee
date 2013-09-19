@@ -488,7 +488,8 @@ update_data = () ->
         ma_fc = g_data.columns_by_type(['fc','primary'])[ma_fc].name
         col = g_data.columns_by_type('fc_calc').filter((c) -> c.name == ma_fc)
         msg_error("Can't find proper column for MA-plot") if col.length!=1
-        ma_plot.update_data(g_data.get_data(), col, g_data.columns_by_type('avg'), color)
+        ma_plot.update_data(g_data.get_data(), col, g_data.columns_by_type('avg'),
+                            color, g_data.columns_by_type('info'))
 
     set_gene_table(g_data.get_data())
 

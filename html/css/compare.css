@@ -40,7 +40,7 @@ div.filter { font-size: 8pt; border: 1px solid #aaa; border-radius: 5px; backgro
 .filter label, .filter input, .filter select { display: inline-block; font-size: 8pt; }
 .filter label { width: 70px; text-align: right; }
 .filter input { width: 50px; }
-.kegg-filter { display: none; } 
+.kegg-filter { display: none; }
 #fdrSlider, #fcSlider { display: inline-block; width: 50px; margin: 0 10px; font-size: 8pt}
 #fc-relative, #ma-fc-col { width: 115px; height: auto; }
 .filter input.error { background-color: #fbb; }
@@ -62,8 +62,23 @@ div.filter { font-size: 8pt; border: 1px solid #aaa; border-radius: 5px; backgro
 #heatmap .extent {
   fill: #990;
   fill-opacity: .2;
-  stroke: #fff;
+  stroke: #000;
 }
 
 .ui-dialog .ui-state-hover { border: 0; }
 
+#dge-ma div.tooltip {
+  position: absolute;
+  text-align: center;
+  padding: 2px;
+  font: 12px sans-serif;
+  background: #333;
+  color: #fff;
+  border: 0px;
+  border-radius: 8px;
+  pointer-events: none;
+}
+#dge-ma div.tooltip table {
+  font: 12px sans-serif;
+  color: #fff;
+}
