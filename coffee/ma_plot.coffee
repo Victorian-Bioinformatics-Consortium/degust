@@ -5,6 +5,8 @@ class MAPlot
         @opts.padding ?= 20
 
         @svg = d3.select(@opts.elem).append('svg')
+        @gDot = @svg.append('g')
+        @gHighlight = @svg.append('g')
         @svg.attr("width", @opts.width).attr("height", @opts.height)
 
         # Create a custom 'brush' event.  This will allow same API as par-coords
@@ -16,6 +18,7 @@ class MAPlot
             msg_info("Only support 2 dimensions for ma-plot",fc_dim,ave_dim)
             return
 
+        @svg.select("g.brush").remove()
         @svg.selectAll(".axis").remove()
 
         #m_dim = (d) -> d[dims[0].idx]-d[dims[1].idx]
@@ -45,14 +48,13 @@ class MAPlot
           .on("brush",  () => @_brushed())
         @svg.call(@mybrush)
 
-        dots = @svg.selectAll("circle")
-                   .data(data)
-        dots.enter().append("circle")
+        dots = @gDot.selectAll("circle")
+                    .data(data, (d) -> d.id)
+        dots.enter().append("circle").on('mouseover', (d) -> console.log(d,m_dim(d),a_dim(d)))
         dots.exit().remove()
         dots.attr("r", 3)
             .attr("cx", (d) -> xScale(a_dim(d)))
             .attr("cy", (d) -> yScale(m_dim(d)))
-            .on('mouseover', (d) -> console.log(d,m_dim(d),a_dim(d)))
         dots.style('fill', coloring) if coloring
         @_hide_dots(dots)
 
@@ -87,7 +89,7 @@ class MAPlot
 
     # These methods just pass through
     highlight: (rows) ->
-        hi = @svg.selectAll(".highlight")
+        hi = @gHighlight.selectAll(".highlight")
                  .data(rows, (d) -> d.id)
         hi.exit().remove()
         hi.enter().insert("circle")
