@@ -21,10 +21,10 @@ class MAPlot
         @m_dim = m_dim = (d) -> d[fc_dim[0].idx]
         @a_dim = a_dim = (d) -> d[ave_dim[0].idx]
 
-        xScale = d3.scale.linear()
+        @xScale = xScale = d3.scale.linear()
                      .domain(d3.extent(data, (d) -> a_dim(d)).map((x) -> x*1.05))
                      .range([@opts.padding, @opts.width-@opts.padding]);
-        yScale = d3.scale.linear()
+        @yScale = yScale = d3.scale.linear()
                      .domain(d3.extent(data, (d) -> m_dim(d)).map((x) -> x*1.05))
                      .range([@opts.height-@opts.padding, @opts.padding]);
 
@@ -39,6 +39,7 @@ class MAPlot
         @mybrush = d3.svg.brush()
           .x(xScale)
           .y(yScale)
+          .clamp([false,false])
           .on("brush",  () => @_brushed())
         @svg.call(@mybrush)
 
@@ -83,10 +84,29 @@ class MAPlot
                         )
 
     # These methods just pass through
-    highlight: (d) ->
-        console.log d
+    highlight: (rows) ->
+        hi = @svg.selectAll(".highlight")
+                 .data(rows, (d) -> d.id)
+        hi.exit().remove()
+        hi.enter().insert("circle")
+            .attr("class", "highlight")
+            .attr("opacity", 1)
+            .style("fill-opacity", 0)
+            .style("stroke", "black")
+            .style("stroke-width", 3)
+
+        hi.attr("r", 15)
+          .attr("cx", (d) => @xScale(@a_dim(d)))
+          .attr("cy", (d) => @yScale(@m_dim(d)))
+          .transition().duration(500)
+          .attr("r", 7);
+
     unhighlight: () ->
-    on: (t,func) -> @dispatch.on(t, func)
+        @svg.selectAll(".highlight").remove()
+
+    on: (t,func) ->
+        @dispatch.on(t, func)
+
     brush: () ->
         @_hide_dots(@svg.selectAll("circle"))
         @_brushed()
