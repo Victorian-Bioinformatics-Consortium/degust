@@ -1,3 +1,5 @@
+window.dge_vis_version = '0.5'
+
 window.msg_error = (msg,rest...) ->
     $('div.container').text("ERROR : #{msg}")
     if rest.length>0
@@ -57,3 +59,36 @@ class ScheduleTasks
 
 
 window.scheduler = new ScheduleTasks()
+
+
+
+
+
+
+setup_about_modal = () ->
+    html = "<div id='about-modal' class='modal hide fade' tabindex='-1' role='dialog' aria-labelledby='myModalLabel' aria-hidden='true'>
+      <div class='modal-header'>
+        <button type='button' class='close' data-dismiss='modal' aria-hidden='true'>x</button>
+        <h3 id='myModalLabel'>About DGE-Vis</h3>
+      </div>
+      <div class='modal-body'>
+        <p>DGE-Vis : Visualize and explore RNA-seq differential gene-expression data.</p>
+        <p>Version : #{dge_vis_version}</p>
+        <p>Visit the <a href='http://vicbioinformatics.com/software.dge-vis.shtml'>DGE-Vis project page</a>,
+           or the <a href='https://github.com/Victorian-Bioinformatics-Consortium/dge-vis'>source code on GitHub</a>
+        </p>
+        <div>Written by <a href='http://thunking.drp.id.au/'>David R. Powell</a></div>
+        <div class='supported-by'>
+          Supported by <a href='http://vicbioinformatics.com/'>Victorian Bioinformatics Consortium, Monash University</a>
+          and <a href='http://www.vlsci.org.au/lscc'>VLSCI\'s Life Sciences Computation Centre</a>
+        </div>
+      </div>
+      <div class='modal-footer'>
+        <button class='btn btn-primary' data-dismiss='modal' aria-hidden='true'>Close</button>
+      </div>
+    </div>"
+
+    $('#about-modal').replaceWith(html)
+    console.log "replaced!"
+
+$(document).ready(() -> setup_about_modal() )

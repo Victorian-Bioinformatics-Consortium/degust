@@ -1,0 +1,4 @@
+v0.5
+  * Added MA-plot
+  * Better data model handling.  Should be easier to support different formats, and
+    to configure standalone
