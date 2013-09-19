@@ -7,6 +7,17 @@
 
 #dge-pc { height: 250px; }
 
+#dge-ma { height: 330px; }
+#dge-ma .axis text {
+    font-family: sans-serif;
+    font-size: 9px;
+}
+#dge-ma .extent {
+  fill: #000;
+  fill-opacity: .2;
+  stroke: #fff;
+}
+
 #grid { height: 300px; }
 #grid-info { font-size: 9pt; }
 .tab-search { font-size: 9pt; float: right; margin-top: -10px; }

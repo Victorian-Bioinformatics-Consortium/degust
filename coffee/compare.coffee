@@ -74,6 +74,7 @@ class WithBackend
                 pri=false
             )
             data_cols.push({idx: 'adj.P.Val', name: 'FDR', type: 'fdr'})
+            data_cols.push({idx: 'AveExpr', name: 'AveExpr', type: 'avg'})
             settings.replicates.forEach(([name,reps]) ->
                 reps.forEach((rep) ->
                     data_cols.push({idx: rep, name: rep, type: 'count', parent: name})
@@ -192,6 +193,10 @@ init_charts = () ->
 
     # update grid on brush
     parcoords.on("brush", (d) ->
+        gene_table.set_data(d)
+        heatmap.schedule_update(d)
+    )
+    maplot.on("brush", (d) ->
         gene_table.set_data(d)
         heatmap.schedule_update(d)
     )
@@ -437,7 +442,7 @@ update_data = () ->
 
     extent = ParCoords.calc_extent(g_data.get_data(), dims)
     parcoords.update_data(g_data.get_data(), dims, extent, color)
-    maplot.update_data(g_data.get_data(), g_data.columns_by_type('expr'), color)
+    maplot.update_data(g_data.get_data(), g_data.columns_by_type('fc'), g_data.columns_by_type('avg'), color)
 
     set_gene_table(g_data.get_data())
 
