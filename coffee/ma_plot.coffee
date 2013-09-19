@@ -16,6 +16,8 @@ class MAPlot
             msg_info("Only support 2 dimensions for ma-plot",fc_dim,ave_dim)
             return
 
+        @svg.selectAll(".axis").remove()
+
         #m_dim = (d) -> d[dims[0].idx]-d[dims[1].idx]
         #a_dim = (d) -> d[dims[0].idx]+d[dims[1].idx]
         @m_dim = m_dim = (d) -> d[fc_dim[0].idx]
@@ -65,7 +67,7 @@ class MAPlot
             .call(yAxis)
 
     _hide_dots: (dots) ->
-        dots.style('opacity', (d) => if @opts.filter(d) then 0.7 else 0.05)
+        dots.style('opacity', (d) => if @opts.filter(d) then 0.7 else 0)
 
     _brushed: () ->
         sel = @_selected()

@@ -194,6 +194,7 @@ activate_parcoords = () ->
     $('#dge-pc').show()
     $('#select-pc').addClass('active')
     $('#select-ma').removeClass('active')
+    $('.ma-fc-col-opt').hide()
     update_data()
 
 activate_ma_plot = () ->
@@ -202,6 +203,7 @@ activate_ma_plot = () ->
     $('#dge-ma').show()
     $('#select-ma').addClass('active')
     $('#select-pc').removeClass('active')
+    $('.ma-fc-col-opt').show()
     update_data()
 
 init_charts = () ->
@@ -365,6 +367,9 @@ init_slider = () ->
     $('#fc-relative').change((e) ->
         update_data()
     )
+    $('#ma-fc-col').change((e) ->
+        update_data()
+    )
     $('#show-counts-cb').on("click", (e) ->
         update_flags()
         gene_table.invalidate()
@@ -432,6 +437,12 @@ process_dge_data = (data, columns) ->
     opts += "<option value='-1' selected>Average</option>"
     $('select#fc-relative').html(opts)
 
+    # Setup MA-plot pulldown
+    opts = ""
+    for col,i in g_data.columns_by_type(['fc','primary'])
+        opts += "<option value='#{i}'>#{html_escape col.name}</option>"
+    $('select#ma-fc-col').html(opts)
+
     if g_data.column_by_type('ec') == null
         $('.kegg-filter').hide()
     else if !requested_kegg
@@ -473,7 +484,11 @@ update_data = () ->
     if expr_plot == parcoords
         parcoords.update_data(g_data.get_data(), dims, extent, color)
     else if expr_plot == ma_plot
-        ma_plot.update_data(g_data.get_data(), g_data.columns_by_type('fc'), g_data.columns_by_type('avg'), color)
+        ma_fc = $('select#ma-fc-col option:selected').val()
+        ma_fc = g_data.columns_by_type(['fc','primary'])[ma_fc].name
+        col = g_data.columns_by_type('fc_calc').filter((c) -> c.name == ma_fc)
+        msg_error("Can't find proper column for MA-plot") if col.length!=1
+        ma_plot.update_data(g_data.get_data(), col, g_data.columns_by_type('avg'), color)
 
     set_gene_table(g_data.get_data())
 
