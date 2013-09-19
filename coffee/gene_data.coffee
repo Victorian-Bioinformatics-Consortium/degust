@@ -14,7 +14,7 @@ class GeneData
     constructor: (@data,@columns) ->
         @columns_by_type_cache = {}
         @_process_data()
-        @set_relative( @columns_by_type('primary')[0] )
+        @set_relative( 'avg' )
         msg_debug 'data',@data
 
 
@@ -59,7 +59,6 @@ class GeneData
                                      d[@relative.idx]
                             v1-v2
                     )
-
         @columns = new_cols
         for d in @data
             for col in @columns
