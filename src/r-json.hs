@@ -180,7 +180,7 @@ doUpload = do
     chkLines txt = let n = length $ T.lines txt
                    in if n<10
                       then Just "Too few lines in the file"
-                      else if n>40000
+                      else if n>70000
                            then Just "Too many lines in the file"
                            else Nothing
 
