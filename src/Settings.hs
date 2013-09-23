@@ -10,7 +10,7 @@ module Settings
     , get_replicates, get_counts_file, get_counts_skip, get_user_settings
     , get_info_columns, get_ec_column
     , is_locked, get_csv_format
-    , get_js_user_settings
+    , get_js_user_settings, get_min_counts
     ) where
 
 import Control.Applicative
@@ -45,6 +45,7 @@ data UserSettings =
                , _csv_format :: Bool  -- ^ True for CSV, False for TAB
                , _hide :: [String] -- ^ Used in the frontend to hide some columns
                , _title :: String -- ^ Title to use in UI
+               , _min_counts :: Maybe Int -- ^ Minimum number of reads across all replicates otherwise ignored
                } deriving Show
 makeLenses ''UserSettings
 
@@ -56,6 +57,7 @@ defUserSettings = UserSettings { _ec_col = Nothing
                                , _csv_format = True
                                , _skip = 0
                                , _title = ""
+                               , _min_counts = Nothing
                                }
 
 instance JSON Settings where
@@ -89,6 +91,7 @@ user_settings_cols = [simple "info_columns" info_cols
                      ,simple_with_def "init_select" init_select []
                      ,simple_with_def "hide_columns" hide []
                      ,simple_with_def "name" title ""
+                     ,(get_simple_f "min_counts" min_counts id, set_maybe "min_counts" min_counts)
                      ]
   where
     simple :: JSON a => String -> (Lens' UserSettings a)
@@ -205,6 +208,9 @@ get_counts_file s = countsFile $ getCode s
 
 get_counts_skip :: Settings -> Int
 get_counts_skip s = user_settings s ^. skip
+
+get_min_counts :: Settings -> Int
+get_min_counts s = fromMaybe 0 (user_settings s ^. min_counts)
 
 get_user_settings :: Settings -> UserSettings
 get_user_settings s = user_settings s

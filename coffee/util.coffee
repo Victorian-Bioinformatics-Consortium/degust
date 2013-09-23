@@ -1,7 +1,7 @@
 window.dge_vis_version = '0.5'
 
-if (!window.console)
-    console = {log: () -> null}
+#if (!window.console)
+#    console = {log: () -> null}
 
 window.msg_error = (msg,rest...) ->
     $('div.container').text("ERROR : #{msg}")

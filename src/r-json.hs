@@ -295,6 +295,9 @@ initR settings =
 
   x<-read.delim('#{get_counts_file settings}',skip=#{get_counts_skip settings}, sep="#{sep_char}", check.names=FALSE)
   counts <- x[,#{columns settings}]
+  keep <- apply(counts, 1, max) >= #{get_min_counts settings}
+  x <- x[keep,]
+  counts <- counts[keep,]
   design <- #{design settings}
  |] ()
 
@@ -315,13 +318,11 @@ dgeR settings cs file =
   fit2 <- contrasts.fit(fit, cont.matrix)
   fit2 <- eBayes(fit2)
 
-  out <- topTable(fit2, n=Inf)
+  out <- topTable(fit2, n=Inf, sort.by='none')
 
-  o <- 1:nrow(fit2$coef)
-
-  out2 <- cbind(fit2$coef[o,,drop=FALSE],
-                out[as.character(o), c('adj.P.Val','AveExpr')],
-                x[o, c(#{colsToRList export_cols})] )
+  out2 <- cbind(fit2$coef,
+                out[, c('adj.P.Val','AveExpr')],
+                x[, c(#{colsToRList export_cols})] )
 
   write.csv(out2, file="#{file}", row.names=FALSE,na='')
  |] ()
