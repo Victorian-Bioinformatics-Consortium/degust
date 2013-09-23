@@ -1,26 +1,28 @@
 window.dge_vis_version = '0.5'
 
-#if (!window.console)
-#    console = {log: () -> null}
+if (typeof window.console == "undefined")
+    my_log = () ->
+else
+    my_log = (args...) -> console.log(args...)
 
 window.msg_error = (msg,rest...) ->
     $('div.container').text("ERROR : #{msg}")
     if rest.length>0
-        console.log("ERROR : #{msg}",rest)
+        my_log("ERROR : #{msg}",rest)
     else
-        console.log("ERROR : #{msg}")
+        my_log("ERROR : #{msg}")
 
 window.msg_info = (msg,rest...) ->
     if rest.length>0
-        console.log("INFO : #{msg}",rest)
+        my_log("INFO : #{msg}",rest)
     else
-        console.log("INFO : #{msg}")
+        my_log("INFO : #{msg}")
 
 window.msg_debug = (msg,rest...) ->
     if rest.length>0
-        console.log("DEBUG : #{msg}",rest)
+        my_log("DEBUG : #{msg}",rest)
     else
-        console.log("DEBUG : #{msg}")
+        my_log("DEBUG : #{msg}")
 
 
 # This "scheduler" is designed to be used for tasks that may take some time, and
