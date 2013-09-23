@@ -24,10 +24,18 @@ csv_or_tab = () -> $('.fmt:checked').val()
 
 warnings = () ->
 
+valid_int = (str) ->
+    str!='' && parseInt(str).toString() == str
+
 save = () ->
     mod_settings.name = $("input.name").val()
     conditions_to_settings()
     mod_settings.csv_format = csv_or_tab()=='CSV'
+
+    if valid_int($("input.min-counts").val())
+        mod_settings.min_counts =  parseInt($("input.min-counts").val())
+    else
+        delete mod_settings.min_counts
 
     $('#saving-modal').modal({'backdrop': 'static', 'keyboard' : false})
     $('#saving-modal .modal-body').html("Saving...")
@@ -60,6 +68,8 @@ update_data = () ->
 
     $("input.name").val(mod_settings.name || "")
     $(".exp-name").text(mod_settings.name || "Unnamed")
+    if mod_settings.hasOwnProperty('min_counts')
+        $("input.min-counts").val(mod_settings.min_counts)
 
     asRows = null
     switch csv_or_tab()
