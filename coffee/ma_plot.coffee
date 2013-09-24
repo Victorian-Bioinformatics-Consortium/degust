@@ -4,21 +4,27 @@ class MAPlot
         @opts.width ?= 600
         @opts.padding ?= 20
 
-        @svg = d3.select(@opts.elem).append('svg')
-        @gBrush = @svg.append('g')
-        @gDot = @svg.append('g')
-        @gHighlight = @svg.append('g')
-        @svg.attr("width", @opts.width).attr("height", @opts.height)
 
-        @tooltip = d3.select(@opts.elem).append("div")
-                     .attr("class", "tooltip")
-                     .style("opacity", 0)
+        @gDot = d3.select(@opts.elem).append('canvas')
+        @gDot.attr("width", @opts.width)
+             .attr("height", @opts.height)
+
+        @svg = d3.select(@opts.elem).append('svg')
+        @svg.attr("width", @opts.width)
+            .attr("height", @opts.height)
+
+        @gBrush = @svg.append('g')
+
+        @gHighlight = @svg.append('g')
+
+        #@tooltip = d3.select(@opts.elem).append("div")
+        #             .attr("class", "tooltip")
+        #             .style("opacity", 0)
 
         # Create a custom 'brush' event.  This will allow same API as par-coords
         @dispatch = d3.dispatch("brush")
 
-
-    update_data: (@data, fc_dim, ave_dim, coloring, @info_cols) ->
+    update_data: (@data, fc_dim, ave_dim, @coloring, @info_cols) ->
         if fc_dim.length!=1 || ave_dim.length!=1
             msg_info("Only support 2 dimensions for ma-plot",fc_dim,ave_dim)
             return
@@ -26,8 +32,6 @@ class MAPlot
         @svg.select("g.brush").remove()
         @svg.selectAll(".axis").remove()
 
-        #m_dim = (d) -> d[dims[0].idx]-d[dims[1].idx]
-        #a_dim = (d) -> d[dims[0].idx]+d[dims[1].idx]
         @m_dim = m_dim = (d) -> d[fc_dim[0].idx]
         @a_dim = a_dim = (d) -> d[ave_dim[0].idx]
 
@@ -53,17 +57,7 @@ class MAPlot
           .on("brush",  () => @_brushed())
         @gBrush.call(@mybrush)
 
-        dots = @gDot.selectAll("circle")
-                    .data(data, (d) -> d.id)
-        dots.enter().append("circle")
-        dots.exit().remove()
-        dots.attr("r", 3)
-            .attr("cx", (d) -> xScale(a_dim(d)))
-            .attr("cy", (d) -> yScale(m_dim(d)))
-            .on('mouseover', (d,ev) => @_show_info(d))
-            .on('mouseout', (d) => @_hide_info(d))
-        dots.style('fill', coloring) if coloring
-        @_hide_dots(dots)
+        @_draw_dots()
 
         @svg.append("g")
             .attr("class", "axis")
@@ -75,8 +69,22 @@ class MAPlot
             .attr("transform", "translate(" + @opts.padding + ",0)")
             .call(yAxis)
 
-    _hide_dots: (dots) ->
-        dots.style('opacity', (d) => if @opts.filter(d) then 0.7 else 0)
+
+    _draw_dots: () ->
+        ctx = @gDot[0][0].getContext("2d")
+        ctx.clearRect(0,0,@opts.width, @opts.height)
+        i=@data.length
+        while(i--)
+            do (i) =>
+                d = @data[i]
+                if @opts.filter(d)
+                    ctx.fillStyle = @coloring(d)
+                    ctx.globalAlpha = 0.7
+                    ctx.beginPath()
+                    ctx.arc(@xScale(@a_dim(d)), @yScale(@m_dim(d)), 3, 0, Math.PI*2)
+                    ctx.fill()
+                    #ctx.strokeStyle="#000000"
+                    #ctx.stroke()
 
     _show_info: (row) ->
         fmt = (val) -> val.toFixed(2)
@@ -115,7 +123,6 @@ class MAPlot
                                 @opts.filter(d) && x>=ex[0][0] && x<=ex[1][0] && y>=ex[0][1] && y<=ex[1][1]
                         )
 
-    # These methods just pass through
     highlight: (rows) ->
         hi = @gHighlight.selectAll(".highlight")
                  .data(rows, (d) -> d.id)
@@ -140,7 +147,7 @@ class MAPlot
         @dispatch.on(t, func)
 
     brush: () ->
-        @_hide_dots(@svg.selectAll("circle"))
+        @_draw_dots()
         @_brushed()
 
 
