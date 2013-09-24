@@ -36,7 +36,7 @@ class ScheduleTasks
         @tasks = {}
         @interval = 100
 
-    schedule: (lbl, func) ->
+    schedule: (lbl, func, interval=@interval) ->
         if @tasks[lbl]
             # Already a pending update.  Cancel it and re-schedule
             #msg_debug("clearing",lbl,@tasks[lbl].id)
@@ -45,7 +45,7 @@ class ScheduleTasks
         # No task pending.  add it, and schedule an update
         @tasks[lbl] =
             func: func
-            id: setTimeout((() => @_runNow(lbl)), @interval)
+            id: setTimeout((() => @_runNow(lbl)), interval)
         #msg_debug("set",lbl,@tasks[lbl].id)
 
     # Used when an important task must run and not be overridden by later tasks
