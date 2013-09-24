@@ -28,7 +28,7 @@ class MAPlot
 
         #@testInfo = d3.select(@opts.elem).append('div')
 
-    update_data: (@data, fc_dim, ave_dim, @coloring, @info_cols) ->
+    update_data: (@data, fc_dim, ave_dim, @coloring, @info_cols, @fdr_col) ->
         if fc_dim.length!=1 || ave_dim.length!=1
             msg_info("Only support 2 dimensions for ma-plot",fc_dim,ave_dim)
             return
@@ -121,7 +121,8 @@ class MAPlot
 
     # Display and fill in the tooltip
     _show_info: (loc, rows) ->
-        fmt = (val) -> val.toFixed(2)
+        fmt  = (val) -> val.toFixed(2)
+        fmt2 = (val) -> if val<0.01 then val.toExponential(2) else val.toFixed(2)
 
         @tooltip.transition().duration(200)
                 .style("opacity", 0.8)
@@ -132,6 +133,7 @@ class MAPlot
         )
         info += "<tr><td><b>A</b>:<td>#{fmt @a_dim(row)}"
         info += "<tr><td><b>M</b>:<td>#{fmt @m_dim(row)}"
+        info += "<tr><td><b>FDR</b>:<td>#{fmt2 row[@fdr_col]}"
         info += "</table>"
         if rows.length>1
             info += "(And #{rows.length-1} other#{if rows.length>2 then 's' else ''})"
