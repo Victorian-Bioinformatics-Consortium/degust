@@ -20,6 +20,9 @@ class Heatmap
 
     # Calculate a rough ordering.  Proper clustering would be better!
     _calc_order: () ->
+        if @data.length==0
+            @order = []
+            return
         t1 = new Date()
         msg_debug("calc order")
         used = {0: true}
@@ -131,7 +134,7 @@ class Heatmap
         #genes.on('mousemove', (e,l) -> console.log 'move', e,l)
 
 
-    # NOT IN USE - not sure how to get it right.  Interaction with parallel-coords?
+    # NOT IN USE - not sure how to get it right.  How should it interact with parallel-coords or ma-plot?
     _create_brush: (w) ->
         # Create brush
         x = d3.scale.identity().domain([0, (@opts.width - @opts.label_width)])

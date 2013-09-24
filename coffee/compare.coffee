@@ -132,8 +132,8 @@ class WithBackend
 
 
 blue_to_brown = d3.scale.linear()
-  .domain([0,1])
-  .range(["brown", "steelblue"])
+  .domain([0,0.05,1])
+  .range(['brown', "steelblue", "steelblue"])
   .interpolate(d3.interpolateLab)
 
 colour_cat20 = d3.scale.category20().domain([1..20])
