@@ -1,5 +1,4 @@
-DGE-Vis
-=======
+# DGE-Vis
 
 * Visualise RNA-seq differential expression data.
 * Perform your own DGE analysis, or use the inbuilt server to analyse from your own "counts" file.
@@ -8,12 +7,11 @@ Access a public web service running [DGE-Vis](http://www.vicbioinformatics.com/s
 
 View a [short video](https://www.youtube.com/watch?v=ucucQ_LtZ1g) of the interface in use.
 
-Example Screenshot
------------------
+## Example Screenshot
+
 ![DGE-Vis screenshot](screenshot-2.png)
 
-Installation
-============
+# Installation
 
 If you do not want to use the [public DGE-Vis installation](http://www.vicbioinformatics.com/software.dge-vis.shtml), you may install your own.
 
@@ -26,8 +24,7 @@ DGE-Vis can be installed in two ways:
   1. Perform your own DGE analysis, and use only the [web frontend from DGE-Vis](#frontend)
   2. Install the [frontend and backend software](#backend) to perform analysis and visualise the results.
 
-<a id='frontend'></a>Frontend installation only
--------------
+## <a id='frontend'></a>Frontend installation only
 
 To use the frontend visualisation, you will need to have done your own DGE analysis with a tool like edgeR or voom.  You will need CSV file contain a line per gene, and the following columns:
 
@@ -39,22 +36,33 @@ To use the frontend visualisation, you will need to have done your own DGE analy
 
 You need to create a `settings.js` file to specify the columns of you CSV file.  As an example, see the `examples/basic-settings.js`
 
-<a id='backend'></a>Full installation
--------------
+## <a id='backend'></a>Full installation
 
 Requirements:
-* GHC 6.12 or later
-* Python
-* CoffeeScript
+
+  * GHC 6.12 or later
+  * Python
+  * CoffeeScript
 
 It can be installed as an apache CGI site, or run in "dev" mode using a standalone python server.  Here we describe how to run in "dev" mode.
 
-Run tests locally
---------------
+## Run tests locally
 
 There are javascript tests which can be run locally:
 
   coffee -c -o tests/js/js-build coffee
   coffee -c -o tests/js/js-build tests/js
   (cd tests/js/ ; python -mSimpleHTTPServer)
+
+
+## Known Issues
+
+#### Heatmap 
+
+  * will only compute clustering (and be useful) if fewer than 4000 points.  Needs a faster algorithm
+  * Clustering algorithm is naive greedy N^2.  So, not fast, and not a great clustering. 
+
+#### Documentation
+
+  * Installing the full backend is barely documented
 
