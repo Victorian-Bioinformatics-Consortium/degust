@@ -405,9 +405,6 @@ kegg_selected = () ->
         kegg.load(code, ec_colours, set_filter)
         $('div#kegg-image').dialog({width:500, height:600, title: title, position: {my: "right top", at:"right top+60", of: $('body')} })
 
-process_counts_data = (dat) ->
-    # If there is an ec column, fill in the kegg pull down
-
 process_kegg_data = (ec_data) ->
     return if requested_kegg
     requested_kegg = true
@@ -434,13 +431,13 @@ process_dge_data = (data, columns) ->
     opts = ""
     for col,i in g_data.columns_by_type(['fc','primary'])
         opts += "<option value='#{i}'>#{html_escape col.name}</option>"
-    opts += "<option value='-1' selected>Average</option>"
+    opts += "<option value='-1'>Average</option>"
     $('select#fc-relative').html(opts)
 
     # Setup MA-plot pulldown
     opts = ""
     for col,i in g_data.columns_by_type(['fc','primary'])
-        opts += "<option value='#{i}'>#{html_escape col.name}</option>"
+        opts += "<option value='#{i}' #{if i==1 then 'selected' else ''}>#{html_escape col.name}</option>"
     $('select#ma-fc-col').html(opts)
 
     if g_data.column_by_type('ec') == null
