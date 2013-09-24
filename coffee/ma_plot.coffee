@@ -14,7 +14,8 @@ class MAPlot
             .attr("height", @opts.height)
 
         @gBrush = @svg.append('g')
-        @gBrush.on('mousemove', () => @_handle_tooltip())
+        @gBrush.on('mousemove', () => @_mouse_move())
+        @gBrush.on('mouseout',  () => @_mouse_out())
 
         @gHighlight = @svg.append('g')
 
@@ -89,11 +90,23 @@ class MAPlot
                     #ctx.strokeStyle="#000000"
                     #ctx.stroke()
 
-    # Mouse-move event handler to display tool-tip
-    _handle_tooltip: (evt) ->
-        sz=3
-        [x,y] = d3.mouse(@gDot[0][0])
+    # Event handler for mouse-move.  Schedule a tooltip display (this is a potentially expensive operation)
+    _mouse_move: () ->
+        loc = d3.mouse(@gDot[0][0])
+        @_hide_info()
+        scheduler.schedule('maplot.tooltip', (() => @_handle_tooltip(loc)), 20)
 
+    # Event handler for mouse-out.  Hide tooltip, and kill any pending tip
+    _mouse_out: () ->
+        @_hide_info()
+        scheduler.schedule('maplot.tooltip', () => )
+
+    # Lookup point for tooltip and display (or hide).
+    # This scans all data points, so can be expensive
+    _handle_tooltip: (loc) ->
+        [x,y] = loc
+
+        sz=3
         # Note swapped 'y' in extent (because yScale is a -ve transform)
         ex = [[@xScale.invert(x-sz), @yScale.invert(y+sz)],
               [@xScale.invert(x+sz), @yScale.invert(y-sz)]]
@@ -101,13 +114,13 @@ class MAPlot
         m = @_in_extent(ex)
 
         if m.length>0
-            @_show_info(m)
+            @_show_info(loc, m)
         else
             @_hide_info()
 
 
     # Display and fill in the tooltip
-    _show_info: (rows) ->
+    _show_info: (loc, rows) ->
         fmt = (val) -> val.toFixed(2)
 
         @tooltip.transition().duration(200)
@@ -123,15 +136,13 @@ class MAPlot
         if rows.length>1
             info += "(And #{rows.length-1} other#{if rows.length>2 then 's' else ''})"
 
-        loc = d3.mouse(@svg[0][0])
         @tooltip.html(info)
                 .style("left", (loc[0] + 10) + "px")
                 .style("top",  (loc[1] + 15) + "px")
 
     # Hide tooltip
     _hide_info: () ->
-        @tooltip.transition().duration(500)
-                .style("opacity", 0)
+        @tooltip.style("opacity", 0)
 
     _brushed: () ->
         sel = @_selected()
