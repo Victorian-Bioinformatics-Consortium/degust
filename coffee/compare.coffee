@@ -185,8 +185,11 @@ gene_table_mouseout = () ->
     kegg.unhighlight()
 
 gene_table_dblclick = (item) ->
-    window.open("http://www.ncbi.nlm.nih.gov/protein?term=#{item.id}", '_blank')
-    window.focus()
+    cols = g_data.columns_by_type(['info'])
+    if cols.length>0
+        str = item[cols[0].idx]
+        window.open("http://ensembl.org/Multi/Search/Results?q=#{str};site=ensembl")
+        window.focus()
 
 activate_parcoords = () ->
     expr_plot = parcoords
