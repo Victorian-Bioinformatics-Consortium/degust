@@ -1,4 +1,4 @@
-window.dge_vis_version = '0.5'
+window.dge_vis_version = '0.6'
 
 if (typeof window.console == "undefined")
     my_log = () ->
