@@ -14,15 +14,18 @@ class MAPlot
             .attr("height", @opts.height)
 
         @gBrush = @svg.append('g')
+        @gBrush.on('mousemove', () => @_handle_tooltip())
 
         @gHighlight = @svg.append('g')
 
-        #@tooltip = d3.select(@opts.elem).append("div")
-        #             .attr("class", "tooltip")
-        #             .style("opacity", 0)
+        @tooltip = d3.select(@opts.elem).append("div")
+                     .attr("class", "tooltip")
+                     .style("opacity", 0)
 
         # Create a custom 'brush' event.  This will allow same API as par-coords
         @dispatch = d3.dispatch("brush")
+
+        #@testInfo = d3.select(@opts.elem).append('div')
 
     update_data: (@data, fc_dim, ave_dim, @coloring, @info_cols) ->
         if fc_dim.length!=1 || ave_dim.length!=1
@@ -86,23 +89,46 @@ class MAPlot
                     #ctx.strokeStyle="#000000"
                     #ctx.stroke()
 
-    _show_info: (row) ->
+    # Mouse-move event handler to display tool-tip
+    _handle_tooltip: (evt) ->
+        sz=3
+        [x,y] = d3.mouse(@gDot[0][0])
+
+        # Note swapped 'y' in extent (because yScale is a -ve transform)
+        ex = [[@xScale.invert(x-sz), @yScale.invert(y+sz)],
+              [@xScale.invert(x+sz), @yScale.invert(y-sz)]]
+
+        m = @_in_extent(ex)
+
+        if m.length>0
+            @_show_info(m)
+        else
+            @_hide_info()
+
+
+    # Display and fill in the tooltip
+    _show_info: (rows) ->
         fmt = (val) -> val.toFixed(2)
 
         @tooltip.transition().duration(200)
                 .style("opacity", 0.8)
         info="<table>"
+        row=rows[0]
         @info_cols.forEach((c) ->
             info += "<tr><td><b>#{c.name}</b>:<td>#{row[c.idx]}"
         )
         info += "<tr><td><b>A</b>:<td>#{fmt @a_dim(row)}"
         info += "<tr><td><b>M</b>:<td>#{fmt @m_dim(row)}"
         info += "</table>"
+        if rows.length>1
+            info += "(And #{rows.length-1} other#{if rows.length>2 then 's' else ''})"
+
         loc = d3.mouse(@svg[0][0])
         @tooltip.html(info)
                 .style("left", (loc[0] + 10) + "px")
                 .style("top",  (loc[1] + 15) + "px")
 
+    # Hide tooltip
     _hide_info: () ->
         @tooltip.transition().duration(500)
                 .style("opacity", 0)
@@ -112,16 +138,18 @@ class MAPlot
         #console.log 'brushed', sel
         @dispatch.brush(sel)
 
+    _in_extent: (ex) ->
+        @data.filter((d) =>
+            y = @m_dim(d)
+            x = @a_dim(d)
+            @opts.filter(d) && x>=ex[0][0] && x<=ex[1][0] && y>=ex[0][1] && y<=ex[1][1]
+        )
+
     _selected: () ->
         if @mybrush.empty()
             @data.filter((d) => @opts.filter(d))
         else
-            ex = @mybrush.extent()
-            @data.filter((d) =>
-                                y = @m_dim(d)
-                                x = @a_dim(d)
-                                @opts.filter(d) && x>=ex[0][0] && x<=ex[1][0] && y>=ex[0][1] && y<=ex[1][1]
-                        )
+            @_in_extent(@mybrush.extent())
 
     highlight: (rows) ->
         hi = @gHighlight.selectAll(".highlight")
