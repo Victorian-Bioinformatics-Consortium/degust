@@ -78,7 +78,7 @@ window.setup_about_modal = () ->
       </div>
       <div class='modal-body'>
         <p>DGE-Vis : Visualize and explore RNA-seq differential gene-expression data.</p>
-        <p>Version : #{dge_vis_version}</p>
+        <p>Version : #{dge_vis_version}  (See <a target='_blank' href='https://raw.github.com/Victorian-Bioinformatics-Consortium/dge-vis/master/Changelog.txt'>Changelog</a>)</p>
         <p>Visit the <a href='http://vicbioinformatics.com/software.dge-vis.shtml'>DGE-Vis project page</a>,
            or the <a href='https://github.com/Victorian-Bioinformatics-Consortium/dge-vis'>source code on GitHub</a>
         </p>
