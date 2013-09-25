@@ -3,12 +3,12 @@ num_loading = 0
 start_loading = () ->
     num_loading += 1
     $('#loading').show()
-    $('#dge-pc').css('opacity',0.4)
+    $('#dge-pc,#dge-ma').css('opacity',0.4)
 done_loading = () ->
     num_loading -= 1
     if num_loading==0
         $('#loading').hide()
-        $('#dge-pc').css('opacity',1)
+        $('#dge-pc,#dge-ma').css('opacity',1)
 
 html_escape = (str) ->
     $('<div/>').text(str).html()

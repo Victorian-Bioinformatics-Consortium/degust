@@ -5,44 +5,70 @@ class Heatmap
         @opts.width ?= 1000
         @opts.label_width ?= 120
         @opts.limit ?= @opts.width - @opts.label_width
-        @opts.redraw_delay ?= 1000
 
         @svg = d3.select(@opts.elem).append('svg')
         @svg.append('g').attr("class", "labels")
         @svg.append('g').attr("class", "genes").attr("transform", "translate(#{opts.label_width},0)")
         @svg.attr("width", @opts.width).attr("height", @opts.h * 2 + 10*@opts.h_pad)
 
-
-        @redraw_scheduled = false
+        @info = @svg.append('text')
+                    .attr("class", "info")
+                    .attr("x", @opts.width-200)
+                    .attr("y", 10)
 
     set_order: (@order) ->
         # Nothing
 
+    _show_calc_info: (str) ->
+        @info.text(str)
+
     # Calculate a rough ordering.  Proper clustering would be better!
+    # The clustering is calculated by "calc_routine" which does part
+    # of the computation then yields and reschedules itself until done.
+    # This allows the large (slow) clusterings to be done without impacting
+    # the browser too much
     _calc_order: () ->
         if @data.length==0
             @order = []
             return
+
         t1 = new Date()
-        msg_debug("calc order")
         used = {0: true}
         order=[0]
-        while order.length < @data.length
-            row = @data[order[order.length-1]]
-            best_i = best_d = null
-            for i in [0..@data.length-1]
-                continue if used[i]
-                r = @data[i]
-                d = @_dist(row,r)
-                if !best_d or d<best_d
-                    best_d = d
-                    best_i = i
-            order.push(best_i)
-            used[best_i] = true
-        @order = order.map((i) => @data[i].id)
-        msg_debug("done.  took=#{new Date()-t1}ms",order,@order)
+        calc_routine = () =>
+            yield_after = 50     # Should be a function of @data.length
+            while order.length < @data.length && (yield_after--)>0
+                row = @data[order[order.length-1]]
+                best_i = best_d = null
+                for i in [0..@data.length-1]
+                    continue if used[i]
+                    r = @data[i]
+                    d = @_dist(row,r)
+                    if !best_d or d<best_d
+                        best_d = d
+                        best_i = i
+                order.push(best_i)
+                used[best_i] = true
+            if order.length >= @data.length
+                # Done.  Render the heatmap
+                @order = order.map((i) => @data[i].id)
+                msg_debug("calc_order: took=#{new Date()-t1}ms for #{@data.length} points",order,@order)
+                @_render_heatmap()
+                @_show_calc_info("")
+            else
+                # Still more work.  Re-schedule ourselves
+                scheduler.schedule('heatmap.calc', calc_routine, 50)
+                @_show_calc_info("Clustered #{order.length} of #{@data.length}")
 
-    # Distance calc for 2 genes.
+        # If there are many data points, start the calc after a few seconds to give an other
+        # rendering a chance (ie. parcoords).  A better solution would be to have priorities
+        # but that needs parcoords to be changed to use the same scheduling interface
+        if @data.length>3000
+            scheduler.schedule('heatmap.calc', calc_routine, 10*1000)
+        else
+            scheduler.schedule('heatmap.calc', calc_routine, 10)
+
+    # Distance calc for 2 genes. (for clustering)
     _dist: (r1,r2) ->
         s = 0
         for c in @columns
@@ -53,8 +79,9 @@ class Heatmap
 
     schedule_update: (data) ->
         @data=data if data
-        scheduler.schedule('heatmap', () => @update_data(@data))
+
         @svg.attr('opacity',0.4)
+        @_calc_order()
 
     # update_columns(columns,extent,sel_column)
     #   columns - The DGE condition columns
@@ -75,13 +102,7 @@ class Heatmap
             .attr("text-anchor", "end")
             .text((d) -> d.name)
 
-    update_data: (@data) ->
-        if @data.length<4000
-            @_calc_order()
-        else
-            @order = null
-
-        @redraw_scheduled = false
+    _render_heatmap: () ->
         @svg.attr('opacity',1)
         kept_data = {}
         sorted = @data[0..]

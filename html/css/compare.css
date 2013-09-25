@@ -61,6 +61,10 @@ div.filter { font-size: 8pt; border: 1px solid #aaa; border-radius: 5px; backgro
   stroke: #000;
 }
 
+#heatmap .info {
+  font-size: 10px;
+}
+
 /* MA-plot ***********************************************************************/
 
 .dge-ma { position: relative; }

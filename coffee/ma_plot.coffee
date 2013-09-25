@@ -102,7 +102,8 @@ class MAPlot
         scheduler.schedule('maplot.tooltip', () => )
 
     # Lookup point for tooltip and display (or hide).
-    # This scans all data points, so can be expensive
+    # This scans all data points, so can be expensive.  It is acceptable on my machine,
+    # it might be worth considering d3.geom.quadtree if it needs to be faster
     _handle_tooltip: (loc) ->
         [x,y] = loc
 
