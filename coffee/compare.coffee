@@ -39,7 +39,56 @@ class WithoutBackend
     request_kegg_data: (callback) ->
         msg_error("Get KEGG data not supported without backend")
 
-class WithBackend
+class WithBackendNoAnalysis
+    constructor: (@settings, @process_dge_data) ->
+        $('.conditions').hide()
+        $('a.show-r-code').hide()
+        if @settings['locked']
+            $('a.config').hide()
+        else
+            $('a.config').show()
+            $('a.config').attr('href', @_script("query=config"))
+
+    _script: (params) ->
+        "r-json.cgi?code=#{window.my_code}&#{params}"
+
+    request_kegg_data: (callback) ->
+        d3.tsv(@_script('query=kegg_titles'), (err,ec_data) ->
+            msg_info("Downloaded kegg : rows=#{ec_data.length}",ec_data,err)
+            callback(ec_data)
+        )
+
+    request_init_data: () ->
+        start_loading()
+        d3.text(@_script("query=csv"), (err, dat) =>
+            if err
+                msg_error(err)
+                return
+
+            if settings.csv_format
+               data = d3.csv.parse(dat)
+            else
+               data = d3.tsv.parse(dat)
+
+            msg_info("Downloaded DGE : rows=#{data.length}",data,err)
+            done_loading()
+
+            data_cols = settings.info_columns.map((n) -> {idx: n, name: n, type: 'info' })
+            data_cols.push({idx: '_dummy', type: 'primary', name:settings.primary_name})
+            settings.fc_columns.forEach((n) ->
+                data_cols.push({idx: n, type: 'fc', name: n})
+            )
+            data_cols.push({idx: settings.fdr_column, name: settings.fdr_column, type: 'fdr'})
+            data_cols.push({idx: settings.avg_column, name: settings.avg_column, type: 'avg'})
+            if settings.ec_column?
+                data_cols.push({idx: settings.ec_column, name: 'EC', type: 'ec'})
+
+            @process_dge_data(data, data_cols)
+        )
+
+
+
+class WithBackendAnalysis
     constructor: (@settings, @process_dge_data) ->
         $('.conditions').show()
         $('a.show-r-code').show()
@@ -48,6 +97,9 @@ class WithBackend
         else
             $('a.config').show()
             $('a.config').attr('href', @_script("query=config"))
+
+    _script: (params) ->
+        "r-json.cgi?code=#{window.my_code}&#{params}"
 
     request_init_data: () ->
         @_init_condition_selector()
@@ -98,7 +150,7 @@ class WithBackend
         )
 
     request_r_code: (callback) ->
-        columns = @get_selected_cols()
+        columns = @_get_selected_cols()
         req = @_script("query=dge_r_code&fields=#{JSON.stringify columns}")
         d3.text(req, (err,data) ->
             msg_info("Downloaded R Code : len=#{data.length}",data,err)
@@ -106,15 +158,12 @@ class WithBackend
         )
 
 
-    _script: (params) ->
-        "r-json.cgi?code=#{window.my_code}&#{params}"
-
     _select_sample: (e) ->
         el = $(e.target).parent('div')
         $(el).toggleClass('selected')
         @_update_samples()
 
-    get_selected_cols: () ->
+    _get_selected_cols: () ->
         cols = []
         # Create a list of conditions that are selected
         $('#files div.selected').each( (i, n) =>
@@ -124,7 +173,7 @@ class WithBackend
         cols
 
     _update_samples: () ->
-        @request_dge_data(@get_selected_cols())
+        @request_dge_data(@_get_selected_cols())
 
     _init_condition_selector: () ->
         init_select = @settings['init_select'] || []
@@ -526,7 +575,10 @@ init = () ->
     g_data = new GeneData([],[])
 
     if window.use_backend
-        g_backend = new WithBackend(settings, process_dge_data)
+        if settings.analyze_server_side
+            g_backend = new WithBackendAnalysis(settings, process_dge_data)
+        else
+            g_backend = new WithBackendNoAnalysis(settings, process_dge_data)
     else
         g_backend = new WithoutBackend(settings, process_dge_data)
 
