@@ -36,16 +36,28 @@ data Settings = Settings { code :: Code
                         } deriving Show
 
 data UserSettings =
-  UserSettings { _replicates :: [(String, [String])] -- ^ Definition of replicates
+  UserSettings { _skip :: Int -- ^ Number of rows to skip (not used frontend?)
+               , _csv_format :: Bool  -- ^ True for CSV, False for TAB
+
                , _ec_col :: Maybe String -- ^ Optional EC number column (0-based)
                , _info_cols :: [String] -- ^ Optional list of columns to include in display
-               , _init_select :: [String] -- ^ Replicates to initially select in UI
 
-               , _skip :: Int -- ^ Number of rows to skip
-               , _csv_format :: Bool  -- ^ True for CSV, False for TAB
+               -- Only used on the frontent
                , _hide :: [String] -- ^ Used in the frontend to hide some columns
                , _title :: String -- ^ Title to use in UI
+
+               , _analyze_server_side :: Bool -- ^ To be analysed server side?
+
+               -- Used for server-side analysis
+               , _init_select :: [String] -- ^ Replicates to initially select in UI
+               , _replicates :: [(String, [String])] -- ^ Definition of replicates
                , _min_counts :: Maybe Int -- ^ Minimum number of reads across all replicates otherwise ignored
+
+               -- Used for data already analysed by user
+               , _fc_cols :: [String] -- ^ Columns containing FC info
+               , _primary :: String   -- ^ Name for primary condition
+               , _avg_col :: String   -- ^ Column name for average expression
+               , _fdr_col :: String   -- ^ Column name for False Discovery Rate
                } deriving Show
 makeLenses ''UserSettings
 
@@ -58,6 +70,11 @@ defUserSettings = UserSettings { _ec_col = Nothing
                                , _skip = 0
                                , _title = ""
                                , _min_counts = Nothing
+                               , _fc_cols = []
+                               , _primary = ""
+                               , _avg_col = ""
+                               , _analyze_server_side = True
+                               , _fdr_col = ""
                                }
 
 instance JSON Settings where
@@ -106,6 +123,11 @@ user_settings_cols = [simple "info_columns" info_cols
                      ,simple_with_def "hide_columns" hide []
                      ,simple_with_def "name" title ""
                      ,(get_simple_f "min_counts" min_counts id, set_maybe "min_counts" min_counts)
+                     ,simple_with_def "fc_columns" fc_cols []
+                     ,simple_with_def "primary_name" primary ""
+                     ,simple_with_def "avg_column" avg_col ""
+                     ,simple_with_def "analyze_server_side" analyze_server_side True
+                     ,simple_with_def "fdr_column" fdr_col ""
                      ]
   where
     simple :: JSON a => String -> (Lens' UserSettings a)

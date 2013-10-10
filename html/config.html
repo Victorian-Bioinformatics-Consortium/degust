@@ -108,39 +108,77 @@
               <select id="hide-columns" multiple="multiple" title="Columns to hide from the table below.  Only used to hide columns on this page and ease configuration" data-placement='right'></select>
             </div>
           </div>
+
           <div class="control-group">
-            <label class="control-label" for="name">Min read count</label>
+            <label class="control-label" for="analyze-server-side">Analyze server side</label>
             <div class="controls">
-              <input class="min-counts" type="text" name="min-counts" placeholder="0" title="Optional: Minimum read count required across all replicates or gene is ignored" data-placement='right' />
+              <input id="analyze-server-side" type="checkbox" />
             </div>
           </div>
 
+          <div class="server-side-analysis-fields">
+            <div class="control-group">
+              <label class="control-label" for="name">Min read count</label>
+              <div class="controls">
+                <input class="min-counts" type="text" name="min-counts" placeholder="0" title="Optional: Minimum read count required across all replicates or gene is ignored" data-placement='right' />
+              </div>
+            </div>
 
-          <div class="condition-group conditions">
+            <div class="condition-group conditions">
+              <div class="control-group">
+                <span class="control-label">Condition name</span>
+                <div class="controls">
+                  <span>Replicates</span>
+                </div>
+              </div>
+
+              <div class="control-group condition template">
+                <input class="control-label col-name" placeholder="Condition Name"/>
+                <div class="controls">
+                  <select class="columns" multiple="multiple"></select>
+                  <span class="init-select">
+                    <input type="checkbox" />
+                    <span>Pre-selected</span>
+                  </span>
+                  <button type="button" class="del-condition">&times;</button>
+                </div>
+              </div>
+            </div>
 
             <div class="control-group">
-              <span class="control-label">Condition name</span>
+              <button type="button" id="add-condition" class="btn" title="Add a new condition or treatment" data-placement='right'>Add condition</button>
+            </div>
+          </div>
+
+          <div class="user-analysed-fields">
+            <div class="control-group">
+              <label class="control-label" for="primary">Primary condition</label>
               <div class="controls">
-                <span>Replicates</span>
+                <input class="primary" type="text" name="primary" placeholder="Primary" title="Name of the condition your fold-change data is relative to" data-placement='right' />
               </div>
             </div>
-
-            <div class="control-group condition template">
-              <input class="control-label col-name" placeholder="Condition Name"/>
+            <div class="control-group">
+              <label class="control-label">FDR column</label>
               <div class="controls">
-                <select class="columns" multiple="multiple"></select>
-                <span class="init-select">
-                  <input type="checkbox" />
-                  <span>Pre-selected</span>
-                </span>
-                <button type="button" class="del-condition">&times;</button>
+                <select id="fdr-column" title="Column containing the False-Discovery-Rate.  Sometimes called 'adj.P.Val'" data-placement='right'></select>
+                <span class='text-error'></span>
+              </div>
+            </div>
+            <div class="control-group">
+              <label class="control-label">Average expression column</label>
+              <div class="controls">
+                <select id="avg-column" title="Column containing the average (log) expression information.  Often called 'Amean' or 'AveExpr'" data-placement='right'></select>
+                <span class='text-error'></span>
+              </div>
+            </div>
+            <div class="control-group">
+              <label class="control-label">Fold-change columns</label>
+              <div class="controls">
+                <select class="fc-columns" multiple="multiple" title="Columns containg the log fold-change data" data-placement='right'></select>
               </div>
             </div>
           </div>
 
-          <div class="control-group">
-            <button type="button" id="add-condition" class="btn" title="Add a new condition or treatment" data-placement='right'>Add condition</button>
-          </div>
 
           <div class="control-group">
             <button type="submit" id="save" class="btn btn-primary">Save changes</button>

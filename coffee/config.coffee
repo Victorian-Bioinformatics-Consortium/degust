@@ -23,12 +23,24 @@ init_table = () ->
 csv_or_tab = () -> $('.fmt:checked').val()
 
 warnings = () ->
+    # Check fdr-column
+    el = $('#fdr-column').siblings('.text-error')
+    el.text('')
+    if !mod_settings.analyze_server_side && !mod_settings.fdr_column
+        $(el).text('You must specify the False Discovery Rate column')
+
+    # Check avg-column
+    el = $('#avg-column').siblings('.text-error')
+    el.text('')
+    if !mod_settings.analyze_server_side && !mod_settings.avg_column
+        $(el).text('You must specify the Average Expression column')
 
 valid_int = (str) ->
     str!='' && parseInt(str).toString() == str
 
 save = () ->
     mod_settings.name = $("input.name").val()
+    mod_settings.primary_name = $("input.primary").val()
     conditions_to_settings()
     mod_settings.csv_format = csv_or_tab()=='CSV'
 
@@ -63,11 +75,18 @@ save = () ->
 col_id = (n) ->
     column_keys.indexOf(n)
 
+set_multi_select = (el, opts, selected) ->
+    selected ||= []
+    $(el).html(opts)
+    $.each(selected, (i,col) -> $("option[value='#{col_id col}']",el).attr('selected','selected'))
+    $(el).multiselect('refresh')
+
 update_data = () ->
     return if !data
 
     $("input.name").val(mod_settings.name || "")
     $(".exp-name").text(mod_settings.name || "Unnamed")
+    $("input.primary").val(mod_settings.primary_name || "")
     if mod_settings.hasOwnProperty('min_counts')
         $("input.min-counts").val(mod_settings.min_counts)
 
@@ -88,15 +107,20 @@ update_data = () ->
     if mod_settings.hasOwnProperty('ec_column')
         $("select.ec-column option[value='#{col_id mod_settings.ec_column}']").attr('selected','selected')
 
-    $('select.info-columns').html(opts)
-    info_columns = mod_settings.info_columns || []
-    $.each(info_columns, (i,col) -> $("select.info-columns option[value='#{col_id col}']").attr('selected','selected'))
-    $("select.info-columns").multiselect('refresh')
+    $('select#fdr-column').html(opts)
+    $('select#fdr-column').html("<option value='-1'>--- Required ---</option>" + opts)
+    if mod_settings.fdr_column
+        $("select#fdr-column option[value='#{col_id mod_settings.fdr_column}']").attr('selected','selected')
 
-    $('select#hide-columns').html(opts)
-    to_hide = mod_settings.hide_columns || []
-    $.each(to_hide, (i,col) -> $("select#hide-columns option[value='#{col_id col}']").attr('selected','selected'))
-    $("select#hide-columns").multiselect('refresh')
+    $('select#avg-column').html(opts)
+    $('select#avg-column').html("<option value='-1'>--- Required ---</option>" + opts)
+    if mod_settings.avg_column
+        $("select#avg-column option[value='#{col_id mod_settings.avg_column}']").attr('selected','selected')
+
+
+    set_multi_select($('select.info-columns'), opts, mod_settings.info_columns)
+    set_multi_select($('select#hide-columns'), opts, mod_settings.hide_columns)
+    set_multi_select($('select.fc-columns'), opts, mod_settings.fc_columns)
 
     update_table()
 
@@ -104,6 +128,9 @@ update_data = () ->
     for r in mod_settings.replicates
         [n,lst] = r
         create_condition_widget(n || 'Unknown', lst, n in (mod_settings['init_select'] || []))
+
+    $('#analyze-server-side').prop('checked', mod_settings.analyze_server_side)
+    update_analyze_server_side()
 
 update_table = () ->
     mod_settings.hide_columns ||= []
@@ -195,6 +222,12 @@ conditions_to_settings = () ->
     mod_settings.replicates = c
     mod_settings.init_select = init_select
 
+update_analyze_server_side = () ->
+    server_side = $('#analyze-server-side').is(':checked')
+    $('.server-side-analysis-fields').toggle(server_side)
+    $('.user-analysed-fields').toggle(!server_side)
+    mod_settings.analyze_server_side = server_side
+
 init = () ->
     reset_settings()
     d3.text(script("query=csv"), "text/csv", (err,dat) ->
@@ -248,6 +281,31 @@ init = () ->
     )
 
     $('.del-condition').click(del_condition_widget)
+
+    $('#analyze-server-side').change(update_analyze_server_side)
+
+    $('select#fdr-column').change(() ->
+        v = +$("select#fdr-column option:selected").val()
+        mod_settings.fdr_column = if v == -1 then '' else column_keys[v]
+        warnings()
+    )
+
+    $('select#avg-column').change(() ->
+        v = +$("select#avg-column option:selected").val()
+        mod_settings.avg_column = if v == -1 then '' else column_keys[v]
+        warnings()
+    )
+
+    $('select.fc-columns').change(() ->
+        fc_cols=[]
+        $("select.fc-columns option:selected").each (i,e) -> fc_cols.push(column_keys[+$(e).val()])
+        mod_settings.fc_columns = fc_cols
+    )
+    $("select.fc-columns").multiselect(
+        noneSelectedText: '-- None selected --'
+        selectedList: 4
+    )
+
 
 $(document).ready(() -> setup_about_modal() )
 $(document).ready(() -> init() )
