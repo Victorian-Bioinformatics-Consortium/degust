@@ -48,11 +48,16 @@ It can be installed as an apache CGI site, or run in "dev" mode using a standalo
 
 ## Run tests locally
 
-There are javascript tests which can be run locally:
+There are javascript tests which can be run locally.  Ensure you have compiled the CoffeeScript:
 
-  coffee -c -o tests/js/js-build coffee
-  coffee -c -o tests/js/js-build tests/js
-  (cd tests/js/ ; python -mSimpleHTTPServer)
+    coffee -c -o tests/js/js-build coffee
+    coffee -c -o tests/js/js-build tests/js
+
+Then you can either run the tests in your browser (navigate to http://localhost:8000/)
+
+    (cd tests/js/ ; python -mSimpleHTTPServer)
+
+Or, if you have <a href='http://phantomjs.org/'>phantomjs</a> installed you can run the tests from the command line: `./test-js.sh`
 
 
 ## Known Issues

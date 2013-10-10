@@ -101,6 +101,10 @@
           <h4>Kegg Pathway</h4>
           <select id='kegg'></select>
         </div>
+
+        <div class='right'>
+          <a class='show-r-code' href='#'>Show R code</a>
+        </div>
       </div>
 
       <div class='row'>
@@ -143,8 +147,24 @@
 
     <div id='kegg-image'></div>
 
-    <!-- Modal -->
+    <!-- About box Modal -->
     <div id="about-modal"></div>
+
+    <!-- Modal for showing R code -->
+    <div id='code-modal' class='modal hide fade' tabindex='-1' role='dialog' aria-labelledby='myModalLabel' aria-hidden='true'>
+      <div class='modal-header'>
+        <button type='button' class='close' data-dismiss='modal' aria-hidden='true'>x</button>
+        <h3>DGE R Code</h3>
+      </div>
+      <div class='modal-body'>
+        This is the R code the backend used to perform the DGE analysis for the current page.
+        <pre>
+        </pre>
+      </div>
+      <div class='modal-footer'>
+        <button class='btn btn-primary' data-dismiss='modal' aria-hidden='true'>Close</button>
+      </div>
+    </div>
 
 </body>
 </html>

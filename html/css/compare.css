@@ -35,6 +35,7 @@ div.filter { font-size: 8pt; border: 1px solid #aaa; border-radius: 5px; backgro
 #fdrSlider, #fcSlider { display: inline-block; width: 50px; margin: 0 10px; font-size: 8pt}
 #fc-relative, #ma-fc-col { width: 115px; height: auto; }
 .filter input.error { background-color: #fbb; }
+.show-r-code { display:none; font-size: 10px; }
 
 .ec-group { display: none; }
 

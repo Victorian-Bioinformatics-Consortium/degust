@@ -17,6 +17,7 @@ class WithoutBackend
     constructor: (@settings, @process_dge_data) ->
         $('.conditions').hide()
         $('.config').hide()
+        $('a.show-r-code').hide()
 
     request_init_data: () ->
         start_loading()
@@ -41,6 +42,7 @@ class WithoutBackend
 class WithBackend
     constructor: (@settings, @process_dge_data) ->
         $('.conditions').show()
+        $('a.show-r-code').show()
         if @settings['locked']
             $('a.config').hide()
         else
@@ -95,6 +97,15 @@ class WithBackend
             #     )
         )
 
+    request_r_code: (callback) ->
+        columns = @get_selected_cols()
+        req = @_script("query=dge_r_code&fields=#{JSON.stringify columns}")
+        d3.text(req, (err,data) ->
+            msg_info("Downloaded R Code : len=#{data.length}",data,err)
+            callback(data)
+        )
+
+
     _script: (params) ->
         "r-json.cgi?code=#{window.my_code}&#{params}"
 
@@ -103,14 +114,17 @@ class WithBackend
         $(el).toggleClass('selected')
         @_update_samples()
 
-    _update_samples: () ->
+    get_selected_cols: () ->
         cols = []
         # Create a list of conditions that are selected
         $('#files div.selected').each( (i, n) =>
             rep_name = $(n).data('rep')
             cols.push(rep_name)
         )
-        @request_dge_data(cols)
+        cols
+
+    _update_samples: () ->
+        @request_dge_data(@get_selected_cols())
 
     _init_condition_selector: () ->
         init_select = @settings['init_select'] || []
@@ -502,6 +516,12 @@ update_data = () ->
     # Ensure the brush callbacks are called (updates heatmap & table)
     expr_plot.brush()
 
+show_r_code = () ->
+    g_backend.request_r_code((d) ->
+        $('div#code-modal .modal-body pre').text(d)
+        $('div#code-modal').modal()
+    )
+
 init = () ->
     g_data = new GeneData([],[])
 
@@ -519,6 +539,7 @@ init = () ->
 
     $('#select-pc a').click(() -> activate_parcoords())
     $('#select-ma a').click(() -> activate_ma_plot())
+    $('a.show-r-code').click(() -> show_r_code())
 
     init_charts()
     init_search()

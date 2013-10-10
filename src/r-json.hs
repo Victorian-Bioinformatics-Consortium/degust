@@ -64,6 +64,7 @@ doQuery = do query <- getInput "query"
                Just "config" -> getPage "config.html"
                Just "csv" -> getCSV
                Just "dge" -> cached "text/csv" getDGE
+               Just "dge_r_code" -> getDGERCode
                Just "annot" -> cached "text/csv" getAnnot
                Just "kegg_titles" -> cached "text/csv" getKeggTitles
                Just "clustering" -> cached "text/csv" getClustering
@@ -130,6 +131,11 @@ getJSSettings = do
                ++"window.my_code='"++codeToStr (getCode settings)++"';"
                ++"window.use_backend=true;"
 
+getDGERCode :: CGI CGIResult
+getDGERCode = do s <- getRCodeWithFields dgeR
+                 setHeader "Content-type" "text/plain"
+                 output s
+
 getDGE :: CGI String
 getDGE = getWithFields dgeR
 
@@ -149,6 +155,16 @@ getWithFields act = do jsonString <- getInput "fields"
                          Ok [] -> return ""
                          Ok [_] -> return ""
                          Ok flds -> runR (\s -> act s flds)
+
+getRCodeWithFields :: (Settings -> [String] -> FilePath -> String) -> CGI String
+getRCodeWithFields act = do jsonString <- getInput "fields"
+                            let flds = decode $ fromMaybe (error "No fields") jsonString
+                            case flds of
+                              Error e -> logMsg ("ERR:"++e) >> return ""
+                              Ok [] -> return ""
+                              Ok [_] -> return ""
+                              Ok flds -> do s <- findSettings
+                                            return $ act s flds "out-file.csv"
 
 findSettings :: CGI Settings
 findSettings = do
