@@ -1,3 +1,5 @@
+  * Add "show r code" functionality
+
 v0.6
   * Changed MA-plot to use canvas.  *much snappier*
 

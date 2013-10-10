@@ -78,8 +78,22 @@ instance JSON Settings where
                           ]
 
 instance JSON UserSettings where
-    readJSON (JSObject obj) = foldM (\u (get,_) -> get u obj) defUserSettings user_settings_cols
+    readJSON (JSObject obj) = chkUserSettingsValid =<< foldM (\u (get,_) -> get u obj) defUserSettings user_settings_cols
     showJSON u = JSObject $ foldl' (\obj (_,set) -> set u obj) (toJSObject []) user_settings_cols
+
+chkUserSettingsValid :: UserSettings -> Result UserSettings
+chkUserSettingsValid s = if any invalidChar allColumns
+                           then Error "Invalid character in column name"
+                           else return s
+  where
+    invalidChar :: String -> Bool
+    invalidChar str = not . null $ intersect "\\'\"" str
+    allColumns :: [String]
+    allColumns = (map fst $ s ^. replicates) ++ (concatMap snd $ s ^. replicates)
+                 ++ maybeToList (s ^. ec_col)
+                 ++ s ^. info_cols
+                 ++ s ^. init_select
+
 
 user_settings_cols :: [(UserSettings -> JSObject JSValue -> Result UserSettings
                        ,UserSettings -> JSObject JSValue -> JSObject JSValue)]
