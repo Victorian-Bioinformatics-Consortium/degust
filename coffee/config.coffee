@@ -230,7 +230,7 @@ update_analyze_server_side = () ->
 
 init = () ->
     reset_settings()
-    d3.text(script("query=csv"), "text/csv", (err,dat) ->
+    d3.text(script("query=partial_csv"), "text/csv", (err,dat) ->
         if err
             $('div.container').text("ERROR : #{err}")
             return

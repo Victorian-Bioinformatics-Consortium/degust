@@ -62,7 +62,8 @@ doQuery = do query <- getInput "query"
                Nothing -> getPage "compare.html"
                Just "settings" -> getJSSettings
                Just "config" -> getPage "config.html"
-               Just "csv" -> getCSV
+               Just "csv" -> getAllCSV
+               Just "partial_csv" -> getPartialCSV
                Just "dge" -> cached "text/csv" getDGE
                Just "dge_r_code" -> getDGERCode
                Just "annot" -> cached "text/csv" getAnnot
@@ -112,8 +113,8 @@ getPage file = do
     replace s1 s2 str = intercalate s2 $ splitOn s1 str
 
 -- | Return a string with the first 20 lines of the csv counts file
-getCSV :: CGI CGIResult
-getCSV = do
+getPartialCSV :: CGI CGIResult
+getPartialCSV = do
     settings <- findSettings
     setHeader "Content-type" "text/csv"
     counts <- liftIO $ BS.readFile (get_counts_file settings)
@@ -121,6 +122,14 @@ getCSV = do
   where
     bsLines = BS.split (BS.head "\n")
     bsUnlines = BS.intercalate "\n"
+
+-- | Return complete CSV file
+getAllCSV :: CGI CGIResult
+getAllCSV = do
+    settings <- findSettings
+    setHeader "Content-type" "text/csv"
+    counts <- liftIO $ BS.readFile (get_counts_file settings)
+    outputFPS counts
 
 getJSSettings :: CGI CGIResult
 getJSSettings = do
