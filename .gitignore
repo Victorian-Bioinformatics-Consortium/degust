@@ -1,4 +1,5 @@
-src/r-json
+build/
+node_modules/
 dist-dev/
 dist-example/
 *.o
