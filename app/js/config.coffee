@@ -1,5 +1,7 @@
 script = (params) -> "r-json.cgi?code=#{window.my_code}" + if params then "&#{params}" else ""
+view_url = () -> "compare.html?code=#{window.my_code}"
 
+# mod_settings will contain a copy of the current settings
 mod_settings = null
 reset_settings = () ->
     mod_settings = $.extend(true, {}, settings)
@@ -228,7 +230,7 @@ update_analyze_server_side = () ->
     $('.user-analysed-fields').toggle(!server_side)
     mod_settings.analyze_server_side = server_side
 
-init = () ->
+init_page = () ->
     reset_settings()
     d3.text(script("query=partial_csv"), "text/csv", (err,dat) ->
         if err
@@ -242,7 +244,7 @@ init = () ->
     $('input.fmt').click(update_data)
     $('#save').click(save)
     $('#cancel').click(() -> reset_settings(); update_data())
-    $('.view').attr('href', script())
+    $('.view').attr('href', view_url())
 
     $('select.ec-column').change(() ->
         mod_settings.ec_column = +$("select.ec-column option:selected").val()
@@ -306,6 +308,22 @@ init = () ->
         selectedList: 4
     )
 
+init = () ->
+    code = get_url_vars()["code"]
+    if !code?
+        msg_error("No code defined")
+    else
+        window.my_code = code
+        $.ajax({
+            type: "GET",
+            url: script("query=settings"),
+            dataType: 'json'
+        }).done((json) ->
+            window.settings = json
+            init_page()
+         ).fail((x) ->
+            msg_error "Failed to get settings!"
+        )
 
 $(document).ready(() -> setup_about_modal() )
 $(document).ready(() -> init() )

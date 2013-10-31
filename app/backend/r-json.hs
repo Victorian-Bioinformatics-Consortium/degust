@@ -59,9 +59,8 @@ urlForCode code = "r-json.cgi?code="++codeToStr code
 --doQuery :: CGI String
 doQuery = do query <- getInput "query"
              case query of
-               Nothing -> getPage "compare.html"
+               Nothing -> redirectMainPage -- Support old style links
                Just "settings" -> getJSSettings
-               Just "config" -> getPage "config.html"
                Just "csv" -> getAllCSV
                Just "partial_csv" -> getPartialCSV
                Just "dge" -> cached "text/csv" getDGE
@@ -102,15 +101,17 @@ cached typ act = do
     getFile :: FilePath -> IO (Either IOException String)
     getFile = try . SIO.run . SIO.readFile
 
--- | Return an HTML page with a substitution for SETTINGS
-getPage :: FilePath -> CGI CGIResult
-getPage file = do
-    html <- liftIO $ Prelude.readFile file
-    settings <- findSettings
+redirectMainPage :: CGI CGIResult
+redirectMainPage = do
+    code <- strToCode . fromMaybe (error "No Code") <$> getInput "code"
+    let url = "compare.html?code="++codeToStr code
     setHeader "Content-type" "text/html"
-    output $ replace "##SETTINGS##" (urlForCode (getCode settings) ++ "&query=settings") html
-  where
-    replace s1 s2 str = intercalate s2 $ splitOn s1 str
+    output $ printf "Redirecting...<br>Click <a href='%s'>here</a> \
+                    \if it doesn't happen automatically.\
+                    \<meta http-equiv=\"refresh\" content=\"0;URL='%s'\">" url url
+    -- setStatus 302 "Found"
+    -- redirect $ url
+
 
 -- | Return a string with the first 20 lines of the csv counts file
 getPartialCSV :: CGI CGIResult
@@ -136,9 +137,8 @@ getJSSettings = do
     settings <- findSettings
     setHeader "Content-type" "application/javascript"
     let settingStr = get_js_user_settings settings
-    output $ "window.settings = "++settingStr++";"
-               ++"window.my_code='"++codeToStr (getCode settings)++"';"
-               ++"window.use_backend=true;"
+    setHeader "Content-type" "text/json"
+    output settingStr
 
 getDGERCode :: CGI CGIResult
 getDGERCode = do s <- getRCodeWithFields dgeR

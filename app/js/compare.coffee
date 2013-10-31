@@ -1,3 +1,4 @@
+config_url = () -> "config.html?code=#{window.my_code}"
 
 num_loading = 0
 start_loading = () ->
@@ -41,13 +42,18 @@ class WithoutBackend
 
 class WithBackendNoAnalysis
     constructor: (@settings, @process_dge_data) ->
+        # Ensure we have been configured!
+        if @settings.fc_columns.length == 0
+            window.location = config_url()
+
         $('.conditions').hide()
         $('a.show-r-code').hide()
         if @settings['locked']
             $('a.config').hide()
         else
             $('a.config').show()
-            $('a.config').attr('href', @_script("query=config"))
+            # TODO - factor out this and the one below
+            $('a.config').attr('href', config_url())
 
     _script: (params) ->
         "r-json.cgi?code=#{window.my_code}&#{params}"
@@ -90,13 +96,17 @@ class WithBackendNoAnalysis
 
 class WithBackendAnalysis
     constructor: (@settings, @process_dge_data) ->
+        # Ensure we have been configured!
+        if @settings.replicates.length == 0
+            window.location = config_url()
+
         $('.conditions').show()
         $('a.show-r-code').show()
         if @settings['locked']
             $('a.config').hide()
         else
             $('a.config').show()
-            $('a.config').attr('href', @_script("query=config"))
+            $('a.config').attr('href', config_url())
 
     _script: (params) ->
         "r-json.cgi?code=#{window.my_code}&#{params}"
@@ -571,15 +581,16 @@ show_r_code = () ->
         $('div#code-modal').modal()
     )
 
-init = () ->
+init_page = (use_backend) ->
     g_data = new GeneData([],[])
 
-    if window.use_backend
+    if use_backend
         if settings.analyze_server_side
             g_backend = new WithBackendAnalysis(settings, process_dge_data)
         else
             g_backend = new WithBackendNoAnalysis(settings, process_dge_data)
     else
+        # TODO check existence of necessary files!
         g_backend = new WithoutBackend(settings, process_dge_data)
 
     $(".exp-name").text(settings.name || "Unnamed")
@@ -599,6 +610,26 @@ init = () ->
     init_download_link()
 
     g_backend.request_init_data()
+
+init = () ->
+    code = get_url_vars()["code"]
+    if !code?
+        init_page(false)
+    else
+        # TODO.  Pull out this 'script' def.  And the 2 in the classes above (and perhaps the one in config.coffee)
+        script = (params) -> "r-json.cgi?code=#{window.my_code}" + if params then "&#{params}" else ""
+        window.my_code = code
+        $.ajax({
+            type: "GET",
+            url: script("query=settings"),
+            dataType: 'json'
+        }).done((json) ->
+            window.settings = json
+            init_page(true)
+         ).fail((x) ->
+            msg_error "Failed to get settings!"
+        )
+
 
 $(document).ready(() -> setup_about_modal() )
 $(document).ready(() -> init() )

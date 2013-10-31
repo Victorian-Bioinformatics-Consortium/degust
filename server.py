@@ -4,11 +4,7 @@
 import sys, os
 import CGIHTTPServer, BaseHTTPServer
 
-
-os.system("./deploy-dev.sh")
-os.chdir("dist-dev")
-
-
+os.chdir("build")
 
 class CGIExtHTTPRequestHandler(CGIHTTPServer.CGIHTTPRequestHandler):
     def is_cgi(self):
