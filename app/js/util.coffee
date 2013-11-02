@@ -5,11 +5,11 @@ window.our_log = (o) ->
         console.log.apply(console, if !!arguments.length then arguments else [this])
     else opera && opera.postError && opera.postError(o || this)
 
-window.log_debug = (o) -> log_msg("DEBUG", arguments)
 window.log_info = (o) -> log_msg("INFO", arguments)
 window.log_warn = (o) -> log_msg("WARN", arguments)
 window.log_error = (o) -> log_msg("ERROR", arguments)
-
+window.log_debug = (o) ->
+    log_msg("DEBUG", arguments) if window.debug?
 
 # Our internal log allowing a log type
 log_msg = (msg,rest) ->
@@ -82,3 +82,5 @@ window.setup_nav_bar = () ->
     about = $(require("../templates/about.hbs")(version: version))
     $('#about-modal').replaceWith(about)
     $("a.log-link").click(() -> $('.log-list').toggle())
+
+    window.debug ?= get_url_vars()["debug"]
