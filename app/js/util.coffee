@@ -71,7 +71,10 @@ window.scheduler = new ScheduleTasks()
 window.get_url_vars = () ->
     vars = []
     hash = null
-    hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&')
+    idx = window.location.href.indexOf('?')
+    return vars if idx<0
+
+    hashes = window.location.href.slice(idx + 1).split('&')
     for i in [0..hashes.length-1]
         hash = hashes[i].split('=')
         vars.push(hash[0])
