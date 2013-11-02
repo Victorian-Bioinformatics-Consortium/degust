@@ -54,8 +54,6 @@ main = do
 fromRight (Right r) = r
 fromRight (Left e) = error e
 
-urlForCode code = "r-json.cgi?code="++codeToStr code
-
 --doQuery :: CGI String
 doQuery = do query <- getInput "query"
              case query of
@@ -217,7 +215,7 @@ doUpload = do
                   now <- liftIO getCurrentTime
                   code <- liftIO $ createSettings dat remote_ip now
                   logMsg $ "New upload from "++remote_ip++" : "++codeToStr code
-                  let url = urlForCode code ++ "&query=config"
+                  let url = "config.html?code="++codeToStr code
                   setHeader "Content-type" "text/html"
                   output $ printf "Redirecting...<br>Click <a href='%s'>here</a> \
                                   \if it doesn't happen automatically.\
