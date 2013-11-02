@@ -1,4 +1,5 @@
   * Add "show r code" functionality
+  * Add ability to upload and display user analyed DGE results
 
 v0.6
   * Changed MA-plot to use canvas.  *much snappier*
