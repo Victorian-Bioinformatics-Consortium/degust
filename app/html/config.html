@@ -31,9 +31,9 @@
           <a class="navbar-brand" href="index.html">DGE-Vis : </a>
           <p class='navbar-text exp-name'>unnamed</span>
         </div>
-        <a class='navbar-btn btn navbar-right btn-link' href="#about-modal" data-toggle="modal">About</a>
-        <a class='navbar-btn btn navbar-right log-link btn-link' href="#">Logs</a>
-        <a class='navbar-btn btn navbar-right btn-link view' href="#">View</a>
+        <a class='navbar-btn btn navbar-right btn-inverse' href="#about-modal" data-toggle="modal">About</a>
+        <a class='navbar-btn btn navbar-right btn-inverse view' href="#">View</a>
+        <a class='navbar-btn btn navbar-right btn-inverse log-link' href="#">Logs</a>
       </div>
     </div>
 
@@ -176,18 +176,22 @@
       <div id="grid" class="row"></div>
     </div> <!-- container -->
 
-    <div id="saving-modal" class="modal hide fade" tabindex="-1" role="dialog">
-      <div class="modal-header">
-        <h3 id="myModalLabel">Saving settings</h3>
-      </div>
-      <div class="modal-body">
-      </div>
-      <div class="modal-footer">
-        <button id="close-modal" class="btn">Close</button>
-        <a class="view btn btn-default" href="#">View</a>
-        <!-- <button class="btn btn-primary">Save changes</button> -->
-      </div>
-    </div>
+    <div id="saving-modal" class="modal fade" tabindex="-1" role="dialog">
+      <div class='modal-dialog'>
+        <div class='modal-content'>
+          <div class='modal-header'>
+            <h3 id="myModalLabel">Saving settings</h3>
+          </div>
+          <div class="modal-body">
+          </div>
+          <div class="modal-footer">
+            <button id="close-modal" class="btn">Close</button>
+            <a class="view btn btn-default" href="#">View</a>
+            <!-- <button class="btn btn-primary">Save changes</button> -->
+          </div>
+        </div><!-- /.modal-content -->
+      </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
 
     <!-- Modal -->
     <div id="about-modal"></div>

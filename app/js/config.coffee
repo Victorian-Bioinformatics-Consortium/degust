@@ -40,7 +40,8 @@ warnings = () ->
 valid_int = (str) ->
     str!='' && parseInt(str).toString() == str
 
-save = () ->
+save = (ev) ->
+    ev.preventDefault()
     mod_settings.name = $("input.name").val()
     mod_settings.primary_name = $("input.primary").val()
     conditions_to_settings()
@@ -56,7 +57,6 @@ save = () ->
     $('#saving-modal .modal-footer').hide()
 
     #console.log mod_settings
-
     $.ajax({
         type: "POST",
         url: script("query=save"),
@@ -65,10 +65,11 @@ save = () ->
     }).done((x) ->
         $('#saving-modal .modal-body').html("Save successful.")
         $('#saving-modal .view').show()
-     ).fail(
+     ).fail((x) ->
+        log_error("ERROR",x)
         $('#saving-modal .modal-body').html("Failed!")
         $('#saving-modal .view').hide()
-     ).always(
+     ).always(() ->
         $('#saving-modal').modal({'backdrop': true, 'keyboard' : true})
         $('#saving-modal .modal-footer').show()
         $('#saving-modal #close-modal').click( () -> window.location = window.location)

@@ -1,6 +1,9 @@
 
 body { padding-top: 60px; }
 
+.btn-inverse { color: #fff; background-color: #333; border-color: #555; }
+.btn-inverse:hover { background-color: #fff; }
+
 div#beta { position: relative; height: 0}
 #beta img { position: relative; width: 150px; top: -67px; left: -90px;}
 .supported-by { font-size: 10px; }

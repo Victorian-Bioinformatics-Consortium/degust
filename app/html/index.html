@@ -10,26 +10,18 @@
     <script type="text/javascript" src="./common.js"></script>
   </head>
   <body>
+
     <div class="navbar navbar-inverse navbar-fixed-top">
-      <div class="navbar-inner">
-        <div class="container">
-          <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-          </button>
-          <a class="brand" href="index.html">DGE-Vis</a>
-          <div class="nav-collapse collapse">
-            <ul class="nav">
-              <li><a href="#about-modal" data-toggle="modal">About</a></li>
-            </ul>
-          </div><!--/.nav-collapse -->
+      <div class="container">
+        <div class="navbar-header">
+          <a class="navbar-brand" href="index.html">DGE-Vis</a>
         </div>
+        <a class='navbar-btn btn btn-inverse' href="#about-modal" data-toggle="modal">About</a>
       </div>
     </div>
 
     <div class="container">
-      <div class="hero-unit">
+      <div class="jumbotron">
         <div id='beta'>
           <img src='images/beta-testing-image.png'/>
         </div>
@@ -44,17 +36,17 @@
 
       <!-- Example row of columns -->
       <div class="row">
-        <div class="span4">
+        <div class="col-md-4">
           <h2>Watch a Demo</h2>
           Watch of video of DGE-Vis in action on a real data set.
           <p><a class="btn" href="https://www.youtube.com/watch?v=ucucQ_LtZ1g">Watch video &raquo;</a></p>
         </div>
-        <div class="span4">
+        <div class="col-md-4">
           <h2>Play with a Demo</h2>
           Try a demo of DGE-Vis on a real data set.  See the CSV <a href="http://vicbioinformatics.com/dge-vis/example-counts.csv">counts file</a> used to create this example</a>
           <p><a class="btn" href="http://vicbioinformatics.com/dge-vis/r-json.cgi?code=example">Try the demo &raquo;</a></p>
         </div>
-        <div class="span4">
+        <div class="col-md-4">
           <h2>Get Started</h2>
           Get started with DGE-Vis with your own data set.  Just upload a CSV counts file from your RNA-seq experiment.  Then use the web configuration pagw to define which columns gene ids, and which contain gene counts for which replicates.  
           <p><a class="btn" href="upload.html">Get Started &raquo;</a></p>
@@ -65,5 +57,5 @@
     <div id="about-modal"></div>
 
   </body>
-  <script type="text/javascript">setup_about_modal();</script>
+  <script type="text/javascript">setup_nav_bar();</script>
 </html>

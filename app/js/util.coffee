@@ -17,6 +17,8 @@ log_msg = (msg,rest) ->
     r = [msg].concat(args)
     window.our_log.apply(window, r)
 
+    return if msg=='DEBUG'
+
     $('.log-list').append("<pre class='#{msg.toLowerCase()}'>#{msg}: #{args}")
     if msg=='ERROR'
         $('.log-link').removeClass('btn-link')

@@ -23,7 +23,8 @@ class WithoutBackend
     request_init_data: () ->
         start_loading()
         d3.text(@settings.csv_file, "text/csv", (err,dat) =>
-            log_info("Downloaded csv",dat,err)
+            log_info("Downloaded csv")
+            log_debug("Downloaded csv",dat,err)
             if err
                 log_error(err)
                 return
@@ -60,7 +61,8 @@ class WithBackendNoAnalysis
 
     request_kegg_data: (callback) ->
         d3.tsv(@_script('query=kegg_titles'), (err,ec_data) ->
-            log_info("Downloaded kegg : rows=#{ec_data.length}",ec_data,err)
+            log_info("Downloaded kegg : rows=#{ec_data.length}")
+            log_debug("Downloaded kegg : rows=#{ec_data.length}",ec_data,err)
             callback(ec_data)
         )
 
@@ -76,7 +78,8 @@ class WithBackendNoAnalysis
             else
                data = d3.tsv.parse(dat)
 
-            log_info("Downloaded DGE : rows=#{data.length}",data,err)
+            log_info("Downloaded DGE : rows=#{data.length}")
+            log_debug("Downloaded DGE : rows=#{data.length}",data,err)
             done_loading()
 
             data_cols = settings.info_columns.map((n) -> {idx: n, name: n, type: 'info' })
@@ -116,7 +119,8 @@ class WithBackendAnalysis
 
     request_kegg_data: (callback) ->
         d3.tsv(@_script('query=kegg_titles'), (err,ec_data) ->
-            log_info("Downloaded kegg : rows=#{ec_data.length}",ec_data,err)
+            log_info("Downloaded kegg : rows=#{ec_data.length}")
+            log_debug("Downloaded kegg : rows=#{ec_data.length}",ec_data,err)
             callback(ec_data)
         )
 
@@ -127,7 +131,8 @@ class WithBackendAnalysis
         req = @_script("query=dge&fields=#{JSON.stringify columns}")
         start_loading()
         d3.csv(req, (err, data) =>
-            log_info("Downloaded DGE : rows=#{data.length}",data,err)
+            log_info("Downloaded DGE : rows=#{data.length}")
+            log_debug("Downloaded DGE : rows=#{data.length}",data,err)
             done_loading()
 
             data_cols = settings.info_columns.map((n) -> {idx: n, name: n, type: 'info' })
@@ -163,7 +168,7 @@ class WithBackendAnalysis
         columns = @_get_selected_cols()
         req = @_script("query=dge_r_code&fields=#{JSON.stringify columns}")
         d3.text(req, (err,data) ->
-            log_info("Downloaded R Code : len=#{data.length}",data,err)
+            log_debug("Downloaded R Code : len=#{data.length}",data,err)
             callback(data)
         )
 
@@ -631,6 +636,6 @@ init = () ->
         )
 
 
-$(document).ready(() -> setup_about_modal() )
+$(document).ready(() -> setup_nav_bar() )
 $(document).ready(() -> init() )
 $(document).ready(() -> $('[title]').tooltip())
