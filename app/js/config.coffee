@@ -311,7 +311,7 @@ init_page = () ->
 init = () ->
     code = get_url_vars()["code"]
     if !code?
-        msg_error("No code defined")
+        log_error("No code defined")
     else
         window.my_code = code
         $.ajax({
@@ -322,9 +322,9 @@ init = () ->
             window.settings = json
             init_page()
          ).fail((x) ->
-            msg_error "Failed to get settings!"
+            log_error "Failed to get settings!",x
         )
 
-$(document).ready(() -> setup_about_modal() )
+$(document).ready(() -> setup_nav_bar() )
 $(document).ready(() -> init() )
 $(document).ready(() -> $('[title]').tooltip())

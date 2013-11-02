@@ -52,7 +52,7 @@ class Heatmap
             if order.length >= @data.length
                 # Done.  Render the heatmap
                 @order = order.map((i) => @data[i].id)
-                msg_debug("calc_order: took=#{new Date()-t1}ms for #{@data.length} points",order,@order)
+                log_debug("calc_order: took=#{new Date()-t1}ms for #{@data.length} points",order,@order)
                 @_render_heatmap()
                 @_show_calc_info("")
             else
@@ -132,7 +132,7 @@ class Heatmap
         cells = genes.selectAll(".cell")
                      .data(((d) =>
                          if !row_ids[d.id]?
-                             msg_info("missing row_ids[#{d.id}]")
+                             log_info("missing row_ids[#{d.id}]")
                              return
                          res=[]
                          for i,c of @columns

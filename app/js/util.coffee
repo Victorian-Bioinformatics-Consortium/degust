@@ -1,28 +1,28 @@
 window.version = '0.6'
 
-if (typeof window.console == "undefined")
-    my_log = () ->
-else
-    my_log = (args...) -> console.log(args...)
+window.our_log = (o) ->
+    if window.console && console.log
+        console.log.apply(console, if !!arguments.length then arguments else [this])
+    else opera && opera.postError && opera.postError(o || this)
 
-window.msg_error = (msg,rest...) ->
-    $('div.container').text("ERROR : #{msg}")
-    if rest.length>0
-        my_log("ERROR : #{msg}",rest)
-    else
-        my_log("ERROR : #{msg}")
+window.log_debug = (o) -> log_msg("DEBUG", arguments)
+window.log_info = (o) -> log_msg("INFO", arguments)
+window.log_warn = (o) -> log_msg("WARN", arguments)
+window.log_error = (o) -> log_msg("ERROR", arguments)
 
-window.msg_info = (msg,rest...) ->
-    if rest.length>0
-        my_log("INFO : #{msg}",rest)
-    else
-        my_log("INFO : #{msg}")
 
-window.msg_debug = (msg,rest...) ->
-    if rest.length>0
-        my_log("DEBUG : #{msg}",rest)
-    else
-        my_log("DEBUG : #{msg}")
+# Our internal log allowing a log type
+log_msg = (msg,rest) ->
+    args = Array.prototype.slice.call(rest)
+    r = [msg].concat(args)
+    window.our_log.apply(window, r)
+
+    $('.log-list').append("<pre class='#{msg.toLowerCase()}'>#{msg}: #{args}")
+    if msg=='ERROR'
+        $('.log-link').removeClass('btn-link')
+        $('.log-link').addClass('btn-danger')
+    if msg=='ERROR' || msg=='WARN'
+        $('.log-link').css('opacity','1')
 
 
 # This "scheduler" is designed to be used for tasks that may take some time, and
@@ -73,9 +73,10 @@ window.get_url_vars = () ->
     for i in [0..hashes.length-1]
         hash = hashes[i].split('=')
         vars.push(hash[0])
-        vars[hash[0]] = hash[1]
+        vars[hash[0]] = hash[1].replace(/\#$/,'')
     vars
 
-window.setup_about_modal = () ->
+window.setup_nav_bar = () ->
     about = $(require("../templates/about.hbs")(version: version))
     $('#about-modal').replaceWith(about)
+    $("a.log-link").click(() -> $('.log-list').toggle())

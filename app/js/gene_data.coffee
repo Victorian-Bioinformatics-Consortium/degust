@@ -15,7 +15,7 @@ class GeneData
         @columns_by_type_cache = {}
         @_process_data()
         @set_relative( 'avg' )
-        #msg_debug 'data',@data
+        #log_debug 'data',@data
 
 
     set_relative: (relative) ->

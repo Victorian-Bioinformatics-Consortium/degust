@@ -23,9 +23,9 @@ class WithoutBackend
     request_init_data: () ->
         start_loading()
         d3.text(@settings.csv_file, "text/csv", (err,dat) =>
-            msg_info("Downloaded csv",dat,err)
+            log_info("Downloaded csv",dat,err)
             if err
-                msg_error(err)
+                log_error(err)
                 return
 
             if settings.csv_format
@@ -38,7 +38,7 @@ class WithoutBackend
         )
 
     request_kegg_data: (callback) ->
-        msg_error("Get KEGG data not supported without backend")
+        log_error("Get KEGG data not supported without backend")
 
 class WithBackendNoAnalysis
     constructor: (@settings, @process_dge_data) ->
@@ -60,7 +60,7 @@ class WithBackendNoAnalysis
 
     request_kegg_data: (callback) ->
         d3.tsv(@_script('query=kegg_titles'), (err,ec_data) ->
-            msg_info("Downloaded kegg : rows=#{ec_data.length}",ec_data,err)
+            log_info("Downloaded kegg : rows=#{ec_data.length}",ec_data,err)
             callback(ec_data)
         )
 
@@ -68,7 +68,7 @@ class WithBackendNoAnalysis
         start_loading()
         d3.text(@_script("query=csv"), (err, dat) =>
             if err
-                msg_error(err)
+                log_error(err)
                 return
 
             if settings.csv_format
@@ -76,7 +76,7 @@ class WithBackendNoAnalysis
             else
                data = d3.tsv.parse(dat)
 
-            msg_info("Downloaded DGE : rows=#{data.length}",data,err)
+            log_info("Downloaded DGE : rows=#{data.length}",data,err)
             done_loading()
 
             data_cols = settings.info_columns.map((n) -> {idx: n, name: n, type: 'info' })
@@ -116,7 +116,7 @@ class WithBackendAnalysis
 
     request_kegg_data: (callback) ->
         d3.tsv(@_script('query=kegg_titles'), (err,ec_data) ->
-            msg_info("Downloaded kegg : rows=#{ec_data.length}",ec_data,err)
+            log_info("Downloaded kegg : rows=#{ec_data.length}",ec_data,err)
             callback(ec_data)
         )
 
@@ -127,7 +127,7 @@ class WithBackendAnalysis
         req = @_script("query=dge&fields=#{JSON.stringify columns}")
         start_loading()
         d3.csv(req, (err, data) =>
-            msg_info("Downloaded DGE : rows=#{data.length}",data,err)
+            log_info("Downloaded DGE : rows=#{data.length}",data,err)
             done_loading()
 
             data_cols = settings.info_columns.map((n) -> {idx: n, name: n, type: 'info' })
@@ -153,7 +153,7 @@ class WithBackendAnalysis
             # if data.length<5000
             #     req = @_script("query=clustering&fields=#{JSON.stringify columns}")
             #     d3.csv(req, (err, data) ->
-            #         msg_info("Downloaded clustering : rows=#{data.length}",data,err)
+            #         log_info("Downloaded clustering : rows=#{data.length}",data,err)
             #         heatmap.set_order(data.map((d) -> d.id))
             #         heatmap.schedule_update()
             #     )
@@ -163,7 +163,7 @@ class WithBackendAnalysis
         columns = @_get_selected_cols()
         req = @_script("query=dge_r_code&fields=#{JSON.stringify columns}")
         d3.text(req, (err,data) ->
-            msg_info("Downloaded R Code : len=#{data.length}",data,err)
+            log_info("Downloaded R Code : len=#{data.length}",data,err)
             callback(data)
         )
 
@@ -560,7 +560,7 @@ update_data = () ->
         ma_fc = $('select#ma-fc-col option:selected').val()
         ma_fc = g_data.columns_by_type(['fc','primary'])[ma_fc].name
         col = g_data.columns_by_type('fc_calc').filter((c) -> c.name == ma_fc)
-        msg_error("Can't find proper column for MA-plot") if col.length!=1
+        log_error("Can't find proper column for MA-plot") if col.length!=1
         ma_plot.update_data(g_data.get_data(), col, g_data.columns_by_type('avg'),
                             color,
                             g_data.columns_by_type('info'),
@@ -627,7 +627,7 @@ init = () ->
             window.settings = json
             init_page(true)
          ).fail((x) ->
-            msg_error "Failed to get settings!"
+            log_error "Failed to get settings!"
         )
 
 

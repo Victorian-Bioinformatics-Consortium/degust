@@ -30,7 +30,7 @@ class MAPlot
 
     update_data: (@data, fc_dim, ave_dim, @coloring, @info_cols, @fdr_col) ->
         if fc_dim.length!=1 || ave_dim.length!=1
-            msg_info("Only support 2 dimensions for ma-plot",fc_dim,ave_dim)
+            log_info("Only support 2 dimensions for ma-plot",fc_dim,ave_dim)
             return
 
         @svg.select("g.brush").remove()
