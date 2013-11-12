@@ -1,27 +1,27 @@
-# DGE-Vis
+# Degust (formerly known as DGE-Vis)
 
 * Visualise RNA-seq differential expression data.
 * Perform your own DGE analysis, or use the inbuilt server to analyse from your own "counts" file.
 
-Access a public web service running [DGE-Vis](http://www.vicbioinformatics.com/software.dge-vis.shtml).
+Access a public web service running [Degust](http://www.vicbioinformatics.com/software.degust.shtml).
 
 View a [short video](https://www.youtube.com/watch?v=ucucQ_LtZ1g) of the interface in use.
 
 ## Example Screenshot
 
-![DGE-Vis screenshot](screenshot-2.png)
+![Degust screenshot](screenshot-2.png)
 
 # Installation
 
-If you do not want to use the [public DGE-Vis installation](http://www.vicbioinformatics.com/software.dge-vis.shtml), you may install your own.
+If you do not want to use the [public Degust installation](http://www.vicbioinformatics.com/software.degust.shtml), you may install your own.
 
-You first need to grab a copy of DGE-Vis.
+You first need to grab a copy of Degust.
 
-        git clone git@github.com:Victorian-Bioinformatics-Consortium/dge-vis
+        git clone git@github.com:Victorian-Bioinformatics-Consortium/degust
 
-DGE-Vis can be installed in two ways:
+Degust can be installed in two ways:
 
-  1. Perform your own DGE analysis, and use only the [web frontend from DGE-Vis](#frontend)
+  1. Perform your own DGE analysis, and use only the [web frontend from Degust](#frontend)
   2. Install the [frontend and backend software](#backend) to perform analysis and visualise the results.
 
 ## <a id='frontend'></a>Frontend installation only
@@ -102,4 +102,4 @@ The resulting build/ directory can then be installed as a CGI site.
   * Installing the full backend is barely documented
 
 ## License ##
-DGE-Vis is released under the GPL v3 (or later) license, see <a href='http://github.com/drpowell/dge-vis/blob/master/COPYING.txt'>COPYING.txt</a>
+Degust is released under the GPL v3 (or later) license, see <a href='http://github.com/Victorian-Bioinformatics-Consortium/degust/blob/master/COPYING.txt'>COPYING.txt</a>
