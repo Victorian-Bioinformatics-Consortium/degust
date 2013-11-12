@@ -2,10 +2,10 @@
   <head profile="http://www.w3.org/2005/10/profile">
     <link rel="icon" type="image/png" href="images/favicon.png"/>
 
-    <!-- Boostrap CSS -->
-    <link rel="stylesheet" href="css/lib/bootstrap.min.css" />
+    <!-- Externals CSS -->
+    <link rel="stylesheet" href="./css/lib.css" />
 
-    <link rel="stylesheet" href="css/common.css" type="text/css"/>
+    <link rel="stylesheet" href="./css/common.css" type="text/css"/>
 
     <script type="text/javascript" src="./common.js"></script>
   </head>
@@ -17,7 +17,9 @@
         <div class="navbar-header">
           <a class="navbar-brand" href="index.html">DGE-Vis</a>
         </div>
-        <a class='navbar-btn btn btn-inverse' href="#about-modal" data-toggle="modal">About</a>
+        <ul class="nav navbar-nav">
+          <li><a href="#about-modal" data-toggle="modal">About</a>
+        </ul>
       </div>
     </div>
 
@@ -28,8 +30,12 @@
 
       <form name="upload" action="r-json.cgi" method="post" enctype="multipart/form-data">
         <input type="hidden" name="query" value="upload"/>
-        <input type="file" name="filename" />
-        <input type="submit" value="Send" />
+        <div class="form-group">
+          <label for="filename">CSV File Upload</label>
+          <input type="file" id="filename" name="filename" />
+          <p class="help-block">Upload your CSV file.  See below for the format description.</p>
+        </div>
+        <button type="submit" class="btn btn-primary">Upload</button>
       </form>
 
       <h3>CSV File Format</h3>

@@ -5,11 +5,11 @@ body { padding-top: 60px; }
 .btn-inverse:hover { background-color: #fff; }
 
 div#beta { position: relative; height: 0}
-#beta img { position: relative; width: 150px; top: -67px; left: -90px;}
+#beta img { position: relative; width: 150px; top: -55px; left: -90px;}
 .supported-by { font-size: 10px; }
 
 div#forkme { position: relative; height: 0 }
-#forkme img { position: absolute; top: -60px; right: -60px; border 0; }
+#forkme img { position: absolute; top: -48px; right: -60px; border 0; }
 
 /* Log message panel ****************************************************/
 

@@ -2,21 +2,11 @@
   <head profile="http://www.w3.org/2005/10/profile">
     <link rel="icon" type="image/png" href="images/favicon.png"/>
 
-    <!-- Boostrap CSS -->
-    <link rel="stylesheet" href="css/lib/bootstrap.min.css" />
+    <!-- Externals CSS -->
+    <link rel="stylesheet" href="./css/lib.css" />
 
-    <!-- D3 CSS -->
-    <link rel="stylesheet" type="text/css" href="css/lib/d3.parcoords.css">
-
-    <!-- SlickGrid CSS -->
-    <link rel="stylesheet" href="css/lib/slick.grid.css" type="text/css"/>
-    <link rel="stylesheet" href="css/lib/jquery-ui-1.8.16.custom.css" type="text/css"/>
-
-    <!-- jQuery Multi-select CSS -->
-    <link rel="stylesheet" href="css/lib/jquery.multiselect.css" type="text/css"/>
-
-    <link rel="stylesheet" href="css/common.css" type="text/css"/>
-    <link rel="stylesheet" href="css/config.css" type="text/css"/>
+    <link rel="stylesheet" href="./css/common.css" type="text/css"/>
+    <link rel="stylesheet" href="./css/config.css" type="text/css"/>
 
 
     <script type="text/javascript" src='./common.js'></script>
@@ -29,11 +19,13 @@
       <div class="container">
         <div class="navbar-header">
           <a class="navbar-brand" href="index.html">DGE-Vis : </a>
-          <p class='navbar-text exp-name'>unnamed</span>
+          <span class="navbar-brand exp-name">unnamed</span>
         </div>
-        <a class='navbar-btn btn navbar-right btn-inverse' href="#about-modal" data-toggle="modal">About</a>
-        <a class='navbar-btn btn navbar-right btn-inverse view' href="#">View</a>
-        <a class='navbar-btn btn navbar-right btn-inverse log-link' href="#">Logs</a>
+        <ul class="nav navbar-nav navbar-right">
+          <li><a class="log-link" href="#">Logs</a>
+          <li><a class="view" href="#">View</a>
+          <li><a href="#about-modal" data-toggle="modal">About</a>
+        </ul>
       </div>
     </div>
 
