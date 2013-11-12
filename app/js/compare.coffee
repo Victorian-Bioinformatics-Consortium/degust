@@ -154,7 +154,7 @@ class WithBackendAnalysis
 
             @process_dge_data(data, data_cols)
 
-            # Disable backend clustering for now - FIXME
+            # Disable backend clustering for now - TODO
             # if data.length<5000
             #     req = @_script("query=clustering&fields=#{JSON.stringify columns}")
             #     d3.csv(req, (err, data) ->

@@ -46,7 +46,7 @@ class ParCoords
     # These methods just pass through
     highlight: (d) -> @parcoords.highlight(d)
     unhighlight: () -> @parcoords.unhighlight()
-    on: (t,func) -> @parcoords.on(t,func)        # FIXME - better abstraction for this
+    on: (t,func) -> @parcoords.on(t,func)        # TODO - better abstraction for this
     brush: () -> @parcoords.brush()
 
 
