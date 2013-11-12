@@ -7,5 +7,6 @@ require('./lib/jquery-ui.js')
 require('./lib/bootstrap.min.js')
 
 # Ours
+require('./version.coffee')
 require('./util.coffee')
 require('./gene_data.coffee')

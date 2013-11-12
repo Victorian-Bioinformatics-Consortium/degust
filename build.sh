@@ -44,7 +44,7 @@ case "$1" in
             cat "$f" | cleancss > "$dest"/css/`basename "$f"`
         done
 
-        cp -r app/html/ "$dest"
+        cp -r app/html/* "$dest"
         ;;
 esac
 

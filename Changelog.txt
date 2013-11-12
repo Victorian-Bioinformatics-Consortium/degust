@@ -1,3 +1,5 @@
+v0.7
+  * Renamed to "degust" : take the time to appreciate your RNA-seq data...
   * Add "show r code" functionality
   * Add ability to upload and display user analyed DGE results
   * Major code re-organisation to allow combined assets

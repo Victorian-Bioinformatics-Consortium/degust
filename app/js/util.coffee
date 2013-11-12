@@ -1,4 +1,3 @@
-window.version = '0.6'
 
 window.our_log = (o) ->
     if window.console && console.log
@@ -82,7 +81,7 @@ window.get_url_vars = () ->
     vars
 
 window.setup_nav_bar = () ->
-    about = $(require("../templates/about.hbs")(version: version))
+    about = $(require("../templates/about.hbs")(version: degust_version))
     $('#about-modal').replaceWith(about)
     $("a.log-link").click(() -> $('.log-list').toggle())
 

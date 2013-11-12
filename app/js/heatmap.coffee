@@ -9,7 +9,7 @@ class Heatmap
         @svg = d3.select(@opts.elem).append('svg')
         @svg.append('g').attr("class", "labels")
         @svg.append('g').attr("class", "genes").attr("transform", "translate(#{opts.label_width},0)")
-        @svg.attr("width", @opts.width).attr("height", @opts.h * 2 + 10*@opts.h_pad)
+        @svg.attr("width", @opts.width).attr("height", 100)
 
         @info = @svg.append('text')
                     .attr("class", "info")
