@@ -4,8 +4,6 @@
 import sys, os
 import CGIHTTPServer, BaseHTTPServer
 
-os.chdir("build")
-
 class CGIExtHTTPRequestHandler(CGIHTTPServer.CGIHTTPRequestHandler):
     def is_cgi(self):
         base = self.path

@@ -38,14 +38,6 @@ You need to create a `settings.js` file to specify the columns of you CSV file. 
 
 ## <a id='backend'></a>Full installation
 
-Requirements:
-
-  * GHC 6.12 or later
-  * Python
-  * CoffeeScript
-
-It can be installed as an apache CGI site, or run in "dev" mode using a standalone python server.  Here we describe how to run in "dev" mode.
-
 ## Run tests locally
 
 There are javascript tests which can be run locally.  Ensure you have compiled the CoffeeScript:
@@ -59,15 +51,56 @@ Then you can either run the tests in your browser (navigate to http://localhost:
 
 Or, if you have <a href='http://phantomjs.org/'>phantomjs</a> installed you can run the tests from the command line: `./test-js.sh`
 
+## Contributing ##
+Feel free to contribute with pull requests, bug reports or enhancement suggestions.
+
+## Development
+
+### To build
+For building from sources, you will need nodejs and the following modules.
+
+    npm install -g browserify
+    npm install -g clean-css
+    npm install hbsfy
+    npm install handlebars-runtime
+    npm install coffeeify       # Needs to be local?
+
+    # Builds files into build/ for deployment
+    ./build.sh prod
+
+### For development
+This will watch the js & coffeescript files and rebuild CoffeeScript as needed.
+
+    npm install -g watchify
+
+    ./build.sh dev
+    ./build-watchify.sh &
+    (cd build ; ../server.py)
+
+
+### To build with the analysis back-end
+The above production build only includes the front-end.  To also build the back-end you can use the following.  (The haskell library requirements are not well documented yet.)
+
+    ./build.sh prod-server
+
+Requirements:
+
+  * GHC 6.12 or later
+  * Python
+  * CoffeeScript
+
+The resulting build/ directory can then be installed as a CGI site.
+
 
 ## Known Issues
 
 #### Heatmap 
 
-  * will only compute clustering (and be useful) if fewer than 4000 points.  Needs a faster algorithm
   * Clustering algorithm is naive greedy N^2.  So, not fast, and not a great clustering. 
 
 #### Documentation
 
   * Installing the full backend is barely documented
 
+## License ##
+DGE-Vis is released under the GPL v3 (or later) license, see <a href='http://github.com/drpowell/dge-vis/blob/master/COPYING.txt'>COPYING.txt</a>

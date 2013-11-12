@@ -1,6 +1,5 @@
 build/
 node_modules/
-dist-dev/
-dist-example/
+app/backend/r-json
 *.o
 *.hi

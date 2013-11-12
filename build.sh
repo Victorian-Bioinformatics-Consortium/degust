@@ -1,46 +1,98 @@
 #!/bin/sh
 
 set -e
-debug=1
-dev=1
 
-mkdir -p build
+dest=build
 
-if [ $dev ]; then
-  echo "Linking in backend files for 'dev' deploy"
-  (cd build ; for f in ../app/backend/*.hs ; do ln -s $f .; done )
-  (cd build ; ln -s r-json.hs r-json.cgi)
-  mkdir -p build/tmp build/user-files build/cached
-else
-  rm -rf build/*
-fi
+case "$1" in
+    dev|prod|prod-server)
+        ;;
+    *)
+        echo "Build to $dest"
+        echo "Usage: ./build.sh dev|prod|prod-server"
+        exit 1
+        ;;
+esac
 
+mkdir -p "$dest"
+mkdir -p "$dest"/css
 
-cp -r app/html/ build
-cp -r app/images build
+case "$1" in
+    dev)
+        echo "Building 'dev'"
+        echo "Linking in backend files for 'dev' deploy"
+        (cd "$dest" ; for f in ../app/backend/*.hs ; do ln -s $f .; done )
+        (cd "$dest" ; ln -s r-json.hs r-json.cgi)
+        mkdir -p "$dest"/tmp "$dest"/user-files "$dest"/cached
 
-#echo "Combining css and minifying..."
-#cat css/bootstrap-tour.min.css css/dge.css css/venn.css css/slick.grid.css | cleancss > build/main.min.css
-cp -r app/css build
+        # Combine the lib CSS
+        cat app/css/lib/*.css > "$dest"/css/lib.css
+
+        # Link our CSS
+        (cd "$dest"/css ; for f in ../../app/css/*.css ; do ln -s $f .; done )
+
+        # Link the HTML
+        (cd "$dest" ; for f in ../app/html/* ; do ln -s $f .; done )
+        ;;
+    *)
+        echo "Building 'production'"
+        echo "Combining css and minifying..."
+        # Combine the lib CSS
+        cat app/css/lib/*.css | cleancss > "$dest"/css/lib.css
+        # Minify our CSS
+        for f in app/css/*.css; do
+            cat "$f" | cleancss > "$dest"/css/`basename "$f"`
+        done
+
+        cp -r app/html/ "$dest"
+        ;;
+esac
+
+cp -r app/css/lib/images "$dest"/css/
+cp -r app/images "$dest"
 
 echo "Compiling CoffeeScript and bundling all js..."
 for f in app/js/*-req.coffee; do
-  t="build/"$(basename "${f%-req.coffee}")".js"
-  b=${t/.js/-big.js}
-  echo "Building $f -> $t"
+    t="$dest/"$(basename "${f%-req.coffee}")".js"
+    echo "Building $f -> $t"
 
-  if [ $debug ]; then
-      browserify --debug -t coffeeify -t hbsfy $f > $t
-  else
-      browserify -t coffeeify -t hbsfy $f > $b
-      uglifyjs $b > $t
-      cp $b > $t
-      rm $b
-  fi
+    case "$1" in
+        dev)
+            browserify --debug -t coffeeify -t hbsfy $f > $t
+            ;;
+        *)
+            b=${t/.js/-big.js}
+            browserify -t coffeeify -t hbsfy $f > $b
+            uglifyjs $b > $t
+            rm $b
+            ;;
+    esac
 done
 
 
+case "$1" in
+    prod-server)
+        # Build the backend
+        (cd app/backend ; ghc -O2 --make r-json)
+        cp app/backend/r-json "$dest"/r-json.cgi
 
-if [ $dev ]; then
-  echo "Now run ./server.py"
-fi
+        # Copy production server specific files
+        cp -r kegg "$dest"
+        cp htaccess "$dest"/.htaccess
+        mkdir -p "$dest"/tmp "$dest"/cached "$dest"/user-files
+        ;;
+esac
+        
+
+case "$1" in
+    dev)
+        echo "Dev build ready.  Now run (cd $dest ; ../server.py)"
+        ;;
+    prod-server)
+        echo "Production server build ready in $dest/"
+        echo "Ensure '$dest/{tmp,cached,user-files}' is writable by the web server user"
+        ;;
+    *)
+        echo "Production build ready in $dest/"
+        ;;
+esac
