@@ -1,7 +1,6 @@
 
 # Ours
 require('./slider.coffee')
-require('./gene_data.coffee')
 require('./gene_table.coffee')
 require('./parcoords.coffee')
 require('./ma_plot.coffee')

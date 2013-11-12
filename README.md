@@ -40,10 +40,9 @@ You need to create a `settings.js` file to specify the columns of you CSV file. 
 
 ## Run tests locally
 
-There are javascript tests which can be run locally.  Ensure you have compiled the CoffeeScript:
+There are some javascript tests which can be run locally (or with travis).  Build the js:
 
-    coffee -c -o tests/js/js-build coffee
-    coffee -c -o tests/js/js-build tests/js
+    ./build-tests.sh
 
 Then you can either run the tests in your browser (navigate to http://localhost:8000/)
 

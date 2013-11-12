@@ -7,7 +7,7 @@ dbls_equal = (arr1, arr2) ->
 
 module('util')
 test('util', () ->
-     ok(msg_info, "testing msg_info")
+     ok(log_info, "testing log_info")
 )
 
 
