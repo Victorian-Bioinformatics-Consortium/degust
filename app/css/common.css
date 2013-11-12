@@ -33,3 +33,11 @@ div#forkme { position: relative; height: 0 }
 .log-list .info { color: blue; }
 
 .log-link { opacity: 0.4; }
+
+/* Fix slickgrid & bootstrap 3 incompatibility ******************************/
+
+#grid, #grid div {
+  -webkit-box-sizing: content-box;
+     -moz-box-sizing: content-box;
+          box-sizing: content-box;
+}

@@ -1,5 +1,6 @@
   * Add "show r code" functionality
   * Add ability to upload and display user analyed DGE results
+  * Major code re-organisation to allow combined assets
 
 v0.6
   * Changed MA-plot to use canvas.  *much snappier*
