@@ -3,7 +3,7 @@
 * Visualise RNA-seq differential expression data.
 * Perform your own DGE analysis, or use the inbuilt server to analyse from your own "counts" file.
 
-Access a public web service running [Degust](http://www.vicbioinformatics.com/software.degust.shtml).
+Access a public web service running [Degust](http://www.vicbioinformatics.com/degust).
 
 View a [short video](https://www.youtube.com/watch?v=ucucQ_LtZ1g) of the interface in use.
 
@@ -13,7 +13,7 @@ View a [short video](https://www.youtube.com/watch?v=ucucQ_LtZ1g) of the interfa
 
 # Installation
 
-If you do not want to use the [public Degust installation](http://www.vicbioinformatics.com/software.degust.shtml), you may install your own.
+If you do not want to use the [public Degust installation](http://www.vicbioinformatics.com/degust), you may install your own.
 
 You first need to grab a copy of Degust.
 
@@ -62,7 +62,8 @@ For building from sources, you will need nodejs and the following modules.
     npm install -g clean-css
     npm install hbsfy
     npm install handlebars-runtime
-    npm install coffeeify       # Needs to be local?
+    npm install uglify-js
+    npm install coffeeify
 
     # Builds files into build/ for deployment
     ./build.sh prod
