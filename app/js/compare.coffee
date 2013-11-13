@@ -22,21 +22,27 @@ class WithoutBackend
 
     request_init_data: () ->
         start_loading()
-        d3.text(@settings.csv_file, "text/csv", (err,dat) =>
-            log_info("Downloaded csv")
-            log_debug("Downloaded csv",dat,err)
-            if err
-                log_error(err)
-                return
+        if @settings.csv_data
+            # csv data is already in document
+            log_info("Using embedded csv")
+            @_data_ready(@settings.csv_data)
+        else
+            d3.text(@settings.csv_file, "text/csv", (err,dat) =>
+                log_info("Downloaded csv")
+                log_debug("Downloaded csv",dat,err)
+                if err
+                    log_error(err)
+                    return
+                @_data_ready(dat)
+            )
 
-            if settings.csv_format
-               data = d3.csv.parse(dat)
-            else
-               data = d3.tsv.parse(dat)
-            @process_dge_data(data, settings.columns)
-
-            done_loading()
-        )
+    _data_ready: (dat) ->
+        if @settings.csv_format
+            data = d3.csv.parse(dat)
+        else
+            data = d3.tsv.parse(dat)
+        @process_dge_data(data, @settings.columns)
+        done_loading()
 
     request_kegg_data: (callback) ->
         log_error("Get KEGG data not supported without backend")
