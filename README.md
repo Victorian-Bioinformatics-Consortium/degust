@@ -77,6 +77,8 @@ This will watch the js & coffeescript files and rebuild CoffeeScript as needed.
     ./build-watchify.sh &
     (cd build ; ../server.py)
 
+It is also useful to access the pages with "debug=1" (eg. http://vicbioinformatics.com/degust/compare.html?code=example&debug=1) which enables extra debug logging to the console.
+
 
 ### To build with the analysis back-end
 The above production build only includes the front-end.  To also build the back-end you can use the following.  (The haskell library requirements are not well documented yet.)
