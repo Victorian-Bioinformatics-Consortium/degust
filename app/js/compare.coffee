@@ -52,7 +52,7 @@ class WithBackendNoAnalysis
         if @settings['locked']
             $('a.config').hide()
         else
-            $('a.config').show()
+            $('a.config').removeClass('hide')
             # TODO - factor out this and the one below
             $('a.config').attr('href', config_url())
 
@@ -108,7 +108,7 @@ class WithBackendAnalysis
         if @settings['locked']
             $('a.config').hide()
         else
-            $('a.config').show()
+            $('a.config').removeClass('hide')
             $('a.config').attr('href', config_url())
 
     _script: (params) ->
@@ -587,6 +587,14 @@ show_r_code = () ->
     )
 
 init_page = (use_backend) ->
+    # Show the main html
+    body = $(require("../templates/compare-body.hbs")())
+    $('body').append(body)
+    $('#main-loading').hide()
+    setup_nav_bar()
+    $('[title]').tooltip()
+
+
     g_data = new GeneData([],[])
 
     if use_backend
@@ -636,6 +644,4 @@ init = () ->
         )
 
 
-$(document).ready(() -> setup_nav_bar() )
 $(document).ready(() -> init() )
-$(document).ready(() -> $('[title]').tooltip())

@@ -1,4 +1,6 @@
 
+#main-loading { position: absolute; top: 100px; left: 250px; }
+
 .selected { background-color: #ddd; }
 .primary { border: 2px solid #d99; }
 #files .pri { font-size: 8pt; float: right; display: none; color: #d99; padding-right: 2px; }
@@ -15,7 +17,7 @@
 a#csv-download { font-size: 9pt; float: right; margin: -7px 30px 0 0; }
 
 .conditions { display: none; }
-.config { display: none; }
+.hide { display: none !important; }
 
 .slick-row { font-size: 9pt; }
 .slick-row:hover {
