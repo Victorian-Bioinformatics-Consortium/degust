@@ -52,6 +52,8 @@ div.filter { font-size: 8pt; border: 1px solid #aaa; border-radius: 5px; backgro
 #gene-info { font-size: 9pt; height: 5em;}
 #gene-info .lbl { width: 100px; font-weight: bold; display: inline-block;}
 
+.r-code { font-size: 11px; }
+
 /* Heatmap ***********************************************************************/
 
 #heatmap-info { font-size: 9pt; height: 2em; }
