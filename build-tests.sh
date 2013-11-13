@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -e
+
 dest=tests/js/js-build
 
 for f in app/js/*-req.coffee; do
