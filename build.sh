@@ -41,10 +41,14 @@ case "$1" in
         cat app/css/lib/*.css | cleancss > "$dest"/css/lib.css
         # Minify our CSS
         for f in app/css/*.css; do
-            cat "$f" | cleancss > "$dest"/css/`basename "$f"`
+            t="$dest"/css/`basename "$f"`
+            rm "$t"
+            cat "$f" | cleancss > "$t"
         done
 
+        rm -f "$dest"/*.html
         cp -r app/html/* "$dest"
+        cp embed.py "$dest"
         ;;
 esac
 

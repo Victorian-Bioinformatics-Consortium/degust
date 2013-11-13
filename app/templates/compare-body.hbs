@@ -1,0 +1,100 @@
+    <div class='container'>
+      <div class='right'>
+        <div class='filter'>
+          <h4>Options</h4>
+          <div title='Filter genes by False Discovery Rate' data-placement='left'>
+            <label>FDR cut-off</label>
+            <input class="fdr-fld" type="text" value="0.01" />
+            <div id='fdrSlider'></div>
+          </div>
+          <div title='Filter genes by absolute of the log Fold Change' data-placement='left'>
+            <label>abs log FC</label>
+            <input class="fc-fld" type="text" value="0" />
+            <div id='fcSlider'></div>
+          </div>
+          <div title='Show FC from selected condition' data-placement='left'>
+            <label for='fc-relative'>FC relative to</label>
+            <select id='fc-relative'></select>
+          </div>
+          <div title='FC for the MA-plot' data-placement='left' class='ma-fc-col-opt'>
+            <label for='ma-fc-col'>MA-Plot FC</label>
+            <select id='ma-fc-col'></select>
+          </div>
+          <div title='Show raw counts in the table' data-placement='left' class='show-counts-opt'>
+            <label for='show-counts-cb'>Show Counts</label>
+            <input type="checkbox" id='show-counts-cb'>
+          </div>
+        </div>
+
+        <div class='filter kegg-filter'>
+          <h4>Kegg Pathway</h4>
+          <select id='kegg'></select>
+        </div>
+
+        <div class='right'>
+          <a class='show-r-code' href='#'>Show R code</a>
+        </div>
+      </div>
+
+      <div class='row'>
+        <div class='col-md-2 conditions'>
+          <h3>Conditions</h3>
+          <div id='files'></div>
+        </div>
+
+        <div class='col-md-6' id='expression'>
+          <div id='loading'><img src='images/ajax-loader.gif'></div>
+          <ul class="nav nav-tabs">
+            <li id='select-pc'><a href="#">Expression : Parallel Coordinates</a></li>
+            <li id='select-ma'><a href="#">Expression : MA plot</a></li>
+          </ul>
+          <div id="dge-pc" class="parcoords"></div>
+          <div id="dge-ma" class="dge-ma"></div>
+        </div>
+      </div>
+
+      <div class='row'>
+        <div id="heatmap-info"></div>
+        <div id='heatmap'></div>
+      </div>
+
+      <div class='row'>
+        <h2>Genes</h2>
+        <div>
+          <div class="tab-search">
+            Search:
+            <input type="text">
+          </div>
+          <a id='csv-download' href='#'>Download CSV</a>
+          <div id="grid-info"></div>
+        </div>
+        <div id="grid"></div>
+        <div id="gene-info"></div>
+      </div>
+
+    </div>
+
+    <div id='kegg-image'></div>
+
+    <!-- About box Modal -->
+    <div id="about-modal"></div>
+
+    <!-- Modal for showing R code -->
+    <div id='code-modal' class='modal fade' tabindex='-1' role='dialog' aria-labelledby='myModalLabel' aria-hidden='true'>
+      <div class='modal-dialog'>
+        <div class='modal-content'>
+          <div class='modal-header'>
+            <button type='button' class='close' data-dismiss='modal' aria-hidden='true'>x</button>
+            <h3>DGE R Code</h3>
+          </div>
+          <div class='modal-body'>
+            This is the R code the backend used to perform the DGE analysis for the current page.
+            <pre class='r-code'>
+            </pre>
+          </div>
+          <div class='modal-footer'>
+            <button class='btn btn-primary' data-dismiss='modal' aria-hidden='true'>Close</button>
+          </div>
+        </div><!-- /.modal-content -->
+      </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
