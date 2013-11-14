@@ -27,7 +27,7 @@ def embed(csv, args):
     <div class="navbar navbar-inverse navbar-fixed-top">
       <div class="container">
         <div class="navbar-header">
-          <a class="navbar-brand" href="index.html">Degust : </a>
+          <a class="navbar-brand" href="http://victorian-bioinformatics-consortium.github.io/degust">Degust : </a>
           <span class="navbar-brand exp-name"></span>
         </div>
         <ul class="nav navbar-nav navbar-right">
