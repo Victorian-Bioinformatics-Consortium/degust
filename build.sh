@@ -88,7 +88,14 @@ done
 
 
 case "$1" in
+    dev)
+        (cd "$dest"
+            rm -f kegg
+            ln -s ../kegg .
+        )
+        ;;
     prod-server)
+        echo "Building backend"
         # Build the backend
         (cd app/backend ; ghc -O2 --make r-json)
         cp app/backend/r-json "$dest"/r-json.cgi

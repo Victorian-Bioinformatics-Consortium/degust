@@ -18,10 +18,18 @@ def embed(csv, args):
       ["{idx:%s, name: %s, type: 'primary'}"%(json.dumps(args.primary), json.dumps(args.primary))] + \
       ["{idx:%s, name: %s, type:'fc'}"%(json.dumps(c),json.dumps(c)) for c in args.logFC] + \
       ["{idx:%s, name: %s, type:'info'}"%(json.dumps(c),json.dumps(c)) for c in args.info]
-      
-    settings = ("window.settings = {html_version: 'VERSION-HERE', asset_base: 'ASSET-HERE',"
-                "  csv_data: data, csv_format: true, name: %s,"
-                "  columns:[%s]};")%(json.dumps(args.name), ",".join(columns))
+
+    settings = ["html_version: 'VERSION-HERE'",
+                "asset_base: 'ASSET-HERE'",
+                "csv_data: data", 
+                "csv_format: true",
+                "name: %s"%json.dumps(args.name),
+                "columns:[%s]"%(",".join(columns)),
+                ]
+    if args.notour:
+        settings += ["show_tour: false"]
+
+    window_settings = "window.settings = {%s};"%(",".join(settings))
     s = html.replace('window.settings = { };', "var data=%s;\n\n%s"%(enc,settings), 1)
     return s
 
@@ -71,6 +79,8 @@ parser.add_argument('-o','--out', type=argparse.FileType('w'),
 
 parser.add_argument('--name', default='Unnamed', 
                     help='Name for this DGE comparison')
+parser.add_argument('--notour',  
+                    help='Do not show the tour on first load')
 parser.add_argument('--primary', default='pri', 
                     help='Name for the primary condition that the fold-changes are relative to')
 parser.add_argument('--avg',
