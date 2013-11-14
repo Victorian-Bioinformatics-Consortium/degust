@@ -594,7 +594,7 @@ show_r_code = () ->
 
 init_page = (use_backend) ->
     # Show the main html
-    body = $(require("../templates/compare-body.hbs")())
+    body = $(require("../templates/compare-body.hbs")(asset_base: settings.asset_base || ''))
     $('body').append(body)
     $('#main-loading').hide()
     setup_nav_bar()
