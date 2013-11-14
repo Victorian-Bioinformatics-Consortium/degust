@@ -30,8 +30,8 @@ sed -e "s|'\./|'$url|" build/compare.html > dist/$ver/index.html
 sed -e "/HTML-HERE/r dist/$ver/index.html" -e '/HTML-HERE/d' -e "s/VERSION-HERE/$ver/g" build/embed.py > dist/$ver/degust.py
 
 (  cd dist
-   rm -f latest
-   ln -sf $ver latest
+   rm -rf latest
+   cp -r $ver latest
 )
 
 
