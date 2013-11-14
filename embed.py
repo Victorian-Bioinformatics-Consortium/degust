@@ -18,7 +18,8 @@ def embed(csv, args):
       ["{idx:%s, name:%s, type:'fc'}"%(json.dumps(c),json.dumps(c)) for c in args.logFC] + \
       ["{idx:%s, name:%s, type:'info'}"%(json.dumps(c),json.dumps(c)) for c in args.info]
       
-    settings = ("window.settings = {html_version: 'VERSION-HERE', csv_data: data, csv_format: true, name: %s,"
+    settings = ("window.settings = {html_version: 'VERSION-HERE', asset_base: 'ASSET-HERE',"
+                "  csv_data: data, csv_format: true, name: %s,"
                 "  columns:[%s]};")%(json.dumps(args.name), ",".join(columns))
     s = html.replace('window.settings = { };', "var data=%s;\n\n%s"%(enc,settings), 1)
     return s

@@ -27,7 +27,10 @@ mkdir -p dist/$ver
 cp -r build/{compare.html,*.js,css,images} dist/$ver
 sed -e "s|'\./|'$url|" build/compare.html > dist/$ver/index.html
 
-sed -e "/HTML-HERE/r dist/$ver/index.html" -e '/HTML-HERE/d' -e "s/VERSION-HERE/$ver/g" build/embed.py > dist/$ver/degust.py
+sed -e "/HTML-HERE/r dist/$ver/index.html" \
+    -e '/HTML-HERE/d' \
+    -e "s/VERSION-HERE/$ver/g" \
+    -e "s^ASSET-HERE^$url^g"  build/embed.py > dist/$ver/degust.py
 
 (  cd dist
    rm -rf latest
