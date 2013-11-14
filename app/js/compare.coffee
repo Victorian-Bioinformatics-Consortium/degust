@@ -599,20 +599,23 @@ show_r_code = () ->
         $('div#code-modal').modal()
     )
 
-render_page = () ->
+render_page = (template) ->
     # Show the main html
     opts =
         asset_base: settings.asset_base || ''
         home_link: settings.home_link || 'index.html'
 
-    body = $(require("../templates/compare-body.hbs")(opts))
+    body = $(template(opts))
     $('#replace-me').replaceWith(body)
     $('#main-loading').hide()
     setup_nav_bar()
     $('[title]').tooltip()
 
+render_main_page = () -> render_page(require("../templates/compare-body.hbs"))
+render_fail_page = () -> render_page(require("../templates/fail.hbs"))
+
 init_page = (use_backend) ->
-    render_page()
+    render_main_page()
 
     g_data = new GeneData([],[])
 
@@ -659,7 +662,11 @@ init = () ->
             window.settings = json
             init_page(true)
          ).fail((x) ->
-            log_error "Failed to get settings!"
+            log_error "Failed to get settings!",x
+            render_fail_page()
+            pre = $("<pre></pre>")
+            pre.text("Error failed to get settings : #{x.responseText}")
+            $('.error-msg').append(pre)
         )
 
 
