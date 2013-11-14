@@ -545,7 +545,7 @@ process_dge_data = (data, columns) ->
     # First time throught?  Setup the tutorial tour
     if !g_tour_setup
         g_tour_setup = true
-        setup_tour(true)
+        setup_tour(if settings.show_tour? then settings.show_tour else true)
 
 update_flags = () ->
     show_counts = $('#show-counts-cb').is(":checked")
