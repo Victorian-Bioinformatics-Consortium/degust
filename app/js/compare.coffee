@@ -227,6 +227,7 @@ colour_by_ec = (ec_col) ->
 colour_by_pval = (col) ->
     (d) -> blue_to_brown(d[col])
 
+# Globals for widgets
 parcoords = null
 ma_plot = null
 expr_plot = null    # Actually parcoords OR ma_plot depending which is active
@@ -240,13 +241,14 @@ g_backend = null
 requested_kegg = false
 
 
-show_ave_fc = false
+# Globals for settings
 show_counts = false
 fdrThreshold = 1
 fcThreshold = 0
 searchStr = ""
 kegg_filter = []
 h_runfilters = null
+g_tour_setup = false
 
 kegg_mouseover = (obj) ->
     ec = obj.id
@@ -542,6 +544,11 @@ process_dge_data = (data, columns) ->
         activate_parcoords()
     else
         activate_ma_plot()
+
+    # First time throught?  Setup the tutorial tour
+    if !g_tour_setup
+        g_tour_setup = true
+        setup_tour(true)
 
 update_flags = () ->
     show_counts = $('#show-counts-cb').is(":checked")
