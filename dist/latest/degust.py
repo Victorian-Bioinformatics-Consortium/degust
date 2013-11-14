@@ -58,7 +58,7 @@ def embed(csv, args):
         settings += ["show_tour: false"]
 
     window_settings = "window.settings = {%s};"%(",".join(settings))
-    s = html.replace('window.settings = { };', "var data=%s;\n\n%s"%(enc,settings), 1)
+    s = html.replace('window.settings = { };', "var data=%s;\n\n%s"%(enc,window_settings), 1)
     return s
 
 def check_args(args, csv_file):
