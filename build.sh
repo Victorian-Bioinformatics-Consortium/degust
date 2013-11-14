@@ -21,18 +21,31 @@ case "$1" in
     dev)
         echo "Building 'dev'"
         echo "Linking in backend files for 'dev' deploy"
-        (cd "$dest" ; for f in ../app/backend/*.hs ; do ln -s $f .; done )
-        (cd "$dest" ; ln -s r-json.hs r-json.cgi)
+        (cd "$dest" ;
+            for f in ../app/backend/*.hs ; do
+                rm -f `basename "$f"`
+                ln -s $f .
+            done )
+        (cd "$dest" ; rm -f r-json.cgi ; ln -s r-json.hs r-json.cgi)
         mkdir -p "$dest"/tmp "$dest"/user-files "$dest"/cached
 
+        echo "Linking in CSS and HTML"
         # Combine the lib CSS
         cat app/css/lib/*.css > "$dest"/css/lib.css
 
         # Link our CSS
-        (cd "$dest"/css ; for f in ../../app/css/*.css ; do ln -s $f .; done )
+        (cd "$dest"/css ;
+            for f in ../../app/css/*.css ; do
+                rm -f `basename "$f"`
+                ln -s "$f" .
+            done )
 
         # Link the HTML
-        (cd "$dest" ; for f in ../app/html/* ; do ln -s $f .; done )
+        (cd "$dest" ;
+            for f in ../app/html/* ; do
+                rm -f `basename "$f"`
+                ln -s "$f" .
+            done )
         ;;
     *)
         echo "Building 'production'"
@@ -86,7 +99,7 @@ case "$1" in
         mkdir -p "$dest"/tmp "$dest"/cached "$dest"/user-files
         ;;
 esac
-        
+
 
 case "$1" in
     dev)

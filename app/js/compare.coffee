@@ -227,6 +227,7 @@ colour_by_ec = (ec_col) ->
 colour_by_pval = (col) ->
     (d) -> blue_to_brown(d[col])
 
+# Globals for widgets
 parcoords = null
 ma_plot = null
 expr_plot = null    # Actually parcoords OR ma_plot depending which is active
@@ -240,13 +241,14 @@ g_backend = null
 requested_kegg = false
 
 
-show_ave_fc = false
+# Globals for settings
 show_counts = false
 fdrThreshold = 1
 fcThreshold = 0
 searchStr = ""
 kegg_filter = []
 h_runfilters = null
+g_tour_setup = false
 
 kegg_mouseover = (obj) ->
     ec = obj.id
@@ -543,6 +545,11 @@ process_dge_data = (data, columns) ->
     else
         activate_ma_plot()
 
+    # First time throught?  Setup the tutorial tour
+    if !g_tour_setup
+        g_tour_setup = true
+        setup_tour(true)
+
 update_flags = () ->
     show_counts = $('#show-counts-cb').is(":checked")
 
@@ -592,14 +599,20 @@ show_r_code = () ->
         $('div#code-modal').modal()
     )
 
-init_page = (use_backend) ->
+render_page = () ->
     # Show the main html
-    body = $(require("../templates/compare-body.hbs")(asset_base: settings.asset_base || ''))
-    $('body').append(body)
+    opts =
+        asset_base: settings.asset_base || ''
+        home_link: settings.home_link || 'index.html'
+
+    body = $(require("../templates/compare-body.hbs")(opts))
+    $('#replace-me').replaceWith(body)
     $('#main-loading').hide()
     setup_nav_bar()
     $('[title]').tooltip()
 
+init_page = (use_backend) ->
+    render_page()
 
     g_data = new GeneData([],[])
 
