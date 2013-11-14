@@ -80,7 +80,7 @@ class Kegg
             when 'same' then 'blue'
             when 'mixed' then 'yellow'
             when 'up' then 'green'
-            when 'down' then 'blue'
+            when 'down' then 'red'
             else 'black'
 
     highlight: (ec) ->
