@@ -1,5 +1,3 @@
-config_url = () -> "config.html?code=#{window.my_code}"
-
 num_loading = 0
 start_loading = () ->
     num_loading += 1
@@ -47,34 +45,48 @@ class WithoutBackend
     request_kegg_data: (callback) ->
         log_error("Get KEGG data not supported without backend")
 
-class WithBackendNoAnalysis
-    constructor: (@settings, @process_dge_data) ->
-        # Ensure we have been configured!
-        if @settings.fc_columns.length == 0
-            window.location = config_url()
+# BackendCommon - used by both WithBackendNoAnalysis and WithBackendAnalysis
+class BackendCommon
+    @config_url: () ->
+        "config.html?code=#{window.my_code}"
 
-        $('.conditions').hide()
-        $('a.show-r-code').hide()
+    @script: (params) ->
+        "r-json.cgi?code=#{window.my_code}" + if params then "&#{params}" else ""
+
+    constructor: (@settings, configured) ->
+        # Ensure we have been configured!
+        if !configured
+            window.location = BackendCommon.config_url()
+
         if @settings['locked']
             $('a.config').hide()
         else
             $('a.config').removeClass('hide')
-            # TODO - factor out this and the one below
-            $('a.config').attr('href', config_url())
-
-    _script: (params) ->
-        "r-json.cgi?code=#{window.my_code}&#{params}"
+            $('a.config').attr('href', BackendCommon.config_url())
 
     request_kegg_data: (callback) ->
-        d3.tsv(@_script('query=kegg_titles'), (err,ec_data) ->
+        d3.tsv(BackendCommon.script('query=kegg_titles'), (err,ec_data) ->
             log_info("Downloaded kegg : rows=#{ec_data.length}")
             log_debug("Downloaded kegg : rows=#{ec_data.length}",ec_data,err)
             callback(ec_data)
         )
 
+class WithBackendNoAnalysis
+    constructor: (@settings, @process_dge_data) ->
+        @backend = new BackendCommon(@settings, @settings.fc_columns.length > 0)
+
+        $('.conditions').hide()
+        $('a.show-r-code').hide()
+
+    request_kegg_data: (callback) ->
+        @backend.request_kegg_data(callback)
+
     request_init_data: () ->
+        req = BackendCommon.script("query=csv")
         start_loading()
-        d3.text(@_script("query=csv"), (err, dat) =>
+        d3.text(req, (err, dat) =>
+            log_info("Downloaded DGE CSV: len=#{dat.length}")
+            done_loading()
             if err
                 log_error(err)
                 return
@@ -83,10 +95,8 @@ class WithBackendNoAnalysis
                data = d3.csv.parse(dat)
             else
                data = d3.tsv.parse(dat)
-
-            log_info("Downloaded DGE : rows=#{data.length}")
-            log_debug("Downloaded DGE : rows=#{data.length}",data,err)
-            done_loading()
+            log_info("Parsed DGE CSV : rows=#{data.length}")
+            log_debug("Parsed DGE CSV : rows=#{data.length}",data,err)
 
             data_cols = settings.info_columns.map((n) -> {idx: n, name: n, type: 'info' })
             data_cols.push({idx: '_dummy', type: 'primary', name:settings.primary_name})
@@ -101,45 +111,32 @@ class WithBackendNoAnalysis
             @process_dge_data(data, data_cols)
         )
 
-
-
 class WithBackendAnalysis
     constructor: (@settings, @process_dge_data) ->
-        # Ensure we have been configured!
-        if @settings.replicates.length == 0
-            window.location = config_url()
+        @backend = new BackendCommon(@settings, @settings.replicates.length > 0)
 
         $('.conditions').show()
         $('a.show-r-code').show()
-        if @settings['locked']
-            $('a.config').hide()
-        else
-            $('a.config').removeClass('hide')
-            $('a.config').attr('href', config_url())
 
-    _script: (params) ->
-        "r-json.cgi?code=#{window.my_code}&#{params}"
+    request_kegg_data: (callback) ->
+        @backend.request_kegg_data(callback)
 
     request_init_data: () ->
         @_init_condition_selector()
-
-    request_kegg_data: (callback) ->
-        d3.tsv(@_script('query=kegg_titles'), (err,ec_data) ->
-            log_info("Downloaded kegg : rows=#{ec_data.length}")
-            log_debug("Downloaded kegg : rows=#{ec_data.length}",ec_data,err)
-            callback(ec_data)
-        )
 
     request_dge_data: (columns) ->
         return if columns.length <= 1
 
         # load csv file and create the chart
-        req = @_script("query=dge&fields=#{JSON.stringify columns}")
+        req = BackendCommon.script("query=dge&fields=#{JSON.stringify columns}")
         start_loading()
         d3.csv(req, (err, data) =>
-            log_info("Downloaded DGE : rows=#{data.length}")
-            log_debug("Downloaded DGE : rows=#{data.length}",data,err)
+            log_info("Downloaded DGE counts : rows=#{data.length}")
+            log_debug("Downloaded DGE counts : rows=#{data.length}",data,err)
             done_loading()
+            if err
+                log_error(err)
+                return
 
             data_cols = settings.info_columns.map((n) -> {idx: n, name: n, type: 'info' })
             pri=true
@@ -172,7 +169,7 @@ class WithBackendAnalysis
 
     request_r_code: (callback) ->
         columns = @_get_selected_cols()
-        req = @_script("query=dge_r_code&fields=#{JSON.stringify columns}")
+        req = BackendCommon.script("query=dge_r_code&fields=#{JSON.stringify columns}")
         d3.text(req, (err,data) ->
             log_debug("Downloaded R Code : len=#{data.length}",data,err)
             callback(data)
@@ -625,7 +622,6 @@ init_page = (use_backend) ->
         else
             g_backend = new WithBackendNoAnalysis(settings, process_dge_data)
     else
-        # TODO check existence of necessary files!
         g_backend = new WithoutBackend(settings, process_dge_data)
 
     $(".exp-name").text(settings.name || "Unnamed")
@@ -651,12 +647,10 @@ init = () ->
     if !code?
         init_page(false)
     else
-        # TODO.  Pull out this 'script' def.  And the 2 in the classes above (and perhaps the one in config.coffee)
-        script = (params) -> "r-json.cgi?code=#{window.my_code}" + if params then "&#{params}" else ""
         window.my_code = code
         $.ajax({
             type: "GET",
-            url: script("query=settings"),
+            url: BackendCommon.script("query=settings"),
             dataType: 'json'
         }).done((json) ->
             window.settings = json
