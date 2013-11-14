@@ -30,11 +30,12 @@ sed -e "s|'\./|'$url|" build/compare.html > dist/$ver/index.html
 sed -e "/HTML-HERE/r dist/$ver/index.html" -e '/HTML-HERE/d' -e "s/VERSION-HERE/$ver/g" build/embed.py > dist/$ver/degust.py
 
 (  cd dist
+   rm -f latest
    ln -sf $ver latest
 )
 
 
 echo "Now commit the changes and switch back:"
-echo "    git add dist/$ver"
+echo "    git add dist/$ver dist/latest"
 echo "    git commit -a"
 echo "    git checkout master"
