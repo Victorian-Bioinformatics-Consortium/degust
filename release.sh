@@ -3,6 +3,7 @@
 # Exit if any command fails
 set -e
 
+degust_home='http://victorian-bioinformatics-consortium.github.io/degust'
 url='http://victorian-bioinformatics-consortium.github.io/degust/dist/latest/'
 
 ver=$(grep ver app/js/version.coffee | sed -e 's/^.* = //')
@@ -25,7 +26,8 @@ echo "Copying to dist/$ver"
 
 mkdir -p dist/$ver
 cp -r build/{compare.html,*.js,css,images} dist/$ver
-sed -e "s|'\./|'$url|" build/compare.html > dist/$ver/index.html
+sed -e "s|'\./|'$url|" \
+    -e s"|index\.html|$degust_home|" build/compare.html > dist/$ver/index.html
 
 sed -e "/HTML-HERE/r dist/$ver/index.html" \
     -e '/HTML-HERE/d' \
