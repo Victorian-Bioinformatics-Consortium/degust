@@ -13,11 +13,11 @@ def embed(csv, args):
          """
     enc = json.dumps(csv)
     columns = \
+      ["{idx:%s, name: %s, type:'info'}"%(json.dumps(c),json.dumps(c)) for c in args.info] + \
       ["{idx:%s, name: 'FDR', type: 'fdr'}"%json.dumps(args.fdr)] + \
       ["{idx:%s, name: 'Average', type: 'avg'}"%json.dumps(args.avg)] + \
       ["{idx:%s, name: %s, type: 'primary'}"%(json.dumps(args.primary), json.dumps(args.primary))] + \
-      ["{idx:%s, name: %s, type:'fc'}"%(json.dumps(c),json.dumps(c)) for c in args.logFC] + \
-      ["{idx:%s, name: %s, type:'info'}"%(json.dumps(c),json.dumps(c)) for c in args.info]
+      ["{idx:%s, name: %s, type:'fc'}"%(json.dumps(c),json.dumps(c)) for c in args.logFC]
 
     settings = ["html_version: 'VERSION-HERE'",
                 "asset_base: 'ASSET-HERE'",
@@ -41,8 +41,7 @@ def check_args(args, csv_file):
     if args.avg is None:
         sys.stderr.write("Column for average expression not defined (use --avg) necessary for the ma-plot\n")
         err=True
-     
-    if args.avg not in headers:
+    elif args.avg not in headers:
         sys.stderr.write("Column for average expression not found (%s)\n"%args.avg)
         err=True
      
