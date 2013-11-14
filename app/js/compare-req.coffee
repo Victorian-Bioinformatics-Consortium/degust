@@ -1,4 +1,6 @@
 
+require("./lib/bootstrap-tour.js")
+
 # Ours
 require('./slider.coffee')
 require('./gene_table.coffee')
