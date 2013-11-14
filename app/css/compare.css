@@ -56,6 +56,9 @@ div.filter { font-size: 8pt; border: 1px solid #aaa; border-radius: 5px; backgro
 
 .r-code { font-size: 11px; }
 
+/* Tour ***********************************************************************/
+.popover.wide { max-width: 460px; }
+
 /* Heatmap ***********************************************************************/
 
 #heatmap-info { font-size: 9pt; height: 2em; }
