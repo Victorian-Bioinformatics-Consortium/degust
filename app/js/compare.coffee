@@ -599,14 +599,20 @@ show_r_code = () ->
         $('div#code-modal').modal()
     )
 
-init_page = (use_backend) ->
+render_page = () ->
     # Show the main html
-    body = $(require("../templates/compare-body.hbs")(asset_base: settings.asset_base || ''))
-    $('body').append(body)
+    opts =
+        asset_base: settings.asset_base || ''
+        home_link: settings.home_link || 'index.html'
+
+    body = $(require("../templates/compare-body.hbs")(opts))
+    $('#replace-me').replaceWith(body)
     $('#main-loading').hide()
     setup_nav_bar()
     $('[title]').tooltip()
 
+init_page = (use_backend) ->
+    render_page()
 
     g_data = new GeneData([],[])
 
