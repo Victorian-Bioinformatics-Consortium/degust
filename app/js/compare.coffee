@@ -380,17 +380,17 @@ gene_table_filter = (item) ->
 # Filter to decide which rows to plot on the parallel coordinates widget
 expr_filter = (row) ->
     if fcThreshold>0
-        keep = false
-        col_type = 'fc_calc'
-        for col in g_data.columns_by_type(col_type)
-            if Math.abs(row[col.idx]) > fcThreshold
-                keep = true
-                break
-        return false if !keep
+        # Filter using largest FC between any pair of samples
+        fc = g_data.columns_by_type('fc').map((c) -> row[c.idx])
+        extent_fc = d3.extent(fc.concat([0]))
+        if Math.abs(extent_fc[0] - extent_fc[1]) < fcThreshold
+            return false
 
+    # Filter by FDR
     pval_col = g_data.columns_by_type('fdr')[0]
     return false if row[pval_col.idx] > fdrThreshold
 
+    # If a Kegg pathway is selected, filter to that.
     if kegg_filter.length>0
         ec_col = g_data.column_by_type('ec')
         return row[ec_col] in kegg_filter

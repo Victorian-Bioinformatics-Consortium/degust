@@ -1,3 +1,6 @@
+v0.9
+  * Fix log FC filter to use the largest FC between any sample pair
+
 v0.8
   * Add script to allow building of a single standalone html
   * Add a tour of the site features
