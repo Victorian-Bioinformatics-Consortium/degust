@@ -7,6 +7,8 @@ Access a public web service running [Degust](http://www.vicbioinformatics.com/de
 
 View a [short video](https://www.youtube.com/watch?v=ucucQ_LtZ1g) of the interface in use.
 
+Read a summary on the <a href='http://victorian-bioinformatics-consortium.github.io/degust/'>Degust home page</a>.
+
 ## Example Screenshot
 
 ![Degust screenshot](screenshot-2.png)
