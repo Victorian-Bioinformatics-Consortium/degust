@@ -7,6 +7,8 @@ Access a public web service running [Degust](http://www.vicbioinformatics.com/de
 
 View a [short video](https://www.youtube.com/watch?v=ucucQ_LtZ1g) of the interface in use.
 
+Read a summary on the <a href='http://victorian-bioinformatics-consortium.github.io/degust/'>Degust home page</a>.
+
 ## Example Screenshot
 
 ![Degust screenshot](screenshot-2.png)
@@ -76,6 +78,8 @@ This will watch the js & coffeescript files and rebuild CoffeeScript as needed.
     ./build.sh dev
     ./build-watchify.sh &
     (cd build ; ../server.py)
+
+It is also useful to access the pages with "debug=1" (eg. http://vicbioinformatics.com/degust/compare.html?code=example&debug=1) which enables extra debug logging to the console.
 
 
 ### To build with the analysis back-end
