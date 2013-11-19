@@ -39,22 +39,72 @@
       </form>
 
       <h3>CSV File Format</h3>
-      The requirements for the uploaded file:
-      <ul>
-        <li>Must be in CSV (or tab-separated) format
-        <li>Must have a single header row defining with a unique name for each column
-        <li>Must have a column with unique identifiers for each gene (an ID column)
-        <li>Must have 2 or more replicates per condition, and 2 or more conditions
-        <li>May optionally have an <a href="http://en.wikipedia.org/wiki/Enzyme_Commission_number">EC Number</a> column to display genes on Kegg pathways
-        <li>May optionally have information columns to be displayed in the gene table
-      </ul>
-      <h4>Example CSV File</h4>
-      <pre>
-        Gene ID, control rep1, control rep2, treatment A rep1, treatment A rep2, EC Number
-        gene001, 60, 40, 200, 220, 3.1.-.-
-        gene002, 0, 4, 20, 30,
-        gene003, 600, 633, 200, 220, 2.7.8.-
-      </pre>
+      <p>You may upload a <a href='#csv-counts'>CSV of read counts per gene</a> <strong>OR</strong> a <a href='#csv-logfc'>CSV of pre-analysed gene</a> data.</p>
+
+      <div class="panel panel-info">
+        <a name='csv-counts'></a>
+        <div class="panel-heading">Uploading read counts per gene</div>
+        <div class="panel-body">
+          <p>After uploading your counts file, you'll be directed to a page to specify the columns.  Ensure the checkbox <strong>Analyze server side</strong> is checked.<p>
+          <p>The requirements for the CSV file:</p>
+          <ul>
+            <li>Must be in CSV (or tab-separated) format
+            <li>Must have a single header row defining with a unique name for each column
+            <li>Must have 2 or more replicates per condition, and 2 or more conditions
+            <li>May optionally have information columns to be displayed in the gene table
+            <li>May optionally have an <a href="http://en.wikipedia.org/wiki/Enzyme_Commission_number">EC Number</a> column to display genes on Kegg pathways
+          </ul>
+          <h5>Example CSV File</h5>
+          <pre>
+            Gene ID, name, control rep1, control rep2, treatment A rep1, treatment A rep2, EC Number
+            gene001, flavodoxin, 60, 40, 200, 220, 3.1.-.-
+            gene002, p53, 0, 4, 20, 30,
+            gene003, potassium uptake protein, 600, 633, 200, 220, 2.7.8.-
+          </pre>
+        </div>
+      </div>
+
+      <div class="panel panel-info">
+        <a name='csv-logfc'></a>
+        <div class="panel-heading">Uploading pre-analysed data</div>
+        <div class="panel-body">
+          <p>After uploading your analysis file, you'll be directed to a page to specify the columns.  Ensure the checkbox <strong>Analyze server side</strong> is not checked.<p>
+          <p>The requirements for CSV file:</p>
+          <ul>
+            <li>Must be in CSV (or tab-separated) format
+            <li>Must have a single header row defining with a unique name for each column
+            <li>Must have 1 or more columns for log-fold-change
+            <li>Must have 1 column for False Discovery Rate (or an equivalent)
+            <li>Must have 1 column for log average expression (for the 'A' in an MA plot)
+            <li>May optionally have information columns to be displayed in the gene table
+            <li>May optionally have an <a href="http://en.wikipedia.org/wiki/Enzyme_Commission_number">EC Number</a> column to display genes on Kegg pathways
+          </ul>
+          
+          <h5>Example CSV File</h5>
+          <pre>
+            Gene ID, name, treatment log-fold-change, FDR, log average expression, EC Number
+            gene001, flavodoxin, 0.1, 0.65, 8.23, 3.1.-.-
+            gene002, p53, -1.5, 0.0001, 10.4,
+            gene003, potassium uptake protein, -1.2, 0.023, 5.32, 2.7.8.-
+          </pre>
+
+          <p>One possible way to produce such a CSV file is by performing your differential analysis using R with LIMMA and saving the results as follows:</p>
+          <pre>
+            &gt; # Save our analysis object 'efit' to a CSV file
+            &gt; class(efit)
+            [1] "MArrayLM"
+            attr(,"package")
+            [1] "limma"
+            &gt; colnames(efit)
+            [1] "GppX" "luxS" "cdhR"
+            &gt; write.csv(topTable(efit, number=Inf), 'dge.csv', row.names=F)
+            &gt; quit()
+            bash$ 
+          </pre>
+        </div>
+      </div>
+
+
     </div>
 
 
