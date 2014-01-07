@@ -267,12 +267,34 @@ gene_table_mouseout = () ->
     $('#gene-info').html('')
     kegg.unhighlight()
 
+# Rules for guess best info link based on some ID
+guess_link_info =
+    [{re: /^ENS/, link: 'http://ensembl.org/Multi/Search/Results?q=%s;site=ensembl'},
+     {re: /^CG/, link: 'http://flybase.org/cgi-bin/uniq.html?species=Dmel&cs=yes&db=fbgn&caller=genejump&context=%s'},
+     {re: //, link: 'http://www.ncbi.nlm.nih.gov/gene/?&term=%s'},
+    ]
+
+# Guess the link using the guess_link_info table
+guess_link = (info) ->
+    return if !info?
+    for o in guess_link_info
+        return o.link if info.match(o.re)
+    return null
+
+# Open a page for the given gene.  Use either the defined link or guess one.
+# The "ID" column can be specified as 'link' otherwise the first 'info' column is used
 gene_table_dblclick = (item) ->
-    cols = g_data.columns_by_type(['info'])
+    cols = g_data.columns_by_type(['link'])
+    if cols.length==0
+        cols = g_data.columns_by_type(['info'])
     if cols.length>0
-        str = item[cols[0].idx]
-        window.open("http://ensembl.org/Multi/Search/Results?q=#{str};site=ensembl")
-        window.focus()
+        info = item[cols[0].idx]
+        link = if settings.link_url? then settings.link_url else guess_link(info)
+        log_debug("Dbl click.  Using info/link",info,link)
+        if link?
+            link = link.replace(/%s/, info)
+            window.open(link)
+            window.focus()
 
 activate_parcoords = () ->
     expr_plot = parcoords
