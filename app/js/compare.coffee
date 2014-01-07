@@ -91,22 +91,22 @@ class WithBackendNoAnalysis
                 log_error(err)
                 return
 
-            if settings.csv_format
+            if @settings.csv_format
                data = d3.csv.parse(dat)
             else
                data = d3.tsv.parse(dat)
             log_info("Parsed DGE CSV : rows=#{data.length}")
             log_debug("Parsed DGE CSV : rows=#{data.length}",data,err)
 
-            data_cols = settings.info_columns.map((n) -> {idx: n, name: n, type: 'info' })
-            data_cols.push({idx: '_dummy', type: 'primary', name:settings.primary_name})
-            settings.fc_columns.forEach((n) ->
+            data_cols = @settings.info_columns.map((n) -> {idx: n, name: n, type: 'info' })
+            data_cols.push({idx: '_dummy', type: 'primary', name:@settings.primary_name})
+            @settings.fc_columns.forEach((n) ->
                 data_cols.push({idx: n, type: 'fc', name: n})
             )
-            data_cols.push({idx: settings.fdr_column, name: settings.fdr_column, type: 'fdr'})
-            data_cols.push({idx: settings.avg_column, name: settings.avg_column, type: 'avg'})
-            if settings.ec_column?
-                data_cols.push({idx: settings.ec_column, name: 'EC', type: 'ec'})
+            data_cols.push({idx: @settings.fdr_column, name: @settings.fdr_column, type: 'fdr'})
+            data_cols.push({idx: @settings.avg_column, name: @settings.avg_column, type: 'avg'})
+            if @settings.ec_column?
+                data_cols.push({idx: @settings.ec_column, name: 'EC', type: 'ec'})
 
             @process_dge_data(data, data_cols)
         )
@@ -138,7 +138,7 @@ class WithBackendAnalysis
                 log_error(err)
                 return
 
-            data_cols = settings.info_columns.map((n) -> {idx: n, name: n, type: 'info' })
+            data_cols = @settings.info_columns.map((n) -> {idx: n, name: n, type: 'info' })
             pri=true
             columns.forEach((n) ->
                 typ = if pri then 'primary' else 'fc'
@@ -147,9 +147,9 @@ class WithBackendAnalysis
             )
             data_cols.push({idx: 'adj.P.Val', name: 'FDR', type: 'fdr'})
             data_cols.push({idx: 'AveExpr', name: 'AveExpr', type: 'avg'})
-            if settings.ec_column?
-                data_cols.push({idx: settings.ec_column, name: 'EC', type: 'ec'})
-            settings.replicates.forEach(([name,reps]) ->
+            if @settings.ec_column?
+                data_cols.push({idx: @settings.ec_column, name: 'EC', type: 'ec'})
+            @settings.replicates.forEach(([name,reps]) ->
                 reps.forEach((rep) ->
                     data_cols.push({idx: rep, name: rep, type: 'count', parent: name})
                 )
