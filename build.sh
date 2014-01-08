@@ -47,8 +47,8 @@ case "$1" in
                 ln -s "$f" .
             done )
         ;;
-    *)
-        echo "Building 'production'"
+    prod|prod-server)
+        echo "Building '$1'"
         echo "Combining css and minifying..."
         # Combine the lib CSS
         cat app/css/lib/*.css | cleancss > "$dest"/css/lib.css
@@ -63,6 +63,9 @@ case "$1" in
         cp -r app/html/* "$dest"
         cp embed.py "$dest"
         ;;
+    *)
+        echo "This did not happen..."
+        exit 1
 esac
 
 cp -r app/css/lib/images "$dest"/css/
