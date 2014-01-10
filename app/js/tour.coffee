@@ -34,7 +34,8 @@ tour_steps =
     element: '#grid'
     placement: 'top'
     title:"<strong>Gene table</strong>"
-    content: "A table of genes filtered to show the same genes as plotted above.  The table may be sorted by clicking on the column headers.  Specific genes may be searched for using the search box"
+    content: "A table of genes filtered to show the same genes as plotted above.  <ul><li>The table may be sorted by clicking on the column headers.<li>Specific genes may be found using the search box<li>Double click a row to open a page for that gene.</ul>"
+    template: () -> $(template).addClass('wide')
   ,
     element: '.fdr-fld'
     placement: 'left'

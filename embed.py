@@ -17,7 +17,8 @@ def embed(csv, args):
       ["{idx:%s, name: 'FDR', type: 'fdr'}"%json.dumps(args.fdr)] + \
       ["{idx:%s, name: 'Average', type: 'avg'}"%json.dumps(args.avg)] + \
       ["{idx:%s, name: %s, type: 'primary'}"%(json.dumps(args.primary), json.dumps(args.primary))] + \
-      ["{idx:%s, name: %s, type:'fc'}"%(json.dumps(c),json.dumps(c)) for c in args.logFC]
+      ["{idx:%s, name: %s, type:'fc'}"%(json.dumps(c),json.dumps(c)) for c in args.logFC] + \
+      ["{idx:%s, name: %s, type:'link'}"%(json.dumps(c),json.dumps(c)) for c in args.link_col]
 
     settings = ["html_version: 'VERSION-HERE'",
                 "asset_base: 'ASSET-HERE'",
@@ -28,6 +29,8 @@ def embed(csv, args):
                 ]
     if args.notour:
         settings += ["show_tour: false"]
+    if args.link_url:
+        settings += ["link_url: %s"%json.dumps(args.link_url)]
 
     window_settings = "window.settings = {%s};"%(",".join(settings))
     s = html.replace('window.settings = { };', "var data=%s;\n\n%s"%(enc,window_settings), 1)
@@ -39,14 +42,14 @@ def check_args(args, csv_file):
     headers = reader.next()
     err = False
     if args.avg is None:
-        sys.stderr.write("Column for average expression not defined (use --avg) necessary for the ma-plot\n")
+        sys.stderr.write("ERROR: Column for average expression not defined (use --avg) necessary for the ma-plot\n")
         err=True
     elif args.avg not in headers:
-        sys.stderr.write("Column for average expression not found (%s)\n"%args.avg)
+        sys.stderr.write("ERROR: Column for average expression not found (%s)\n"%args.avg)
         err=True
      
     if args.fdr not in headers:
-        sys.stderr.write("Column for FDR not found (%s)\n"%args.fdr)
+        sys.stderr.write("ERROR: Column for FDR not found (%s)\n"%args.fdr)
         err=True
 
     if args.logFC is None:
@@ -90,12 +93,19 @@ parser.add_argument('--logFC',
                     help='Comma separated names for "logFC" columns in CSV file')
 parser.add_argument('--info',
                     help='Comma separated names for info columns in CSV file')
+parser.add_argument('--link-col',
+                    help='Name for column to use with "--link-url"')
+parser.add_argument('--link-url',
+                    help='Gene info URL.  Used when double-clicking the gene-table.  Any "%%s" will be replaced with the value from the specified "--link-col"')
 
 args = parser.parse_args()
 
 #print args
 if args.info:  args.info = args.info.split(",")
 if args.logFC: args.logFC = args.logFC.split(",")
+args.link_col = [args.link_col] if args.link_col else []
+
+# print args
 
 if args.csvfile == sys.stdin:
     sys.stderr.write("Reading from stdin...\n")

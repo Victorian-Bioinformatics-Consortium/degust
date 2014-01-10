@@ -39,8 +39,10 @@ data UserSettings =
   UserSettings { _skip :: Int -- ^ Number of rows to skip (not used frontend?)
                , _csv_format :: Bool  -- ^ True for CSV, False for TAB
 
-               , _ec_col :: Maybe String -- ^ Optional EC number column (0-based)
+               , _ec_col :: Maybe String -- ^ Optional EC number column
                , _info_cols :: [String] -- ^ Optional list of columns to include in display
+               , _link_col :: Maybe String -- ^ Optional gene-link column (used in link_url)
+               , _link_url :: Maybe String -- ^ Optional gene-link URL
 
                -- Only used on the frontent
                , _hide :: [String] -- ^ Used in the frontend to hide some columns
@@ -62,6 +64,8 @@ data UserSettings =
 makeLenses ''UserSettings
 
 defUserSettings = UserSettings { _ec_col = Nothing
+                               , _link_col = Nothing
+                               , _link_url = Nothing
                                , _info_cols = []
                                , _replicates = []
                                , _init_select = []
@@ -108,6 +112,7 @@ chkUserSettingsValid s = if any invalidChar allColumns
     allColumns :: [String]
     allColumns = (map fst $ s ^. replicates) ++ (concatMap snd $ s ^. replicates)
                  ++ maybeToList (s ^. ec_col)
+                 ++ maybeToList (s ^. link_col)
                  ++ s ^. info_cols
                  ++ s ^. init_select
 
@@ -116,6 +121,8 @@ user_settings_cols :: [(UserSettings -> JSObject JSValue -> Result UserSettings
                        ,UserSettings -> JSObject JSValue -> JSObject JSValue)]
 user_settings_cols = [simple "info_columns" info_cols
                      ,(get_simple_f "ec_column" ec_col id, set_maybe "ec_column" ec_col)
+                     ,(get_simple_f "link_column" link_col id, set_maybe "link_column" link_col)
+                     ,(get_simple_f "link_url" link_url id, set_maybe "link_url" link_url)
                      ,simple "replicates" replicates
                      ,simple "csv_format" csv_format
                      ,simple "skip" skip

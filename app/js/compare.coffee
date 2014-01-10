@@ -91,22 +91,24 @@ class WithBackendNoAnalysis
                 log_error(err)
                 return
 
-            if settings.csv_format
+            if @settings.csv_format
                data = d3.csv.parse(dat)
             else
                data = d3.tsv.parse(dat)
             log_info("Parsed DGE CSV : rows=#{data.length}")
             log_debug("Parsed DGE CSV : rows=#{data.length}",data,err)
 
-            data_cols = settings.info_columns.map((n) -> {idx: n, name: n, type: 'info' })
-            data_cols.push({idx: '_dummy', type: 'primary', name:settings.primary_name})
-            settings.fc_columns.forEach((n) ->
+            data_cols = @settings.info_columns.map((n) -> {idx: n, name: n, type: 'info' })
+            data_cols.push({idx: '_dummy', type: 'primary', name:@settings.primary_name})
+            @settings.fc_columns.forEach((n) ->
                 data_cols.push({idx: n, type: 'fc', name: n})
             )
-            data_cols.push({idx: settings.fdr_column, name: settings.fdr_column, type: 'fdr'})
-            data_cols.push({idx: settings.avg_column, name: settings.avg_column, type: 'avg'})
-            if settings.ec_column?
-                data_cols.push({idx: settings.ec_column, name: 'EC', type: 'ec'})
+            data_cols.push({idx: @settings.fdr_column, name: @settings.fdr_column, type: 'fdr'})
+            data_cols.push({idx: @settings.avg_column, name: @settings.avg_column, type: 'avg'})
+            if @settings.ec_column?
+                data_cols.push({idx: @settings.ec_column, name: 'EC', type: 'ec'})
+            if @settings.link_column?
+                data_cols.push({idx: @settings.link_column, name: 'link', type: 'link'})
 
             @process_dge_data(data, data_cols)
         )
@@ -138,7 +140,7 @@ class WithBackendAnalysis
                 log_error(err)
                 return
 
-            data_cols = settings.info_columns.map((n) -> {idx: n, name: n, type: 'info' })
+            data_cols = @settings.info_columns.map((n) -> {idx: n, name: n, type: 'info' })
             pri=true
             columns.forEach((n) ->
                 typ = if pri then 'primary' else 'fc'
@@ -147,9 +149,11 @@ class WithBackendAnalysis
             )
             data_cols.push({idx: 'adj.P.Val', name: 'FDR', type: 'fdr'})
             data_cols.push({idx: 'AveExpr', name: 'AveExpr', type: 'avg'})
-            if settings.ec_column?
-                data_cols.push({idx: settings.ec_column, name: 'EC', type: 'ec'})
-            settings.replicates.forEach(([name,reps]) ->
+            if @settings.ec_column?
+                data_cols.push({idx: @settings.ec_column, name: 'EC', type: 'ec'})
+            if @settings.link_column?
+                data_cols.push({idx: @settings.link_column, name: 'link', type: 'link'})
+            @settings.replicates.forEach(([name,reps]) ->
                 reps.forEach((rep) ->
                     data_cols.push({idx: rep, name: rep, type: 'count', parent: name})
                 )
@@ -267,12 +271,34 @@ gene_table_mouseout = () ->
     $('#gene-info').html('')
     kegg.unhighlight()
 
+# Rules for guess best info link based on some ID
+guess_link_info =
+    [{re: /^ENS/, link: 'http://ensembl.org/Multi/Search/Results?q=%s;site=ensembl'},
+     {re: /^CG/, link: 'http://flybase.org/cgi-bin/uniq.html?species=Dmel&cs=yes&db=fbgn&caller=genejump&context=%s'},
+     {re: //, link: 'http://www.ncbi.nlm.nih.gov/gene/?&term=%s'},
+    ]
+
+# Guess the link using the guess_link_info table
+guess_link = (info) ->
+    return if !info?
+    for o in guess_link_info
+        return o.link if info.match(o.re)
+    return null
+
+# Open a page for the given gene.  Use either the defined link or guess one.
+# The "ID" column can be specified as 'link' otherwise the first 'info' column is used
 gene_table_dblclick = (item) ->
-    cols = g_data.columns_by_type(['info'])
+    cols = g_data.columns_by_type(['link'])
+    if cols.length==0
+        cols = g_data.columns_by_type(['info'])
     if cols.length>0
-        str = item[cols[0].idx]
-        window.open("http://ensembl.org/Multi/Search/Results?q=#{str};site=ensembl")
-        window.focus()
+        info = item[cols[0].idx]
+        link = if settings.link_url? then settings.link_url else guess_link(info)
+        log_debug("Dbl click.  Using info/link",info,link)
+        if link?
+            link = link.replace(/%s/, info)
+            window.open(link)
+            window.focus()
 
 activate_parcoords = () ->
     expr_plot = parcoords

@@ -44,6 +44,9 @@ save = (ev) ->
     ev.preventDefault()
     mod_settings.name = $("input.name").val()
     mod_settings.primary_name = $("input.primary").val()
+    mod_settings.link_url = $("input.link-url").val()
+    if mod_settings.link_url.length==0
+        delete mod_settings.link_url
     conditions_to_settings()
     mod_settings.csv_format = csv_or_tab()=='CSV'
 
@@ -90,6 +93,7 @@ update_data = () ->
     $("input.name").val(mod_settings.name || "")
     $(".exp-name").text(mod_settings.name || "Unnamed")
     $("input.primary").val(mod_settings.primary_name || "")
+    $("input.link-url").val(mod_settings.link_url || "")
     if mod_settings.hasOwnProperty('min_counts')
         $("input.min-counts").val(mod_settings.min_counts)
 
@@ -109,6 +113,10 @@ update_data = () ->
     $('select.ec-column').html("<option value='-1'>--- Optional ---</option>" + opts)
     if mod_settings.hasOwnProperty('ec_column')
         $("select.ec-column option[value='#{col_id mod_settings.ec_column}']").attr('selected','selected')
+
+    $('select.link-column').html("<option value='-1'>--- Optional ---</option>" + opts)
+    if mod_settings.hasOwnProperty('link_column')
+        $("select.link-column option[value='#{col_id mod_settings.link_column}']").attr('selected','selected')
 
     $('select#fdr-column').html(opts)
     $('select#fdr-column').html("<option value='-1'>--- Required ---</option>" + opts)
@@ -253,6 +261,15 @@ init_page = () ->
             delete mod_settings.ec_column
         else
             mod_settings.ec_column = column_keys[mod_settings.ec_column]
+        warnings()
+    )
+
+    $('select.link-column').change(() ->
+        mod_settings.link_column = +$("select.link-column option:selected").val()
+        if mod_settings.link_column == -1
+            delete mod_settings.link_column
+        else
+            mod_settings.link_column = column_keys[mod_settings.link_column]
         warnings()
     )
 
