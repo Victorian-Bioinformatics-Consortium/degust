@@ -44,7 +44,7 @@
           <div class="form-group">
             <label class="control-label col-sm-3" for="name">Name</label>
             <div class="controls col-sm-8">
-              <input class="name" type="text" name="name" placeholder="Unnamed" title="Optional: Give your experiment a name" data-placement='right' />
+              <input class="name" type="text" name="name" placeholder="Unnamed" title="Optional: Give your experiment a name" data-placement='right' size='30' />
             </div>
           </div>
           <div class="form-group">
@@ -75,6 +75,18 @@
             <label class="control-label col-sm-3">Hide columns</label>
             <div class="controls col-sm-6">
               <select id="hide-columns" multiple="multiple" title="Columns to hide from the table below.  Only used to hide columns on this page and ease configuration" data-placement='right'></select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="control-label col-sm-3">Gene link column</label>
+            <div class="controls col-sm-6">
+              <select class="link-column" title="Column containing information for external linking" data-placement='right'></select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="control-label col-sm-3">Gene link URL</label>
+            <div class="controls col-sm-6">
+              <input class="link-url" type="text" size='50' placeholder="Leave blank to have Degust guess" title="Optional: External link for genes.  Any '%s' in the link will be replaced by the defined link column" data-placement='right' />
             </div>
           </div>
 

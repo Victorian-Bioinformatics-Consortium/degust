@@ -1,3 +1,6 @@
+v0.10
+  * Make the external URL link used for double-clicking the gene table configurable
+
 v0.9
   * Fix log FC filter to use the largest FC between any sample pair
 

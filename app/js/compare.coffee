@@ -107,6 +107,8 @@ class WithBackendNoAnalysis
             data_cols.push({idx: @settings.avg_column, name: @settings.avg_column, type: 'avg'})
             if @settings.ec_column?
                 data_cols.push({idx: @settings.ec_column, name: 'EC', type: 'ec'})
+            if @settings.link_column?
+                data_cols.push({idx: @settings.link_column, name: 'link', type: 'link'})
 
             @process_dge_data(data, data_cols)
         )
@@ -149,6 +151,8 @@ class WithBackendAnalysis
             data_cols.push({idx: 'AveExpr', name: 'AveExpr', type: 'avg'})
             if @settings.ec_column?
                 data_cols.push({idx: @settings.ec_column, name: 'EC', type: 'ec'})
+            if @settings.link_column?
+                data_cols.push({idx: @settings.link_column, name: 'link', type: 'link'})
             @settings.replicates.forEach(([name,reps]) ->
                 reps.forEach((rep) ->
                     data_cols.push({idx: rep, name: rep, type: 'count', parent: name})
