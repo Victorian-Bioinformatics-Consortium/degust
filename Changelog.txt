@@ -1,3 +1,6 @@
+v0.10.1
+  * Improve layout on small displays
+
 v0.10
   * Make the external URL link used for double-clicking the gene table configurable
 
