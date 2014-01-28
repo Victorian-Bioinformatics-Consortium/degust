@@ -1,6 +1,6 @@
 #!/usr/bin/env runghc
 
-{-# LANGUAGE QuasiQuotes, OverloadedStrings, TemplateHaskell #-}
+{-# LANGUAGE QuasiQuotes, OverloadedStrings, TemplateHaskell, BangPatterns #-}
 
 {- Test on the command line:
       QUERY_STRING=query=code=2456dfc6c20a6ff4b43129fd6ac00ac5&query=counts ./r-json.hs
@@ -191,6 +191,17 @@ getKeggTitles =  liftIO $ do
                               let ecs = xml =~ ("name=\"ec:([.\\d]+)\"" ::String) :: [[String]]
                               return $ line ++ [intercalate " " $ map (!!1) ecs]
 
+
+-- | Portable count lines.  Handle just LF (unix), just CR+LF (windows), just CR (macos)
+-- Actually not exact since won't count last line correctly if doesn't finish with a eol marker
+countLines :: T.Text -> Int
+countLines txt = snd $ T.foldl' go (False,0) txt
+  where
+    go (True, !num)  '\n' = (False,num)    -- Don't increment on CR+LF (we incremented on the CR already)
+    go (False, !num) '\n' = (False, num+1) -- Increment LF
+    go (_, !num) '\r' = (True, num+1)      -- Increment on CR
+    go (_, !num) c = (False, num)          -- Any other non-line charater
+
 doUpload :: CGI CGIResult
 doUpload = do
     dat <- getInputFPS "filename"
@@ -200,7 +211,7 @@ doUpload = do
                     Nothing -> save dat
                     Just msg -> do setHeader "Content-type" "text/html"; output msg
   where
-    chkLines txt = let n = length $ T.lines txt
+    chkLines txt = let n = countLines txt
                    in if n<10
                       then Just "Too few lines in the file"
                       else if n>70000
