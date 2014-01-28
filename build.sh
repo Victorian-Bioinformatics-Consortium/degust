@@ -107,6 +107,7 @@ case "$1" in
         cp -r kegg "$dest"
         cp htaccess "$dest"/.htaccess
         mkdir -p "$dest"/tmp "$dest"/cached "$dest"/user-files
+        cp examples/example-counts.csv "$dest"
         ;;
 esac
 
