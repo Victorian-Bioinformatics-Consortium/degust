@@ -23,7 +23,7 @@ def embed(csv, args):
     settings = ["html_version: 'VERSION-HERE'",
                 "asset_base: 'ASSET-HERE'",
                 "csv_data: data", 
-                "csv_format: true",
+                "csv_format: %s"%("false" if args.tab else "true"),
                 "name: %s"%json.dumps(args.name),
                 "columns:[%s]"%(",".join(columns)),
                 ]
@@ -38,7 +38,8 @@ def embed(csv, args):
 
 def check_args(args, csv_file):
     # Check args match csv file.
-    reader = csv.reader(csv_file.split('\n'), delimiter=',')
+    delim = "\t" if args.tab else ","
+    reader = csv.reader(csv_file.split('\n'), delimiter=delim)
     headers = reader.next()
     err = False
     if args.avg is None:
@@ -97,6 +98,8 @@ parser.add_argument('--link-col',
                     help='Name for column to use with "--link-url"')
 parser.add_argument('--link-url',
                     help='Gene info URL.  Used when double-clicking the gene-table.  Any "%%s" will be replaced with the value from the specified "--link-col"')
+parser.add_argument('--tab', action='store_true', default=False,
+                    help='Specify that the csv file is actually tab delimited')
 
 args = parser.parse_args()
 
