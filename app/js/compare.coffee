@@ -275,7 +275,7 @@ gene_table_mouseout = () ->
 guess_link_info =
     [{re: /^ENS/, link: 'http://ensembl.org/Multi/Search/Results?q=%s;site=ensembl'},
      {re: /^CG/, link: 'http://flybase.org/cgi-bin/uniq.html?species=Dmel&cs=yes&db=fbgn&caller=genejump&context=%s'},
-     {re: //, link: 'http://www.ncbi.nlm.nih.gov/gene/?&term=%s'},
+     {re: /^/, link: 'http://www.ncbi.nlm.nih.gov/gene/?&term=%s'},
     ]
 
 # Guess the link using the guess_link_info table
