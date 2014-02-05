@@ -1,11 +1,6 @@
 #!/usr/bin/env python
 
-import argparse
-import json
-import re
-import sys
-import csv
-
+import argparse, json, re, sys, csv, StringIO, math
 
 def embed(csv, args):
     html="""
@@ -72,6 +67,28 @@ def check_args(args, csv_file):
                 err=True
     return err
 
+
+def cuffdiff_avg(str):
+    """Given a string that is the output from cuffdiff, create and log2(average expression) column.
+    Acutally, it is just the average log2() of the FPKM, but that should be enough for visualisation
+    """
+    delim = "\t" if args.tab else ","
+    reader = csv.reader(csv_file.split('\n'), delimiter=delim)
+    si = StringIO.StringIO()
+    cw = csv.writer(si, delimiter=delim)
+
+    headers = reader.next()
+    cw.writerow(headers + ['Avg'])
+    idx1 = headers.index("value_1")
+    idx2 = headers.index("value_2")
+    for r in reader:
+        if len(r)>=max(idx1,idx2):
+            v1 = max(float(r[idx1]),1)
+            v2 = max(float(r[idx2]),1)
+            v = 0.5 * (math.log(v1,2) + math.log(v2,2))
+            cw.writerow(r + [v])
+    return si.getvalue()
+
 parser = argparse.ArgumentParser(description='Produce a standalone Degust html file from a CSV file containing DGE.')
 parser.add_argument('csvfile', type=argparse.FileType('r'), 
                     nargs='?', default='-', 
@@ -100,6 +117,8 @@ parser.add_argument('--link-url',
                     help='Gene info URL.  Used when double-clicking the gene-table.  Any "%%s" will be replaced with the value from the specified "--link-col"')
 parser.add_argument('--tab', action='store_true', default=False,
                     help='Specify that the csv file is actually tab delimited')
+parser.add_argument('--cuffdiff', action='store_true', default=False,
+                    help='Input file is from cuffdiff (gene_exp.diff).  This will set the columns automatically')
 
 args = parser.parse_args()
 
@@ -114,6 +133,14 @@ if args.csvfile == sys.stdin:
     sys.stderr.write("Reading from stdin...\n")
 
 csv_file = args.csvfile.read()
+
+if args.cuffdiff:
+    args.info = ['gene_id','gene']
+    args.logFC = ['log2(fold_change)']
+    args.tab = True
+    args.fdr = 'q_value'
+    args.avg = 'Avg'
+    csv_file = cuffdiff_avg(csv_file)
 
 err = check_args(args, csv_file)
 
