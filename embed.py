@@ -118,7 +118,7 @@ parser.add_argument('--link-url',
 parser.add_argument('--tab', action='store_true', default=False,
                     help='Specify that the csv file is actually tab delimited')
 parser.add_argument('--cuffdiff', action='store_true', default=False,
-                    help='Input file is from cuffdiff (gene_exp.diff).  This will set the columns automatically')
+                    help='Input file is from cuffdiff (gene_exp.diff).  This will set the columns automatically.  Note this is still experimental')
 
 args = parser.parse_args()
 
