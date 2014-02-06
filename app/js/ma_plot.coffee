@@ -67,12 +67,23 @@ class MAPlot
             .attr("class", "axis")
             .attr("transform", "translate(0," + yScale(0) + ")")
             .call(xAxis)
+           .append("text")
+            .attr("x", xScale.range()[1])
+            .attr("y", -6)
+            .style("text-anchor", "end")
+            .text("Avg Expression")
 
         @svg.append("g")
             .attr("class", "axis")
             .attr("transform", "translate(" + @opts.padding + ",0)")
             .call(yAxis)
-
+           .append("text")
+            .attr("transform", "rotate(-90)")
+            .attr("x", -5)
+            .attr("y", 5)
+            .attr("dy", ".71em")
+            .style("text-anchor", "end")
+            .text("logFC")
 
     _draw_dots: () ->
         ctx = @gDot[0][0].getContext("2d")
