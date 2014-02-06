@@ -109,8 +109,9 @@ def cuffdiff_avg(str):
     cw.writerow(headers + ['Avg'])
     idx1 = headers.index("value_1")
     idx2 = headers.index("value_2")
+    tst_idx = headers.index("status")
     for r in reader:
-        if len(r)>=max(idx1,idx2):
+        if len(r)>=max(idx1,idx2) and r[tst_idx] == 'OK':
             v1 = max(float(r[idx1]),1)
             v2 = max(float(r[idx2]),1)
             v = 0.5 * (math.log(v1,2) + math.log(v2,2))
