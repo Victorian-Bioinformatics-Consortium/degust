@@ -1,3 +1,6 @@
+v0.11.1
+  * Add axis labels to the MA-plot
+
 v0.11
   * Add option to degust.py to load tab-delimitered files
   * Add option to degust.py to process cuffdiff output (gene_exp.diff).  Note this is still experimental
