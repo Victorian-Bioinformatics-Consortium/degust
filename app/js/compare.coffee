@@ -428,6 +428,7 @@ init_search = () ->
                     Slick.GlobalEditorLock.cancelCurrentEdit()
                     this.value = "" if e.which == 27     # Clear on "Esc"
                     searchStr = this.value.toLowerCase()
+                    $(this).toggleClass('active', searchStr != "")
                     gene_table.refresh()
 
 init_download_link = () ->

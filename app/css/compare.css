@@ -14,6 +14,7 @@
 #grid { height: 300px; }
 #grid-info { font-size: 9pt; }
 .tab-search { font-size: 9pt; float: right; margin-top: -10px; }
+.tab-search .active { background-color: gold; }
 a#csv-download { font-size: 9pt; float: right; margin: -7px 30px 0 0; }
 
 .conditions { display: none; }
