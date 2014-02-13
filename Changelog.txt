@@ -1,3 +1,6 @@
+v0.11.2
+  * Workaround issue with centering of bootstraptour popup.
+
 v0.11.1
   * Add axis labels to the MA-plot
 
