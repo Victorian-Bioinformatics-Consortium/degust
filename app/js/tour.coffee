@@ -76,8 +76,8 @@ tour_steps =
   ]
 
 window.setup_tour = (show_tour) ->
-    tour = new Tour()    #({debug: true})
+    tour = new Tour(steps: tour_steps)    #({debug: true})
     #window.tour = tour
-    tour.addSteps(tour_steps)
+    tour.init()
     $('a#tour').click(() -> tour.restart())
     tour.start() if show_tour
