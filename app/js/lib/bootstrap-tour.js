@@ -522,7 +522,8 @@
     };
 
     Tour.prototype._center = function($tip) {
-      return $tip.css("top", $(window).outerHeight() / 2 - $tip.outerHeight() / 2);
+      //return $tip.css("top", $(window).outerHeight() / 2 - $tip.outerHeight() / 2);
+      return $tip.css("top", window.innerHeight / 2 - $tip.outerHeight() / 2);
     };
 
     Tour.prototype._replaceArrow = function($tip, delta, dimension, position) {
