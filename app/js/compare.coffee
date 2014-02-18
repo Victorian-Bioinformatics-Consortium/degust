@@ -344,7 +344,7 @@ init_charts = () ->
 
     parcoords = new ParCoords({elem: '#dge-pc', filter: expr_filter})
     ma_plot = new MAPlot({elem: '#dge-ma', filter: expr_filter})
-    pca_plot = new GenePCA({elem: '#dge-pca', filter: expr_filter, gene_table: gene_table, num_filter: () -> [skipGenesThreshold, numGenesThreshold, $('.pca-dims-fld').val()] })
+    pca_plot = new GenePCA({elem: '#dge-pca', filter: expr_filter, gene_table: gene_table, num_filter: () -> [+skipGenesThreshold, +numGenesThreshold, $('.pca-dims-fld').val()] })
 
 
     # update grid on brush
@@ -664,7 +664,6 @@ update_data = () ->
         count_cols = g_data.columns_by_type('count').filter((c) -> cols.indexOf(c.parent)>=0)
         pca_plot.update_data(g_data.get_data(), count_cols)
 
-    window.xx = g_data
     set_gene_table(g_data.get_data())
 
     # Update the heatmap

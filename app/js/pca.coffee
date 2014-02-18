@@ -50,7 +50,7 @@ class ScatterPlot
             .attr("x", @width)
             .attr("y", 10)
             .style("text-anchor", "start")
-            .text("PCA dim #{dim1}");
+            .text("PCA dim #{dim1+1}");
 
         @svg.append("g")
             .attr("class", "y axis")
@@ -61,7 +61,7 @@ class ScatterPlot
             .attr("y", 6)
             .attr("dy", ".71em")
             .style("text-anchor", "end")
-            .text("PCA dim #{dim2}");
+            .text("PCA dim #{dim2+1}");
 
         dots = @svg.selectAll(".dot")
                    .data(locs)
@@ -154,7 +154,7 @@ class GenePCA
 
     redraw: () ->
         [skip_genes, num_genes, dims] = @opts.num_filter()
-        dims = dims.split(',').map((v) -> +v)[0..1]
+        dims = dims.split(',').map((v) -> v-1)[0..1].filter((x) -> x>=0)
         dims = [1,2] if dims.length!=2
 
         # Log transform counts
