@@ -19,6 +19,18 @@ class Slider
       else
           v
 
+    set_max: (val, min, max, log) ->
+        if !log
+            @stepValues = (x for x in [min..max] by 10)
+        else
+            # FIXME
+            @stepValues = [0,1,2,3,4,5,10,20,100,200,Math.floor(max/3),Math.floor(max/2),max]
+            @stepValues = @stepValues.filter((v) -> v>=min && v<=max)
+        @slider.slider("option", "max", @stepValues.length-1)
+        @set_slider(val)
+        $(@opts.input_id).val(@fmt(val))
+        @opts.on_change(val)
+
     constructor: (@opts) ->
         @stepValues = opts.step_values || [0..10]
         @slider = $(opts.id).slider({

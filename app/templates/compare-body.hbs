@@ -51,6 +51,20 @@
             <label for='show-counts-cb'>Show Counts</label>
             <input type="checkbox" id='show-counts-cb'>
           </div>
+          <div title='Number of genes to use for the PCA' data-placement='left' class='pca-num-genes-opt'>
+            <label>No. PCA genes</label>
+            <input class="num-genes-fld" type="text" value="50" />
+            <div id='numGenesSlider'></div>
+          </div>
+          <div title='Number of genes to ignore for the PCA' data-placement='left' class='pca-skip-genes-opt'>
+            <label>Skip PCA genes</label>
+            <input class="skip-genes-fld" type="text" value="50" />
+            <div id='skipGenesSlider'></div>
+          </div>
+          <div title='PCA dims' data-placement='left' class='pca-dims-opt'>
+            <label>PCA dims</label>
+            <input class="pca-dims-fld" type="text" value="1,2" />
+          </div>
         </div>
 
         <div class='filter kegg-filter'>
@@ -74,24 +88,11 @@
           <ul class="nav nav-tabs">
             <li id='select-pc'><a href="#">Expression : Parallel Coordinates</a></li>
             <li id='select-ma'><a href="#">Expression : MA plot</a></li>
+            <li id='select-pca'><a href="#">MDS plot</a></li>
           </ul>
           <div id="dge-pc" class="parcoords"></div>
           <div id="dge-ma" class="dge-ma"></div>
-
-          <div id='pca'>
-            <div id='pca-plot'></div>
-            <div>
-              <label for='labels'>Show Labels</label><input id='labels' type='checkbox' checked=checked />
-              <div>
-                <label>Number genes to use : </label><input id='top-n' type=text value=500 size=8 />
-                
-                <span id='min' style='margin-left: 20px;'>1</span>
-                <input id="top-n-slider" type="range" min="1" max="1" value="" />
-                <span id='max'>1</span>
-              </div>
-            </div>
-            
-          </div><!-- pca -->
+          <div id="dge-pca"></div>
         </div><!-- expression -->
       </div><!-- row -->
 

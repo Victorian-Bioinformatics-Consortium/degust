@@ -1,8 +1,8 @@
 require('./lib/numeric-1.2.6.js')
 
 class ScatterPlot
-    constructor: (elem, tot_width=800, tot_height=500) ->
-        margin = {top: 20, right: 380, bottom: 80, left: 40}
+    constructor: (elem, tot_width=800, tot_height=400) ->
+        margin = {top: 20, right: 380, bottom: 40, left: 40}
         @width = tot_width - margin.left - margin.right
         @height = tot_height - margin.top - margin.bottom
 
@@ -29,13 +29,13 @@ class ScatterPlot
                  .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
 
     # draw(data,labels)
-    #   data - array of rows.  First row is all x-coordinates
-    #                          Second row is all y-coordinates
-    #   labels - array of rows.  Each rows has 2 elements, first element is sample name
-    #                             second element is key for coloring (for replicate)
-    draw: (data, labels) ->
-        @x.domain(d3.extent(data[0]))
-        @y.domain(d3.extent(data[1]))
+    #   data - array of rows.  First row is all x-coordinates (dimension 1)
+    #                          Second row is all y-coordinates (dimension 2)
+    #   labels - array of samples.  sample.name, and (sample.parent for colouring)
+    draw: (data, labels, dims) ->
+        [dim1,dim2] = dims
+        @x.domain(d3.extent(data[dim1]))
+        @y.domain(d3.extent(data[dim2]))
 
         # Easier to plot with array of
         locs = d3.transpose(data)
@@ -50,7 +50,7 @@ class ScatterPlot
             .attr("x", @width)
             .attr("y", 10)
             .style("text-anchor", "start")
-            .text("PCA dim 1");
+            .text("PCA dim #{dim1}");
 
         @svg.append("g")
             .attr("class", "y axis")
@@ -61,7 +61,7 @@ class ScatterPlot
             .attr("y", 6)
             .attr("dy", ".71em")
             .style("text-anchor", "end")
-            .text("PCA dim 2");
+            .text("PCA dim #{dim2}");
 
         dots = @svg.selectAll(".dot")
                    .data(locs)
@@ -74,163 +74,128 @@ class ScatterPlot
              .attr("r", 3.5)
              .attr("cx",0)
              .attr("cy",0)
-             .style("fill", (d,i) => @color(labels[i][1]))
+             .style("fill", (d,i) => @color(labels[i].parent))
         dot_g.append("text")
              .attr('class',"labels")
-             .text((d,i) -> labels[i][0])
+             .text((d,i) -> labels[i].name)
              .attr('x',3)
              .attr('y',-3)
-             .style("fill", (d,i) => @color(labels[i][1]))
+             .style("fill", (d,i) => @color(labels[i].parent))
 
         # Position the dots
         dots.transition()
-            .attr("transform", (d) => "translate(#{@x(d[0])},#{@y(d[1])})")
+            .attr("transform", (d) => "translate(#{@x(d[dim1])},#{@y(d[dim2])})")
 
 class PCA
     @pca: (matrix) ->
-        # Subtract mean (need zero-mean for PCA).  Global mean or column wise?
+        # Subtract column-wise mean (need zero-mean for PCA).
         #m = X.length
         #X = numeric.sub(X, numeric.sum(X)/(m*m))
 
         X = matrix.map((r) -> mean = 1.0*numeric.sum(r)/r.length; numeric.sub(r,mean))
         X = numeric.transpose(X)
-        console.log(matrix,X)
+        #console.log(matrix,X)
 
 
         #sigma = numeric.div(numeric.dot(numeric.transpose(X), X), X.length)
-        sigma = numeric.dot(numeric.transpose(X), X)
+        #sigma = numeric.dot(numeric.transpose(X), X)
+        sigma = numeric.dot(X,numeric.transpose(X))
         svd = numeric.svd(sigma)
-        console.log("svd",svd);
-        #return numeric.dot(svd.U, numeric.diag(svd.S))
-        return svd.U
+        #console.log("svd",svd);
+        #return svd.U
+        # scale the coordinates back so can interpret at RMS expression
+        # (from http://www.ats.ucla.edu/stat/r/pages/svd_demos.htm)
+        numeric.dot(svd.V, numeric.sqrt(numeric.diag(svd.S)))
 
-    @most_variable: (X,num) ->
-        num = Math.min(X.length-1, num)
-        variances = X.map((row,i) ->
-            sz = row.length;
-            v = numeric.sum(numeric.pow(row,2))/sz - Math.pow(numeric.sum(row),2)/(sz*sz)
-            return [v,i]
-        )
-
-        variances.sort((a,b) -> b[0] - a[0])
-        #console.log("variances",variances)
-        res = []
-        for i in [0...num]
-            res.push( X[variances[i][1]] )
-        #console.log("res",res)
-        return res;
+    @variance: (X) ->
+        sz = X.length
+        numeric.sum(numeric.pow(X,2))/sz - Math.pow(numeric.sum(X),2)/(sz*sz)
 
     @to_dist: (a,b) ->
         diffs = numeric.sub(a,b)
         return Math.sqrt(numeric.sum(numeric.pow(diffs,2))/a.length)
 
-class LogSlider
-    constructor: (@elem, @txt_elem = null) ->
-        @events = d3.dispatch("change")
-
-        d3.select(@elem).on('change', () =>
-            v = d3.select(@elem).property('value')
-            d3.select(@txt_elem).property('value', Math.round(@slider_to_val(v))) if @txt_elem?
-            @events.change()
-        )
-
-        if @txt_elem?
-            d3.selectAll(@txt_elem).on('change', () =>
-                v = +d3.select(@txt_elem)[0][0].value;
-                @update_slider(v)
-                @events.change()
-            )
-
-    on: (typ,cb) -> @events.on(typ, cb)
-
-    val: () ->
-        if @txt_elem?
-            return +d3.select(@txt_elem)[0][0].value
-        else
-            return +d3.select(@elem).property('value')
-
-    update_slider: (v) ->
-        d3.select(@elem).property('value', @val_to_slider(v))
-
-    set_max: (max) ->
-        d3.select(@elem).property('max',Math.ceil(@val_to_slider(max)))
-        @update_slider(@val())  # Redraw
-
-    val_to_slider: (v) ->
-        Math.log(v)/Math.log(1.3)
-
-    slider_to_val: (v) ->
-        Math.round(Math.pow(1.3,v))
-
 # Implement Paul Harrison's glog moderation
-log_moderation = 5.0
+log_moderation = 10.0
 glog = (x,m) ->
     Math.log( (x + Math.sqrt(x*x + 4*m*m))/2 ) / Math.log(2)
 
+variance_key = "_variance"
+transform_key = "_transformed_"
+
 class GenePCA
-    constructor: (file, replicate_regexp) ->
-        @top_n = new LogSlider('#top-n-slider','#top-n')
-        @top_n.on('change', () => @redraw())
-        @scatter = new ScatterPlot('#pca')
+    constructor: (@opts) ->
+        @scatter = new ScatterPlot(@opts.elem)
 
-        # Hide labels if selected
-        d3.select('#labels').on('change', () ->
-            d3.selectAll('.labels').attr('display',
-                if d3.select('#labels')[0][0].checked then null else 'none')
+    # Note, this is naughty - it writes to the 'data' array a "_variance" column
+    # and several "_transformed_" columns
+    update_data: (@data, @columns) ->
+        # 'data' - one row per gene.
+        max = @data.length
+        #@top_n.set_max(max)
+
+        # Counts is an array for each gene.  Each of those is an array of counts
+        #raw_counts = @data.map((row) => @columns.map((c) -> row[c.idx]) )
+
+        #lib_size = d3.transpose(raw_counts).map((l) -> d3.sum(l))
+        #avg_lib_size = d3.mean(lib_size)
+
+        @redraw()
+
+    _compute_variance: (row) ->
+        transformed =  @columns.map((col) ->
+            val = row[col.idx]
+            #t_val = glog(1000000.0 * val/size, 1000000.0 * log_moderation / avg_lib_size)
+            t_val = Math.log(log_moderation + val)/Math.log(2)
+            row[transform_key+col.idx] = t_val
+            t_val
         )
-
-        d3.csv(file, (data) =>
-            # 'data' - one row per gene. First row is sample names.  First column is gene name
-            max = data.length
-            @top_n.set_max(max)
-            d3.select('#max').text(""+max)
-
-            @sample_names = d3.keys(data[0])[1..].map((name) ->
-                m = name.match(replicate_regexp)
-                key = if m then m[1] else null
-                return [name, key])
-            # Counts is an array for each gene.  Each of those is an array of counts
-            counts = data.map((e) -> v = d3.values(e); v[1..].map((a) -> +a))
-
-            lib_size = d3.transpose(counts).map((l) -> d3.sum(l))
-            avg_lib_size = d3.mean(lib_size)
-            console.log "lib_size",lib_size,avg_lib_size
-            #console.log("names",window.names);
-            #console.log("m - pre log",m);
-
-            # Log transform counts
-            @data = counts.map((row) -> d3.zip(row, lib_size).map(([val,size]) ->
-                Math.log(10 + val)/Math.log(2)
-                #glog(1000000.0 * val/size, 1000000.0 * log_moderation / avg_lib_size)
-                ))
-
-            @redraw()
-        )
+        row[variance_key] = PCA.variance(transformed)
 
     redraw: () ->
-        num_genes = @top_n.val()
+        [skip_genes, num_genes, dims] = @opts.num_filter()
+        dims = dims.split(',').map((v) -> +v)[0..1]
+        dims = [1,2] if dims.length!=2
 
-        top_genes = PCA.most_variable(@data, num_genes)
+        # Log transform counts
+        kept_data = @data.filter((d) => @opts.filter(d))
+                       #  .map((row) -> d3.zip(row, lib_size).map(([val,size]) ->
+        kept_data.forEach((row) => @_compute_variance(row))
+
+        top_genes = kept_data.sort((a,b) -> b[variance_key] - a[variance_key])
+        top_genes = top_genes[skip_genes ... (skip_genes + num_genes)]
+
+        @opts.gene_table.set_data(top_genes) if @opts.gene_table
 
         # Transpose to row per sample.
-        top_genes = numeric.transpose(top_genes)
+        transformed = top_genes.map((row) => @columns.map((col) ->
+                                                row[transform_key+col.idx]))
+        by_gene = numeric.transpose(transformed)
 
-        #console.log("num",num_genes,"m",m);
         # Compute pair-wise distances
         dist = []
-        for i in [0...top_genes.length]
+        for i in [0...by_gene.length]
             dist[i] ?= []
-            for j in [i...top_genes.length]
+            for j in [i...by_gene.length]
                 dist[j] ?= []
                 if i==j
                     dist[i][j] = 0
                 else
-                    dist[i][j] = dist[j][i] = PCA.to_dist(top_genes[i], top_genes[j])
+                    dist[i][j] = dist[j][i] = PCA.to_dist(by_gene[i], by_gene[j])
 
-        console.log dist
         comp = PCA.pca(dist)
         #console.log("dist",dist,"comp",comp);
-        @scatter.draw(numeric.transpose(comp), @sample_names)
+        @scatter.draw(numeric.transpose(comp), @columns, dims)
 
-#new GenePCA('x.csv', /^(.*)-rep\d/)
-new GenePCA('x3.csv', /^(.*)_rp\d/)
+    brush: () ->
+        @redraw()
+
+    highlight: () ->
+        # Pass
+    unhighlight: () ->
+        # Pass
+
+window.GenePCA = GenePCA
+
+
+# mat<-matrix(c(10,4,34,46,1204,4798,510,  771,439,3,3,827,1660,549,  56,44,47,51,966,2146,470),nrow=3,byrow=T)
