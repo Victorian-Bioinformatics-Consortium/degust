@@ -88,13 +88,10 @@ class ScatterPlot
 
 class PCA
     @pca: (matrix) ->
+        # We expect 1 row per sample.  Each column is a different gene
         # Subtract column-wise mean (need zero-mean for PCA).
-        #m = X.length
-        #X = numeric.sub(X, numeric.sum(X)/(m*m))
-
-        X = matrix.map((r) -> mean = 1.0*numeric.sum(r)/r.length; numeric.sub(r,mean))
-        X = numeric.transpose(X)
-        #console.log(matrix,X)
+        X = numeric.transpose(numeric.transpose(matrix).map((r) -> mean = 1.0*numeric.sum(r)/r.length; numeric.sub(r,mean)))
+        #console.log("matrix",matrix,"X",X)
 
 
         #sigma = numeric.div(numeric.dot(numeric.transpose(X), X), X.length)
@@ -167,24 +164,14 @@ class GenePCA
 
         @opts.gene_table.set_data(top_genes) if @opts.gene_table
 
-        # Transpose to row per sample.
+        # Get the transformed counts
         transformed = top_genes.map((row) => @columns.map((col) ->
                                                 row[transform_key+col.idx]))
+        # Transpose to row per sample.
         by_gene = numeric.transpose(transformed)
 
-        # Compute pair-wise distances
-        dist = []
-        for i in [0...by_gene.length]
-            dist[i] ?= []
-            for j in [i...by_gene.length]
-                dist[j] ?= []
-                if i==j
-                    dist[i][j] = 0
-                else
-                    dist[i][j] = dist[j][i] = PCA.to_dist(by_gene[i], by_gene[j])
-
-        comp = PCA.pca(dist)
-        #console.log("dist",dist,"comp",comp);
+        comp = PCA.pca(by_gene)
+        #console.log("dist",dist,"comp",comp)
         @scatter.draw(numeric.transpose(comp), @columns, dims)
 
     brush: () ->
@@ -199,3 +186,15 @@ window.GenePCA = GenePCA
 
 
 # mat<-matrix(c(10,4,34,46,1204,4798,510,  771,439,3,3,827,1660,549,  56,44,47,51,966,2146,470),nrow=3,byrow=T)
+#
+# dd <- matrix(c(0,1,1,1, 1,0,1,1, 1,1,0,1, 1,1,1,0), nrow=4)
+# mds <- cmdscale(as.dist(dd))
+# plot(mds[,1],mds[,2])
+# dist(mds[c(4,4),])
+# loc3 <- t(cmdscale(as.dist(dd), k=3))
+# plotMDS(loc3,dim.plot=c(1,2))
+#
+# cc <- c(2,4,4,367,393,569)
+# v <- log(10+cc,base=2)
+# diff <- function(a,b) abs(a-b)
+# dd <- as.dist(outer(v,v,FUN="diff"))
