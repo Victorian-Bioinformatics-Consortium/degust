@@ -113,6 +113,27 @@ class PCA
         diffs = numeric.sub(a,b)
         return Math.sqrt(numeric.sum(numeric.pow(diffs,2))/a.length)
 
+    @dist_matrix: (by_gene) ->
+        # Compute pair-wise distances
+        dist = []
+        for i in [0...by_gene.length]
+            dist[i] ?= []
+            for j in [i...by_gene.length]
+                dist[j] ?= []
+                if i==j
+                    dist[i][j] = 0
+                else
+                    dist[i][j] = dist[j][i] = PCA.to_dist(by_gene[i], by_gene[j])
+        console.log "DIST"
+        str = ""
+        for r in dist
+            for c in r
+                str += c.toFixed(1)
+                str += " | "
+            str += "\n"
+        console.log str
+        dist
+
 # Implement Paul Harrison's glog moderation
 log_moderation = 10.0
 glog = (x,m) ->
@@ -170,6 +191,8 @@ class GenePCA
                                                 row[transform_key+col.idx]))
         # Transpose to row per sample.
         by_gene = numeric.transpose(transformed)
+
+        #dist = PCA.dist_matrix(by_gene)
 
         comp = PCA.pca(by_gene)
         #console.log("dist",dist,"comp",comp)
