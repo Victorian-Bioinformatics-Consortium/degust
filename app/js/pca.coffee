@@ -98,11 +98,12 @@ class PCA
         #sigma = numeric.dot(numeric.transpose(X), X)
         sigma = numeric.dot(X,numeric.transpose(X))
         svd = numeric.svd(sigma)
-        #console.log("svd",svd);
-        #return svd.U
-        # scale the coordinates back so can interpret at RMS expression
+        # scale the coordinates back
         # (from http://www.ats.ucla.edu/stat/r/pages/svd_demos.htm)
-        numeric.dot(svd.V, numeric.sqrt(numeric.diag(svd.S)))
+        r = numeric.dot(svd.V, numeric.sqrt(numeric.diag(svd.S)))
+        # Want RMS distance (like in Limma), so divide by sqrt(n)
+        r = numeric.div(r, Math.sqrt(matrix[0].length))
+        r
 
     @variance: (X) ->
         sz = X.length
