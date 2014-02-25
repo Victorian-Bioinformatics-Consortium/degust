@@ -344,7 +344,8 @@ dgeR settings cs file =
   #{initR settings}
 
   nf <- calcNormFactors(counts)
-  y<-voom(counts, design, plot=FALSE,lib.size=colSums(counts)*nf)
+  #y<-voom(counts, design, plot=FALSE,lib.size=colSums(counts)*nf)
+  y<-counts
 
   cont.matrix <- #{contMatrix settings cs}
 

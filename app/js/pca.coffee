@@ -165,7 +165,8 @@ class GenePCA
         transformed =  @columns.map((col) ->
             val = row[col.idx]
             #t_val = glog(1000000.0 * val/size, 1000000.0 * log_moderation / avg_lib_size)
-            t_val = Math.log(log_moderation + val)/Math.log(2)
+            #t_val = Math.log(log_moderation + val)/Math.log(2)
+            t_val = val
             row[transform_key+col.idx] = t_val
             t_val
         )
