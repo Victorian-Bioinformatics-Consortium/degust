@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 
 # Process counts.csv from tail-tools (from /expression/peakwise/counts.csv)
+# also needs relation-parent.giff  (from peaks/relation-parent.gff)
 # Remove any peaks with <10 counts across any sample
 # Inlcude gene info for each peak (from peaks/relation-parent.gff)
 
