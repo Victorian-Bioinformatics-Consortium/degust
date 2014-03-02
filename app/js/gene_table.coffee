@@ -12,6 +12,7 @@ class GeneTable
             enableColumnReorder: false
             multiColumnSort: false
             forceFitColumns: true
+            enableTextSelectionOnCells: true
 
         @dataView = new Slick.Data.DataView()
         @grid = new Slick.Grid(@opts.elem, @dataView, [], grid_options)
