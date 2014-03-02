@@ -1,3 +1,6 @@
+v0.12
+  * Ability to specify count columns in degust.py
+
 v0.11.2
   * Workaround issue with centering of bootstraptour popup.
 
