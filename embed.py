@@ -13,8 +13,10 @@ def embed(csv, args):
       ["{idx:%s, name: 'Average', type: 'avg'}"%json.dumps(args.avg)] + \
       ["{idx:%s, name: %s, type: 'primary'}"%(json.dumps(args.primary), json.dumps(args.primary))] + \
       ["{idx:%s, name: %s, type:'fc'}"%(json.dumps(c),json.dumps(c)) for c in args.logFC] + \
-      ["{idx:%s, name: %s, type:'link'}"%(json.dumps(c),json.dumps(c)) for c in args.link_col]
+      ["{idx:%s, name: %s, type:'link'}"%(json.dumps(c),json.dumps(c)) for c in args.link_col] + \
+      ["{idx:%s, name: %s, type:'count', parent: %s}"%(json.dumps(c),json.dumps(c),json.dumps(p)) for dct in args.counts for c,p in dct]
 
+    #print columns
     settings = ["html_version: 'VERSION-HERE'",
                 "asset_base: 'ASSET-HERE'",
                 "csv_data: data", 
@@ -65,8 +67,21 @@ def check_args(args, csv_file):
             if f not in headers:
                 sys.stderr.write("ERROR: Column for info not found (%s)\n"%f)
                 err=True
+
+    for dct in args.counts:
+        for col,parent in dct:
+            if parent not in headers and parent != args.primary:
+                sys.stderr.write("ERROR: Parent column for counts not found (%s)\n"%parent)
+                err=True
+            if col not in headers:
+                sys.stderr.write("ERROR: Column for counts not found (%s)\n"%col)
+                err=True
+
     return err
 
+def parse_counts_arg(str):
+    lst = str.split(':',2)
+    return [[x, lst[0]] for x in lst[1].split(',')]
 
 def cuffdiff_avg(str):
     """Given a string that is the output from cuffdiff, create and log2(average expression) column.
@@ -112,6 +127,8 @@ parser.add_argument('--logFC',
                     help='Comma separated names for "logFC" columns in CSV file')
 parser.add_argument('--info',
                     help='Comma separated names for info columns in CSV file')
+parser.add_argument('--counts', action='append', default=[],
+                    help="Specify 'count' columns - only used for display in the table.  Specify the name of the logFC column then a colon followed by comma separate count columns.  Use multiple times for multiple conditions.  Example: --counts cond1:cond1-rep1,cond1-rep2")
 parser.add_argument('--link-col',
                     help='Name for column to use with "--link-url"')
 parser.add_argument('--link-url',
@@ -126,6 +143,7 @@ args = parser.parse_args()
 #print args
 if args.info:  args.info = args.info.split(",")
 if args.logFC: args.logFC = args.logFC.split(",")
+args.counts = [parse_counts_arg(x) for x in args.counts]
 args.link_col = [args.link_col] if args.link_col else []
 
 # print args
