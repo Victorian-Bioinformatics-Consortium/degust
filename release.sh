@@ -18,6 +18,7 @@ fi
 
 echo "Minifying..."
 ./build.sh prod
+./build-embed.sh remote
 
 echo "Changing repo to gh-pages"
 git checkout gh-pages
@@ -25,14 +26,9 @@ git checkout gh-pages
 echo "Copying to dist/$ver"
 
 mkdir -p dist/$ver
-cp -r build/{compare.html,*.js,css,images} dist/$ver
+cp -r build/{compare.html,*.js,css,images,degust.py} dist/$ver
 sed -e "s|'\./|'$url|" \
     -e s"|index\.html|$degust_home|" build/compare.html > dist/$ver/index.html
-
-sed -e "/HTML-HERE/r dist/$ver/index.html" \
-    -e '/HTML-HERE/d' \
-    -e "s/VERSION-HERE/$ver/g" \
-    -e "s^ASSET-HERE^$url^g"  build/embed.py > dist/$ver/degust.py
 
 (  cd dist
    rm -rf latest
