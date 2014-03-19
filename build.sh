@@ -61,7 +61,6 @@ case "$1" in
 
         rm -f "$dest"/*.html
         cp -r app/html/* "$dest"
-        cp embed.py "$dest"
         ;;
     *)
         echo "This did not happen..."
