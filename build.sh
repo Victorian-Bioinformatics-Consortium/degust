@@ -55,7 +55,7 @@ case "$1" in
         # Minify our CSS
         for f in app/css/*.css; do
             t="$dest"/css/`basename "$f"`
-            rm "$t"
+            rm -f "$t"
             cat "$f" | cleancss > "$t"
         done
 
