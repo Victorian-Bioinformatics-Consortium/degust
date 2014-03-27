@@ -79,6 +79,10 @@ This will watch the js & coffeescript files and rebuild CoffeeScript as needed.
     ./build-watchify.sh &
     (cd build ; ../server.py)
 
+To build the degust.py script for embedding csv into an html file for local
+
+    ./build-embed.sh local
+
 It is also useful to access the pages with "debug=1" (eg. http://vicbioinformatics.com/degust/compare.html?code=example&debug=1) which enables extra debug logging to the console.
 
 
