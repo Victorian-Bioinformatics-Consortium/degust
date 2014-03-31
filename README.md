@@ -24,7 +24,7 @@ You first need to grab a copy of Degust.
 Degust can be installed in two ways:
 
   1. Perform your own DGE analysis, and use only the [web frontend from Degust](#frontend)
-  2. Install the [frontend and backend software](#backend) to perform analysis and visualise the results.
+  2. Install the [frontend and back-end software](#backend) to perform analysis and visualise the results.
 
 ## <a id='frontend'></a>Frontend installation only
 
@@ -93,12 +93,27 @@ The above production build only includes the front-end.  To also build the back-
 
 Requirements:
 
-  * GHC 6.12 or later
   * Python
   * CoffeeScript
+  * R and the following libraries
+    * limma
+    * edgeR
+  * GHC 6.12 or later, and the following libraries:
+    * pureMD5 >= 2.1
+    * json >= 0.7
+    * regex-pcre >= 0.94
+    * hamlet >= 1.1
+    * shakespeare-text >= 1.0
+    * strict-io >= 0.2
+    * lens >= 3.9
 
 The resulting build/ directory can then be installed as a CGI site.
 
+#### Troubleshooting
+
+  * The directories "tmp/", "cached/" and "user-files/" under the CGI directory must be writable by the web-server user
+  * Any runtime errors relating to R will be logged in the directory "tmp/" under the CGI directory
+  * If your R libraries are not installed in the default location, you may need to edit r-json.hs and modify the setting for R_LIBS_SITE
 
 ## Known Issues
 
@@ -108,7 +123,7 @@ The resulting build/ directory can then be installed as a CGI site.
 
 #### Documentation
 
-  * Installing the full backend is barely documented
+  * Installing the full back-end is barely documented
 
 ## License ##
 Degust is released under the GPL v3 (or later) license, see <a href='http://github.com/Victorian-Bioinformatics-Consortium/degust/blob/master/COPYING.txt'>COPYING.txt</a>
