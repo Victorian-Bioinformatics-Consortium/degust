@@ -277,7 +277,7 @@ runR script = do
     delFile :: FilePath -> IO (Either IOException ())
     delFile = try . removeFile
 
-instance ToText Int where toText = toText . show
+-- instance ToText Int where toText = toText . show
 
 getCountsR :: Settings -> FilePath -> String
 getCountsR settings file =

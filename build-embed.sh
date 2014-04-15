@@ -7,6 +7,11 @@ degust_home='http://victorian-bioinformatics-consortium.github.io/degust'
 
 case "$1" in
     local)
+        url='./'
+        echo "Building LOCAL, ensure you run ./build.sh dev"
+        echo "You will need build/css/*  and build/js/*.js"
+        ;;
+    local-srv)
         url='http://localhost:8000/'
         echo "Building LOCAL, ensure you run ./build.sh dev"
         ;;
