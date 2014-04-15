@@ -103,7 +103,7 @@ Requirements:
     * json >= 0.7
     * regex-pcre >= 0.94
     * hamlet >= 1.1
-    * shakespeare-text >= 1.0
+    * shakespeare-text >= 1.1
     * strict-io >= 0.2
     * lens >= 3.9
 
