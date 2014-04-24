@@ -100,6 +100,7 @@ case "$1" in
         echo "Building backend"
         # Build the backend
         (cd app/backend ; ghc -O2 --make r-json)
+        rm -f "$dest"/r-json.cgi "$dest"/*.hs
         cp app/backend/r-json "$dest"/r-json.cgi
 
         # Copy production server specific files

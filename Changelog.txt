@@ -1,3 +1,6 @@
+v0.14
+  * Option to display counts-per-million instead of raw counts
+
 v0.13
   * Add warning to all pages if using IE
 

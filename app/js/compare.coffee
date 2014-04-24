@@ -243,7 +243,7 @@ requested_kegg = false
 
 
 # Globals for settings
-show_counts = false
+show_counts = 'no'   # Possible values 'yes','no','cpm'
 fdrThreshold = 1
 fcThreshold = 0
 searchStr = ""
@@ -389,10 +389,14 @@ set_gene_table = (data) ->
 fc_div = (n, column, row) ->
     colour = if n>0.1 then "pos" else if n<-0.1 then "neg" else ""
     countStr = ""
-    if show_counts
+    if show_counts=='yes'
         count_columns = g_data.assoc_column_by_type('count',column.name)
-        counts = count_columns.map((c) -> row[c.idx])
-        countStr = "<span class='counts'>(#{counts})</span>"
+        vals = count_columns.map((c) -> row[c.idx])
+        countStr = "<span class='counts'>(#{vals})</span>"
+    else if show_counts=='cpm'
+        count_columns = g_data.assoc_column_by_type('count',column.name)
+        vals = count_columns.map((c) -> tot=g_data.get_total(c) ; (1000000 * row[c.idx]/tot).toFixed(1))
+        countStr = "<span class='counts'>(#{vals})</span>"
     "<div class='#{colour}'>#{n.toFixed(2)}#{countStr}</div>"
 
 
@@ -483,7 +487,7 @@ init_slider = () ->
     $('#ma-fc-col').change((e) ->
         update_data()
     )
-    $('#show-counts-cb').on("click", (e) ->
+    $('#show-counts').change((e) ->
         update_flags()
         gene_table.invalidate()
     )
@@ -575,7 +579,7 @@ process_dge_data = (data, columns) ->
         setup_tour(if settings.show_tour? then settings.show_tour else true)
 
 update_flags = () ->
-    show_counts = $('#show-counts-cb').is(":checked")
+    show_counts = $('select#show-counts option:selected').val()
 
 # Called whenever the data is changed, or the "checkboxes" are modified
 update_data = () ->

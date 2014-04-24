@@ -34,6 +34,7 @@ class GeneData
                     d[c.idx] = +d[c.idx]
         fdr_col = @column_by_type('fdr')
         @data.sort((a,b) -> a[fdr_col] - b[fdr_col])
+        @_totals = {}
         null
 
     _calc_fc: () ->
@@ -99,6 +100,12 @@ class GeneData
         for col in @columns
             res.push(col) if col.type==type && col.parent==parent_name
         res
+
+    # Get the sum of the specified column.  Results are cached.
+    get_total: (col) ->
+        return @_totals[col.name] if col.name of @_totals
+        @_totals[col.name] = d3.sum( @data.map( (d) -> d[col.idx] ) )
+        @_totals[col.name]
 
     #get_columns: () -> @columns
 
