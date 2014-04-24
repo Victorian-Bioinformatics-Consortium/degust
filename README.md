@@ -13,6 +13,22 @@ Read a summary on the <a href='http://victorian-bioinformatics-consortium.github
 
 ![Degust screenshot](screenshot-2.png)
 
+# FAQ
+
+### How can a gene have zero counts for all samples but has a non-zero fold-change?
+
+This can happen when using the backend of Degust.  Degust uses voom to perform the expression analysis.  Voom adds a small constant (0.5), to each count, normalizes for library size, then takes the log.  This means when you have a count of 0 across all samples, but different library sizes, it is possible to compute a non-zero fold-change.
+
+We recommend setting **Min read count** on the configuration page to a small value, say 10.
+
+### What is the **Min read count** setting?
+
+This is the minimum number of reads required in at least one sample to keep the gene in the analysis.  That is, a given gene is omitted if the number of reads across all samples is below this setting.
+
+### Chrome dies with an "Aw, Snap" error when trying to download the table
+
+This appears to be a problem with Chrome when there are many (thousands) of genes in the table.  We suggest using Firefox if this happens.
+
 # Installation
 
 If you do not want to use the [public Degust installation](http://www.vicbioinformatics.com/degust), you may install your own.
