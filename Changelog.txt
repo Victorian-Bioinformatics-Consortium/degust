@@ -1,5 +1,6 @@
 v0.14
   * Option to display counts-per-million instead of raw counts
+  * Make the parallel-coordinates plot as wide as possible
 
 v0.13
   * Add warning to all pages if using IE

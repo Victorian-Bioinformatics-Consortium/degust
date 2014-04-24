@@ -318,8 +318,13 @@ activate_ma_plot = () ->
     $('.ma-fc-col-opt').show()
     update_data()
 
+calc_max_parcoords_width = () ->
+    w = $('.container').width()
+    w -= $('.conditions').outerWidth(true) if $('.conditions').is(':visible')
+    w -= $('div.filter').outerWidth(true) if $('div.filter').is(':visible')
+
 init_charts = () ->
-    parcoords = new ParCoords({elem: '#dge-pc', filter: expr_filter})
+    parcoords = new ParCoords({elem: '#dge-pc', width: calc_max_parcoords_width(), filter: expr_filter})
     ma_plot = new MAPlot({elem: '#dge-ma', filter: expr_filter})
 
     gene_table = new GeneTable({elem: '#grid', elem_info: '#grid-info', sorter: do_sort, mouseover: gene_table_mouseover, mouseout: gene_table_mouseout, dblclick: gene_table_dblclick, filter: gene_table_filter})
