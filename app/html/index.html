@@ -8,6 +8,13 @@
     <link rel="stylesheet" href="./css/common.css" type="text/css"/>
 
     <script type="text/javascript" src="./common.js"></script>
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+      <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
   </head>
   <body>
 
@@ -31,10 +38,12 @@
           <a href="https://github.com/Victorian-Bioinformatics-Consortium/degust"><img src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png" alt="Fork me on GitHub"></a>
         </div>
         <h1>Degust</h1>
-        <p>Degust : Perform RNA-seq analysis and visualisation</p>
+        <p><a href='http://victorian-bioinformatics-consortium.github.io/degust'>Degust</a> : Perform RNA-seq analysis and visualisation</p>
         <p>Simply upload a CSV file of read counts for each replicate; then view your DGE data</p>
         <p><a href="upload.html" class="btn btn-primary btn-large">Upload your counts file &raquo;</a></p>
       </div>
+      
+      <div class='browser-warning-outer'></div>
 
       <!-- Example row of columns -->
       <div class="row">
@@ -50,7 +59,7 @@
         </div>
         <div class="col-md-4">
           <h2>Get Started</h2>
-          Get started with Degust with your own data set.  Just upload a CSV counts file from your RNA-seq experiment.  Then use the web configuration pagw to define which columns gene ids, and which contain gene counts for which replicates.  
+          Get started with Degust with your own data set.  Just upload a CSV counts file from your RNA-seq experiment, or upload a CSV file containing your own analysis (eg. from Limma/Voom, edgeR or DESeq).
           <p><a class="btn btn-primary" href="upload.html">Get Started &raquo;</a></p>
         </div>
       </div>

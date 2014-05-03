@@ -244,7 +244,7 @@ requested_kegg = false
 
 
 # Globals for settings
-show_counts = false
+show_counts = 'no'   # Possible values 'yes','no','cpm'
 fdrThreshold = 1
 fcThreshold = 0
 numGenesThreshold = 50
@@ -338,14 +338,41 @@ activate_pca_plot = () ->
 
     update_data()
 
+calc_max_parcoords_width = () ->
+    w = $('.container').width()
+    w -= $('.conditions').outerWidth(true) if $('.conditions').is(':visible')
+    w -= $('div.filter').outerWidth(true) if $('div.filter').is(':visible')
+
 init_charts = () ->
-    gene_table = new GeneTable({elem: '#grid', elem_info: '#grid-info', sorter: do_sort, mouseover: gene_table_mouseover, mouseout: gene_table_mouseout, dblclick: gene_table_dblclick, filter: gene_table_filter})
-    kegg = new Kegg({elem: 'div#kegg-image', mouseover: kegg_mouseover, mouseout: () -> expr_plot.unhighlight()})
+    gene_table = new GeneTable(
+        elem: '#grid'
+        elem_info: '#grid-info'
+        sorter: do_sort
+        mouseover: gene_table_mouseover
+        mouseout: gene_table_mouseout
+        dblclick: gene_table_dblclick
+        filter: gene_table_filter
+        )
 
-    parcoords = new ParCoords({elem: '#dge-pc', filter: expr_filter})
+    parcoords = new ParCoords(
+        elem: '#dge-pc'
+        width: calc_max_parcoords_width()
+        filter: expr_filter
+        )
+
     ma_plot = new MAPlot({elem: '#dge-ma', filter: expr_filter})
-    pca_plot = new GenePCA({elem: '#dge-pca', filter: expr_filter, gene_table: gene_table, num_filter: () -> [+skipGenesThreshold, +numGenesThreshold, $('.pca-dims-fld').val()] })
+    pca_plot = new GenePCA(
+        elem: '#dge-pca'
+        filter: expr_filter
+        gene_table: gene_table
+        num_filter: () -> [+skipGenesThreshold, +numGenesThreshold, $('.pca-dims-fld').val()]
+        )
 
+    kegg = new Kegg(
+        elem: 'div#kegg-image'
+        mouseover: kegg_mouseover
+        mouseout: () -> expr_plot.unhighlight()
+        )
 
     # update grid on brush
     parcoords.on("brush", (d) ->
@@ -411,10 +438,14 @@ set_gene_table = (data) ->
 fc_div = (n, column, row) ->
     colour = if n>0.1 then "pos" else if n<-0.1 then "neg" else ""
     countStr = ""
-    if show_counts
+    if show_counts=='yes'
         count_columns = g_data.assoc_column_by_type('count',column.name)
-        counts = count_columns.map((c) -> row[c.idx])
-        countStr = "<span class='counts'>(#{counts})</span>"
+        vals = count_columns.map((c) -> row[c.idx])
+        countStr = "<span class='counts'>(#{vals})</span>"
+    else if show_counts=='cpm'
+        count_columns = g_data.assoc_column_by_type('count',column.name)
+        vals = count_columns.map((c) -> tot=g_data.get_total(c) ; (1000000 * row[c.idx]/tot).toFixed(1))
+        countStr = "<span class='counts'>(#{vals})</span>"
     "<div class='#{colour}'>#{n.toFixed(2)}#{countStr}</div>"
 
 
@@ -533,7 +564,7 @@ init_slider = () ->
     $('#ma-fc-col').change((e) ->
         update_data()
     )
-    $('#show-counts-cb').on("click", (e) ->
+    $('#show-counts').change((e) ->
         update_flags()
         gene_table.invalidate()
     )
@@ -627,7 +658,7 @@ process_dge_data = (data, columns) ->
         setup_tour(if settings.show_tour? then settings.show_tour else true)
 
 update_flags = () ->
-    show_counts = $('#show-counts-cb').is(":checked")
+    show_counts = $('select#show-counts option:selected').val()
 
 # Called whenever the data is changed, or the "checkboxes" are modified
 update_data = () ->

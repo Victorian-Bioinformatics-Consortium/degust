@@ -47,9 +47,13 @@
             <label for='ma-fc-col'>MA-Plot FC</label>
             <select id='ma-fc-col'></select>
           </div>
-          <div title='Show raw counts in the table' data-placement='left' class='show-counts-opt'>
-            <label for='show-counts-cb'>Show Counts</label>
-            <input type="checkbox" id='show-counts-cb'>
+          <div title='Show raw counts (or counts-per-million) in the table' data-placement='left' class='show-counts-opt'>
+            <label for='show-counts'>Show Counts</label>
+            <select id='show-counts'>
+              <option value='no'>No</option>
+              <option value='yes'>Yes</option>
+              <option value='cpm'>As counts-per-million</option>
+            </select>
           </div>
           <div title='Number of genes to use for the PCA' data-placement='left' class='pca-num-genes-opt'>
             <label>No. PCA genes</label>

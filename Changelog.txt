@@ -1,3 +1,14 @@
+v0.14
+  * Option to display counts-per-million instead of raw counts
+  * Make the parallel-coordinates plot as wide as possible
+
+v0.13
+  * Add warning to all pages if using IE
+
+v0.12
+  * Ability to specify count columns in degust.py
+  * Allow text selection in the gene table
+
 v0.11.2
   * Workaround issue with centering of bootstraptour popup.
 
