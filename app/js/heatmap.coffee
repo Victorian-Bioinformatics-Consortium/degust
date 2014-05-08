@@ -139,7 +139,7 @@ class Heatmap
         @max = d3.max(extent.map(Math.abs))
         @colorScale = d3.scale.linear()
                         .domain([-@max, 0, @max])
-                        .range(["red", "white", "blue"]);
+                        .range(["blue", "white", "red"]);
 
         cols = @svg.select('.labels').selectAll('.label')
                    .data(@columns)

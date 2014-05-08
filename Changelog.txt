@@ -1,3 +1,7 @@
+v0.15
+  * Update heatmap to use web-worker to compute clustering
+  * Change colours in heatmap, table, kegg to be consistent with red is +ve, blue is -ve
+
 v0.14
   * Option to display counts-per-million instead of raw counts
   * Make the parallel-coordinates plot as wide as possible

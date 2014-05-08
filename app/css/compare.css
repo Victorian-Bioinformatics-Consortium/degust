@@ -43,8 +43,8 @@ div.filter { font-size: 8pt; border: 1px solid #aaa; border-radius: 5px; backgro
 
 .ec-group { display: none; }
 
-.pos  { height: 100%; background-color: #dfd; }
-.neg  { height: 100%; background-color: #fdd; }
+.neg  { height: 100%; background-color: #ddf; }
+.pos  { height: 100%; background-color: #fdd; }
 
 #expression { position: relative; }
 #loading { position: absolute; top: 100px; left: 250px; }
