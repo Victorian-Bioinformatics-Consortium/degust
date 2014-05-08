@@ -200,19 +200,20 @@ class GenePCA
     # Note, this is naughty - it writes to the 'data' array a "_variance" column
     # and several "_transformed_" columns
     update_data: (@data, @columns) ->
-
-        #max = @data.length
-        # Counts is an array for each gene.  Each of those is an array of counts
-        #raw_counts = @data.map((row) => @columns.map((c) -> row[c.idx]) )
-
-        #lib_size = d3.transpose(raw_counts).map((l) -> d3.sum(l))
-        #avg_lib_size = d3.mean(lib_size)
+        # Compute library sizes for normalisation later
+        lib_sizes = {}
+        @columns.map((c) -> lib_sizes[c.idx] = 0)
+        @data.forEach((row) => @columns.map((c) -> lib_sizes[c.idx] += row[c.idx]))
+        @lib_sizes = lib_sizes
+        @avg_lib_size = d3.mean(d3.values(@lib_sizes))
 
         @redraw()
 
+    # Compute the variance for each gene (normalised by library size)
     _compute_variance: (row) ->
-        transformed =  @columns.map((col) ->
+        transformed =  @columns.map((col) =>
             val = row[col.idx]
+            val = val/(@lib_sizes[col.idx] / @avg_lib_size)
             t_val = Math.log(log_moderation + val)/Math.log(2)
             row[transform_key+col.idx] = t_val
             t_val
@@ -225,7 +226,7 @@ class GenePCA
 
         # Log transform counts
         kept_data = @data.filter((d) => @opts.filter(d))
-                       #  .map((row) -> d3.zip(row, lib_size).map(([val,size]) ->
+
         kept_data.forEach((row) => @_compute_variance(row))
 
         top_genes = kept_data.sort((a,b) -> b[variance_key] - a[variance_key])
