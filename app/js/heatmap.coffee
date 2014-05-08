@@ -93,7 +93,7 @@ class Heatmap
                         .domain([-@max, 0, @max])
                         .range(["red", "white", "blue"]);
 
-        cols = @svg.select('#heatmap .labels').selectAll('.label')
+        cols = @svg.select('.labels').selectAll('.label')
                    .data(@columns)
         cols.enter().append('text').attr("class","label")
         cols.exit().remove()
@@ -123,7 +123,7 @@ class Heatmap
 
         # @_create_brush(w)
 
-        genes = @svg.select("#heatmap .genes").selectAll("g.gene")
+        genes = @svg.select(".genes").selectAll("g.gene")
                     .data(d3.values(kept_data)) #, (d) -> d.id)
 
         genes.enter().append("g").attr("class","gene")
