@@ -98,8 +98,48 @@ class Heatmap
                     .attr("x", @opts.width-200)
                     .attr("y", 10)
 
+        @legend = d3.select(@opts.elem).append('svg')
+                    .attr("class", "legend")
+                    .attr("width", @opts.width)
+                    .attr("height", 50)
+
         # Create a single wrapper for later use
         @worker = new WorkerWrapper(calc_order, (d) => @_worker_callback(d))
+
+    _make_legend: () ->
+        @legend.selectAll("*").remove()
+
+        @legend.append('text')
+               .attr("x", @opts.width-110)
+               .attr("y", 20)
+               .attr("text-anchor", "end")
+               .text("Heatmap log-fold-change ")
+
+        width = 100
+        steps = width
+        stepToVal = d3.scale.linear().domain([0, steps-1]).range([-@max, @max])
+        vals = (v for v in [0 ... steps])
+
+        g = @legend.append('g')
+                   .attr('transform', "translate(#{@opts.width-width},0)")
+
+        rects = g.selectAll('rect')
+                       .data(vals)
+        rects.enter().append("rect")
+                     .attr("x", (v) -> v*1.0*width/steps)
+                     .attr("height", 30)
+                     .attr("width", 1.0*width/steps)
+                     .style("fill", (v) => @colorScale(stepToVal(v)))
+
+        sc = d3.scale.linear().domain([-@max,@max]).range([0,width])
+        axis = d3.svg.axis()
+                  .scale(sc)
+                  .orient("bottom")
+                  .tickSize(5)
+        g.append('g')
+         .attr('transform', "translate(0, 30)")
+         .call(axis)
+
 
     set_order: (@order) ->
         # Nothing
@@ -149,6 +189,7 @@ class Heatmap
             .attr('y', (d,i) => i * @opts.h + @opts.h/2)
             .attr("text-anchor", "end")
             .text((d) -> d.name)
+        @_make_legend()
 
     _render_heatmap: () ->
         @svg.attr('opacity',1)
