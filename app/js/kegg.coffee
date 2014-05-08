@@ -77,10 +77,10 @@ class Kegg
 
     colour: (ec) ->
         switch @ec_colours[ec]
-            when 'same' then 'blue'
+            when 'same' then 'green'
             when 'mixed' then 'yellow'
-            when 'up' then 'green'
-            when 'down' then 'red'
+            when 'up' then 'red'
+            when 'down' then 'blue'
             else 'black'
 
     highlight: (ec) ->

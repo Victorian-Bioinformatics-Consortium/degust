@@ -44,8 +44,8 @@ div.filter { font-size: 8pt; border: 1px solid #aaa; border-radius: 5px; backgro
 
 .ec-group { display: none; }
 
-.pos  { height: 100%; background-color: #dfd; }
-.neg  { height: 100%; background-color: #fdd; }
+.neg  { height: 100%; background-color: #ddf; }
+.pos  { height: 100%; background-color: #fdd; }
 
 #expression { position: relative; }
 #loading { position: absolute; top: 100px; left: 250px; }
@@ -74,6 +74,19 @@ div.filter { font-size: 8pt; border: 1px solid #aaa; border-radius: 5px; backgro
 
 #heatmap .info {
   font-size: 10px;
+}
+
+#heatmap .legend {
+  font-size: 10px;
+}
+
+#heatmap .legend path {
+  display: none;
+}
+
+#heatmap .legend line {
+  stroke: #000;
+  shape-rendering: crispEdges;
 }
 
 /* MA-plot ***********************************************************************/
