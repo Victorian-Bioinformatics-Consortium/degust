@@ -1,7 +1,7 @@
 
 class ScatterPlot
     constructor: (elem, tot_width=800, tot_height=400) ->
-        margin = {top: 20, right: 380, bottom: 40, left: 40}
+        margin = {top: 20, right: 380, bottom: 40, left: 50}
         @width = tot_width - margin.left - margin.right
         @height = tot_height - margin.top - margin.bottom
 
@@ -16,10 +16,12 @@ class ScatterPlot
         @xAxis = d3.svg.axis()
                    .scale(@x)
                    .orient("bottom")
+                   .tickSize(8,1)
 
         @yAxis = d3.svg.axis()
                    .scale(@y)
-                   .orient("left");
+                   .orient("left")
+                   .tickSize(8,1)
 
         @svg = d3.select(elem).append("svg")
                  .attr("width", @width + margin.left + margin.right)
@@ -46,10 +48,10 @@ class ScatterPlot
             .call(@xAxis)
           .append("text")
             .attr("class", "label")
-            .attr("x", @width)
-            .attr("y", 10)
-            .style("text-anchor", "start")
-            .text("PCA dim #{dim1}");
+            .attr("x", @width/2)
+            .attr("y", 40)
+            .style("text-anchor", "middle")
+            .text("MDS Dimension #{dim1}");
 
         @svg.append("g")
             .attr("class", "y axis")
@@ -57,10 +59,10 @@ class ScatterPlot
           .append("text")
             .attr("class", "label")
             .attr("transform", "rotate(-90)")
-            .attr("y", 6)
-            .attr("dy", ".71em")
+            .attr("x", -100)
+            .attr("y", -40)
             .style("text-anchor", "end")
-            .text("PCA dim #{dim2}");
+            .text("MDS Dimension #{dim2}");
 
         dots = @svg.selectAll(".dot")
                    .data(locs)

@@ -96,6 +96,12 @@ div.filter { font-size: 8pt; border: 1px solid #aaa; border-radius: 5px; backgro
   shape-rendering: crispEdges;
 }
 
+/* PCA-plot / MDS-plot ***********************************************************/
+#dge-pca .axis line {
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
 /* MA-plot ***********************************************************************/
 
 .dge-ma { position: relative; }
