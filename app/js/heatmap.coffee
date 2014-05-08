@@ -105,6 +105,15 @@ class Heatmap
 
         # Create a single wrapper for later use
         @worker = new WorkerWrapper(calc_order, (d) => @_worker_callback(d))
+        @_enabled = true
+
+    # Enable/disable the heatmap.  When disabled it is hidden and does not update
+    enabled: (enabled) ->
+        if enabled?
+            @_enabled = enabled
+            $(@opts.elem).toggle(enabled)
+        else
+            @_enabled
 
     _make_legend: () ->
         @legend.selectAll("*").remove()
@@ -169,7 +178,7 @@ class Heatmap
 
     schedule_update: (data) ->
         @data=data if data
-        return if !@data? || !@columns?
+        return if !@data? || !@columns? || !@_enabled
 
         @_thinking(true)
         @_calc_order()
