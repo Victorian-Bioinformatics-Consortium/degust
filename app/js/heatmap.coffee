@@ -164,11 +164,14 @@ class Heatmap
     _calc_order: () ->
         @worker.start([@data,@columns.map((c) -> {idx: c.idx})])
 
+    _thinking: (bool) ->
+        @svg.select("g.genes").attr('opacity',if bool then 0.4 else 1)
+
     schedule_update: (data) ->
         @data=data if data
         return if !@data? || !@columns?
 
-        @svg.attr('opacity',0.4)
+        @_thinking(true)
         @_calc_order()
 
     # update_columns(columns,extent,sel_column)
@@ -192,7 +195,7 @@ class Heatmap
         @_make_legend()
 
     _render_heatmap: () ->
-        @svg.attr('opacity',1)
+        @_thinking(false)
         kept_data = {}
         sorted = @data[0..]
         sorted.sort((a,b) => a[@sel_column] - b[@sel_column])
