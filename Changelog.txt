@@ -3,6 +3,7 @@ v0.15
   * Change colours in heatmap, table, kegg to be consistent with red is +ve, blue is -ve
   * Add a legend to the heatmap
   * Heatmap now ignores the "FC relative to" value.  It is always relative to the row average
+  * Add an MDS plot enabled only when per-replicate count data is available
 
 v0.14
   * Option to display counts-per-million instead of raw counts
