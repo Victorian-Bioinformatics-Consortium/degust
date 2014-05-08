@@ -34,6 +34,12 @@ class Slider
         $(@opts.input_id).val(@fmt(val))
         @opts.on_change(val)
 
+    set_val: (val, fire_change) ->
+        $(@opts.input_id).val(@fmt(val))
+        @set_slider(val)
+        if fire_change?
+            @opts.on_change(val)
+
     constructor: (@opts) ->
         @stepValues = opts.step_values || [0..10]
         @slider = $(opts.id).slider({
@@ -46,10 +52,8 @@ class Slider
             $(opts.input_id).val(@fmt(v))
             opts.on_change(v)
         })
-        if @opts.val?
-            v = @opts.val
-            $(opts.input_id).val(@fmt(v))
-            @set_slider(v)
+
+        @set_val(@opts.val) if @opts.val?
 
         self = this
         $(opts.input_id).keyup(() ->
