@@ -29,6 +29,19 @@ This is the minimum number of reads required in at least one sample to keep the 
 
 This appears to be a problem with Chrome when there are many (thousands) of genes in the table.  We suggest using Firefox if this happens.
 
+### I don't see an option to display an MDS plot
+
+The MDS plot is only available when you have included "count" columns
+
+### How is the MDS plot calculated
+
+  * First genes that don't pass the "FDR cut-off" or "abs log FC" filters are ignored.  Using these filters is "cheating" when doing an MDS plot to look at replicate clustering
+  * The remaining genes have the counts for each replicate log-transformed.
+  * The genes are then ranked by decreasing variance.  That is, the most variable genes are "at the top"
+  * Then the top "Skip genes" are ignored.
+  * And the next "Num genes" are selected.
+  * These selected genes are used to compute an MDS (or PCA) plot
+
 # Installation
 
 If you do not want to use the [public Degust installation](http://www.vicbioinformatics.com/degust), you may install your own.
