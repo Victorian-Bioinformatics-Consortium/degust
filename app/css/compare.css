@@ -97,10 +97,29 @@ div.filter { font-size: 8pt; border: 1px solid #aaa; border-radius: 5px; backgro
 }
 
 /* PCA-plot / MDS-plot ***********************************************************/
-#dge-pca .axis line {
+#dge-pca .bar-chart { position: absolute; bottom: 0; left: 510px; }
+
+#dge-pca .label { font-size: 100%; }
+#dge-pca .title { font-size: 70%; font-weight: bold; }
+
+#dge-pca .scatter .axis line {
   stroke: #000;
   shape-rendering: crispEdges;
 }
+
+#dge-pca .bar-chart .bar { fill: steelblue; }
+
+#dge-pca .bar-chart .bar:hover { fill: brown; }
+
+#dge-pca .bar-chart .axis { font: 10px sans-serif; }
+
+#dge-pca .bar-chart .axis path, #dge-pca .bar-chart .axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+#dge-pca .bar-chart .x.axis path { display: none; }
 
 /* MA-plot ***********************************************************************/
 

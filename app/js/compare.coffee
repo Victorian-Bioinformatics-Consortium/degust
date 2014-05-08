@@ -251,8 +251,9 @@ fcThreshold = 0
 numGenesThreshold = 50
 numGenesSlider = null    # Need a handle on this to update number of genes
 skipGenesThreshold = 50
-skipGenesSlider = null    # Need a handle on this to update number of genes
+skipGenesSlider = null   # Need a handle on this to update number of genes
 pcaDimension = 1
+pcaDimsSlider = null
 
 searchStr = ""
 kegg_filter = []
@@ -372,6 +373,7 @@ init_charts = () ->
         elem: '#dge-pca'
         filter: expr_filter
         gene_table: gene_table
+        sel_dimension: (d) => pcaDimsSlider.set_val(+d, true)
         params: () ->
             skip: +skipGenesThreshold
             num: +numGenesThreshold

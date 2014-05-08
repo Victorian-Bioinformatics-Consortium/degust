@@ -1,7 +1,7 @@
 
 class ScatterPlot
-    constructor: (elem, tot_width=800, tot_height=400) ->
-        margin = {top: 20, right: 380, bottom: 40, left: 50}
+    constructor: (elem, tot_width=570, tot_height=400) ->
+        margin = {top: 20, right: 180, bottom: 40, left: 60}
         @width = tot_width - margin.left - margin.right
         @height = tot_height - margin.top - margin.bottom
 
@@ -24,6 +24,7 @@ class ScatterPlot
                    .tickSize(8,1)
 
         @svg = d3.select(elem).append("svg")
+                 .attr('class','scatter')
                  .attr("width", @width + margin.left + margin.right)
                  .attr("height", @height + margin.top + margin.bottom)
                 .append("g")
@@ -60,7 +61,7 @@ class ScatterPlot
             .attr("class", "label")
             .attr("transform", "rotate(-90)")
             .attr("x", -100)
-            .attr("y", -40)
+            .attr("y", -50)
             .style("text-anchor", "end")
             .text("MDS Dimension #{dim2}");
 
@@ -87,12 +88,85 @@ class ScatterPlot
         dots.transition()
             .attr("transform", (d) => "translate(#{@x(d[dim1-1])},#{@y(d[dim2-1])})")
 
+class BarGraph
+    constructor: (@opts) ->
+        @opts.tot_width  ||= 200
+        @opts.tot_height ||= 200
+        margin = {top: 20, right: 10, bottom: 30, left: 40}
+        @width = @opts.tot_width - margin.left - margin.right
+        @height = @opts.tot_height - margin.top - margin.bottom
+
+        @x = d3.scale.ordinal()
+               .rangeRoundBands([0, @width], .1)
+
+        @y = d3.scale.linear()
+               .range([@height, 0])
+
+        @xAxis = d3.svg.axis()
+                   .scale(@x)
+                   .orient("bottom")
+                   .tickSize(8,1)
+
+        @yAxis = d3.svg.axis()
+                   .scale(@y)
+                   .orient("left")
+                   .tickSize(8,1)
+
+        @svg = d3.select(@opts.elem).append("svg")
+                 .attr('class','bar-chart')
+                 .attr("width", @width + margin.left + margin.right)
+                 .attr("height", @height + margin.top + margin.bottom)
+                .append("g")
+                 .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+    draw: (data) ->
+        @svg.selectAll("*").remove()
+        @x.domain(data.map((d) -> d.lbl ))
+        @y.domain([0, d3.max(data, (d) -> d.val)])
+
+        @svg.append("text")
+             .attr('class', 'title')
+             .attr("x", @width/2)
+             .attr("y", -10)
+             .style("text-anchor", "middle")
+             .text("Magnitude of each MDS dimension")
+
+        @svg.append("g")
+             .attr("class", "x axis")
+             .attr("transform", "translate(0," + @height + ")")
+             .call(@xAxis)
+            .append("text")
+             .attr('class', 'label')
+             .attr("x", @width/2)
+             .attr("y", 30)
+             .style("text-anchor", "middle")
+             .text("Dimension")
+
+        @svg.append("g")
+             .attr("class", "y axis")
+             .call(@yAxis)
+           .append("text")
+             .attr('class', 'label')
+             .attr("transform", "rotate(-90)")
+             .attr("x", -60)
+             .attr("y", -30)
+             .style("text-anchor", "end")
+             .text("Magnitude")
+
+        @svg.selectAll(".bar")
+            .data(data)
+            .enter().append("rect")
+              .attr("class", "bar")
+              .attr("x", (d) => @x(d.lbl))
+              .attr("width", @x.rangeBand())
+              .attr("y", (d) => @y(d.val))
+              .attr("height", (d) => @height - @y(d.val))
+              .on('click', (d) => if @opts.click? then @opts.click(d))
+
 class PCA
     @pca: (matrix) ->
         # We expect 1 row per sample.  Each column is a different gene
         # Subtract column-wise mean (need zero-mean for PCA).
         X = numeric.transpose(numeric.transpose(matrix).map((r) -> mean = 1.0*numeric.sum(r)/r.length; numeric.sub(r,mean)))
-
 
         sigma = numeric.dot(X,numeric.transpose(X))
         svd = numeric.svd(sigma)
@@ -117,6 +191,11 @@ transform_key = "_transformed_"
 class GenePCA
     constructor: (@opts) ->
         @scatter = new ScatterPlot(@opts.elem)
+        @barGraph = new BarGraph(
+                           elem: @opts.elem
+                           click: (d) => if @opts.sel_dimension?
+                                             @opts.sel_dimension(d.lbl)
+                        )
 
     # Note, this is naughty - it writes to the 'data' array a "_variance" column
     # and several "_transformed_" columns
@@ -161,9 +240,15 @@ class GenePCA
         by_gene = numeric.transpose(transformed)
 
 
-        comp = PCA.pca(by_gene)
+        comp = numeric.transpose(PCA.pca(by_gene))
+        # 'comp' now contains components.  Each row is a dimension
 
-        @scatter.draw(numeric.transpose(comp), @columns, dims)
+        @scatter.draw(comp, @columns, dims)
+
+        @barGraph.draw(comp[0..9].map((v,i) ->
+            range = d3.max(v) - d3.min(v)
+            {lbl: "#{i+1}", val: range}
+        ))
 
     brush: () ->
         @redraw()
