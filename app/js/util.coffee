@@ -86,3 +86,28 @@ window.setup_nav_bar = () ->
     $("a.log-link").click(() -> $('.log-list').toggle())
 
     window.debug ?= get_url_vars()["debug"]
+
+
+# WorkerWrapper : Take a javascript function, and wrap it in a web-worker.
+# NOTE: The passed function can have no external dependencies!
+# This handles creating a new blob for the function, and releases that blob
+# on each new start() call
+class WorkerWrapper
+    constructor: (worker_fn, @callback) ->
+        @blob = new Blob(["onmessage ="+worker_fn.toString()], { type: "text/javascript" })
+
+    stop: () ->
+        if @blobURL?
+            #console.log "Terminating existing worker"
+            @worker.terminate()
+            window.URL.revokeObjectURL(@blobURL)
+            @blobURL = null
+
+    start: (data) ->
+        @stop()
+        @blobURL = window.URL.createObjectURL(@blob)
+        @worker = new Worker(@blobURL)
+        @worker.onmessage = (e) => @callback(e.data)
+        @worker.postMessage(data)
+
+window.WorkerWrapper = WorkerWrapper
