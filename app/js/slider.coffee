@@ -11,6 +11,9 @@ class Slider
       @slider.slider("value", set_i)
 
     fmt: (v) ->
+      if @opts.fmt?
+        return @opts.fmt(v)
+
       n=Number(v)
       if n==undefined
           v
@@ -43,9 +46,10 @@ class Slider
             $(opts.input_id).val(@fmt(v))
             opts.on_change(v)
         })
-        if opts.val != undefined
-            $(opts.input_id).val(opts.val)
-            @set_slider(opts.val)
+        if @opts.val?
+            v = @opts.val
+            $(opts.input_id).val(@fmt(v))
+            @set_slider(v)
 
         self = this
         $(opts.input_id).keyup(() ->

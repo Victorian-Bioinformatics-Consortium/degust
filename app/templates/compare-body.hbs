@@ -55,20 +55,24 @@
               <option value='cpm'>As counts-per-million</option>
             </select>
           </div>
-          <div title='Number of genes to use for the PCA' data-placement='left' class='pca-num-genes-opt'>
-            <label>No. PCA genes</label>
-            <input class="num-genes-fld" type="text" value="50" />
-            <div id='numGenesSlider'></div>
-          </div>
-          <div title='Number of genes to ignore for the PCA' data-placement='left' class='pca-skip-genes-opt'>
-            <label>Skip PCA genes</label>
-            <input class="skip-genes-fld" type="text" value="50" />
-            <div id='skipGenesSlider'></div>
-          </div>
-          <div title='PCA dims' data-placement='left' class='pca-dims-opt'>
-            <label>PCA dims</label>
-            <input class="pca-dims-fld" type="text" value="1,2" />
-          </div>
+          <div class='pca-opts'>
+            <div class='pca-title'>MDS options</div>
+            <div title='Number of genes to use for the MDS plot' data-placement='left' class='pca-num-genes-opt'>
+              <label>Num genes</label>
+              <input class="num-genes-fld" type="text" value="50" />
+              <div id='numGenesSlider'></div>
+            </div>
+            <div title='Number of genes to ignore for the MDS plot' data-placement='left' class='pca-skip-genes-opt'>
+              <label>Skip genes</label>
+              <input class="skip-genes-fld" type="text" value="50" />
+              <div id='skipGenesSlider'></div>
+            </div>
+            <div title='MDS dimensions to plot' data-placement='left' class='pca-dims-opt'>
+              <label>Dimensions</label>
+              <input class="pca-dims-fld" type="text" value="50" />
+              <div id='pcaDimsSlider'></div>
+            </div>
+          </div><!-- div.pca-opts -->
         </div>
 
         <div class='filter kegg-filter'>

@@ -36,8 +36,7 @@ div.filter { font-size: 8pt; border: 1px solid #aaa; border-radius: 5px; backgro
 .filter label { width: 70px; text-align: right; }
 .filter input { width: 50px; }
 .kegg-filter { display: none; }
-#fdrSlider, #fcSlider, #numGenesSlider, #skipGenesSlider { display: inline-block; width: 50px; margin: 0 10px; font-size: 8pt}
-.pca-num-genes-opt, .pca-skip-genes-opt, .pca-dims-opt { display: none; }
+#fdrSlider, #fcSlider, #numGenesSlider, #skipGenesSlider, #pcaDimsSlider { display: inline-block; width: 50px; margin: 0 10px; font-size: 8pt}
 #fc-relative, #ma-fc-col { width: 115px; height: auto; }
 .filter input.error { background-color: #fbb; }
 .show-r-code { display:none; font-size: 10px; }
@@ -57,6 +56,14 @@ div.filter { font-size: 8pt; border: 1px solid #aaa; border-radius: 5px; backgro
 #gene-info .lbl { width: 100px; font-weight: bold; display: inline-block;}
 
 .r-code { font-size: 11px; }
+
+/* Hide all options or controls that are displayed conditionally */
+.conditions, .config, a.show-r-code, #dge-ma, #dge-pca, .ma-fc-col-opt, .pca-opts {
+  display: none;
+}
+
+.pca-opts { border-top: solid 1px black; margin-top: 5px}
+.pca-opts .pca-title { font-size: 10pt; font-weight: bold; margin-bottom: 3px; }
 
 /* Tour ***********************************************************************/
 .popover.wide { max-width: 460px; }

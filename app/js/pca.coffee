@@ -1,4 +1,3 @@
-require('./lib/numeric-1.2.6.js')
 
 class ScatterPlot
     constructor: (elem, tot_width=800, tot_height=400) ->
@@ -34,8 +33,8 @@ class ScatterPlot
     #   labels - array of samples.  sample.name, and (sample.parent for colouring)
     draw: (data, labels, dims) ->
         [dim1,dim2] = dims
-        @x.domain(d3.extent(data[dim1]))
-        @y.domain(d3.extent(data[dim2]))
+        @x.domain(d3.extent(data[dim1-1]))
+        @y.domain(d3.extent(data[dim2-1]))
 
         # Easier to plot with array of
         locs = d3.transpose(data)
@@ -50,7 +49,7 @@ class ScatterPlot
             .attr("x", @width)
             .attr("y", 10)
             .style("text-anchor", "start")
-            .text("PCA dim #{dim1+1}");
+            .text("PCA dim #{dim1}");
 
         @svg.append("g")
             .attr("class", "y axis")
@@ -61,7 +60,7 @@ class ScatterPlot
             .attr("y", 6)
             .attr("dy", ".71em")
             .style("text-anchor", "end")
-            .text("PCA dim #{dim2+1}");
+            .text("PCA dim #{dim2}");
 
         dots = @svg.selectAll(".dot")
                    .data(locs)
@@ -84,7 +83,7 @@ class ScatterPlot
 
         # Position the dots
         dots.transition()
-            .attr("transform", (d) => "translate(#{@x(d[dim1])},#{@y(d[dim2])})")
+            .attr("transform", (d) => "translate(#{@x(d[dim1-1])},#{@y(d[dim2-1])})")
 
 class PCA
     @pca: (matrix) ->
@@ -172,8 +171,7 @@ class GenePCA
         row[variance_key] = PCA.variance(transformed)
 
     redraw: () ->
-        [skip_genes, num_genes, dims] = @opts.num_filter()
-        dims = dims.split(',').map((v) -> v-1)[0..1].filter((x) -> x>=0)
+        {skip:skip_genes, num:num_genes, dims:dims} = @opts.params()
         dims = [1,2] if dims.length!=2
 
         # Log transform counts
@@ -207,6 +205,7 @@ class GenePCA
         # Pass
 
 window.GenePCA = GenePCA
+window.PCA = PCA
 
 
 # mat<-matrix(c(10,4,34,46,1204,4798,510,  771,439,3,3,827,1660,549,  56,44,47,51,966,2146,470),nrow=3,byrow=T)

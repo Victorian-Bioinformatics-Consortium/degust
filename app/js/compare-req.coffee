@@ -1,5 +1,6 @@
 
 require("./lib/bootstrap-tour.js")
+require("./lib/numeric-1.2.6.js")
 
 # Ours
 require('./slider.coffee')

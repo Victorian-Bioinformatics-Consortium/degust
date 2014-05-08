@@ -247,10 +247,13 @@ requested_kegg = false
 show_counts = 'no'   # Possible values 'yes','no','cpm'
 fdrThreshold = 1
 fcThreshold = 0
+
 numGenesThreshold = 50
 numGenesSlider = null    # Need a handle on this to update number of genes
 skipGenesThreshold = 50
 skipGenesSlider = null    # Need a handle on this to update number of genes
+pcaDimension = 1
+
 searchStr = ""
 kegg_filter = []
 h_runfilters = null
@@ -312,7 +315,7 @@ activate_parcoords = () ->
     $('#select-pc').addClass('active')
     $('#select-ma,#select-pca').removeClass('active')
     $('.ma-fc-col-opt').hide()
-    $('.pca-num-genes-opt, .pca-skip-genes-opt, .pca-dims-opt').hide()
+    $('.pca-opts').hide()
     update_data()
 
 activate_ma_plot = () ->
@@ -322,7 +325,7 @@ activate_ma_plot = () ->
     $('#select-ma').addClass('active')
     $('#select-pc,#select-pca').removeClass('active')
     $('.ma-fc-col-opt').show()
-    $('.pca-num-genes-opt, .pca-skip-genes-opt, .pca-dims-opt').hide()
+    $('.pca-opts').hide()
     update_data()
 
 activate_pca_plot = () ->
@@ -332,7 +335,7 @@ activate_pca_plot = () ->
     $('#select-pca').addClass('active')
     $('#select-pc,#select-ma').removeClass('active')
     $('.ma-fc-col-opt').hide()
-    $('.pca-num-genes-opt, .pca-skip-genes-opt, .pca-dims-opt').show()
+    $('.pca-opts').show()
     numGenesSlider.set_max(100, 1, g_data.get_data().length, true)
     skipGenesSlider.set_max(0, 0, g_data.get_data().length, true)
 
@@ -361,11 +364,15 @@ init_charts = () ->
         )
 
     ma_plot = new MAPlot({elem: '#dge-ma', filter: expr_filter})
+
     pca_plot = new GenePCA(
         elem: '#dge-pca'
         filter: expr_filter
         gene_table: gene_table
-        num_filter: () -> [+skipGenesThreshold, +numGenesThreshold, $('.pca-dims-fld').val()]
+        params: () ->
+            skip: +skipGenesThreshold
+            num: +numGenesThreshold
+            dims: [+pcaDimension, +pcaDimension+1]
         )
 
     kegg = new Kegg(
@@ -557,6 +564,21 @@ init_slider = () ->
                window.clearTimeout(h_runfilters)
                h_runfilters = window.setTimeout(redraw_plot, 10)
                skipGenesThreshold = v
+    )
+    pcaDimsSlider = new Slider(
+          id: "#pcaDimsSlider"
+          input_id: "input.pca-dims-fld"
+          step_values: [1..10]
+          val: pcaDimension
+          fmt: (v) -> v+" vs "+(v+1)
+          validator: (v) ->
+             n = Number(v)
+             !(isNaN(n) || n<0)
+          on_change: (v) ->
+            if (pcaDimension != v)
+                window.clearTimeout(h_runfilters)
+                h_runfilters = window.setTimeout(redraw_plot, 10)
+                pcaDimension = v
     )
     $('#fc-relative').change((e) ->
         update_data()
