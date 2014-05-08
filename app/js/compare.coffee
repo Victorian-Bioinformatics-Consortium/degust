@@ -620,8 +620,8 @@ update_data = () ->
     set_gene_table(g_data.get_data())
 
     # Update the heatmap
-    heatmap.schedule_update(g_data.get_data())
     heatmap.update_columns(dims, extent, pval_col)
+    heatmap.schedule_update(g_data.get_data())
 
     # Ensure the brush callbacks are called (updates heatmap & table)
     expr_plot.brush()
