@@ -620,7 +620,9 @@ update_data = () ->
     set_gene_table(g_data.get_data())
 
     # Update the heatmap
-    heatmap.update_columns(dims, extent, pval_col)
+    heatmap_dims = g_data.columns_by_type('fc_calc_avg')
+    heatmap_extent = ParCoords.calc_extent(g_data.get_data(), heatmap_dims)
+    heatmap.update_columns(heatmap_dims, heatmap_extent, pval_col)
     heatmap.schedule_update(g_data.get_data())
 
     # Ensure the brush callbacks are called (updates heatmap & table)
