@@ -2,12 +2,12 @@ num_loading = 0
 start_loading = () ->
     num_loading += 1
     $('#loading').show()
-    $('#dge-pc,#dge-ma').css('opacity',0.4)
+    $('#dge-pc,#dge-ma,#dge-pca').css('opacity',0.4)
 done_loading = () ->
     num_loading -= 1
     if num_loading==0
         $('#loading').hide()
-        $('#dge-pc,#dge-ma').css('opacity',1)
+        $('#dge-pc,#dge-ma,#dge-pca').css('opacity',1)
 
 html_escape = (str) ->
     $('<div/>').text(str).html()
@@ -231,6 +231,7 @@ colour_by_pval = (col) ->
 # Globals for widgets
 parcoords = null
 ma_plot = null
+pca_plot = null
 expr_plot = null    # Actually parcoords OR ma_plot depending which is active
 
 gene_table = null
@@ -243,9 +244,17 @@ requested_kegg = false
 
 
 # Globals for settings
-show_counts = false
+show_counts = 'no'   # Possible values 'yes','no','cpm'
 fdrThreshold = 1
 fcThreshold = 0
+
+numGenesThreshold = 50
+numGenesSlider = null    # Need a handle on this to update number of genes
+skipGenesThreshold = 50
+skipGenesSlider = null   # Need a handle on this to update number of genes
+pcaDimension = 1
+pcaDimsSlider = null
+
 searchStr = ""
 kegg_filter = []
 h_runfilters = null
@@ -302,28 +311,80 @@ gene_table_dblclick = (item) ->
 
 activate_parcoords = () ->
     expr_plot = parcoords
-    $('#dge-ma').hide()
+    $('#dge-ma,#dge-pca').hide()
     $('#dge-pc').show()
     $('#select-pc').addClass('active')
-    $('#select-ma').removeClass('active')
+    $('#select-ma,#select-pca').removeClass('active')
     $('.ma-fc-col-opt').hide()
+    $('.pca-opts').hide()
+    heatmap.enabled(true)
     update_data()
 
 activate_ma_plot = () ->
     expr_plot = ma_plot
-    $('#dge-pc').hide()
+    $('#dge-pc,#dge-pca').hide()
     $('#dge-ma').show()
     $('#select-ma').addClass('active')
-    $('#select-pc').removeClass('active')
+    $('#select-pc,#select-pca').removeClass('active')
     $('.ma-fc-col-opt').show()
+    $('.pca-opts').hide()
+    heatmap.enabled(true)
     update_data()
 
+activate_pca_plot = () ->
+    expr_plot = pca_plot
+    $('#dge-pc,#dge-ma').hide()
+    $('#dge-pca').show()
+    $('#select-pca').addClass('active')
+    $('#select-pc,#select-ma').removeClass('active')
+    $('.ma-fc-col-opt').hide()
+    heatmap.enabled(false)
+    $('.pca-opts').show()
+    numGenesSlider.set_max(100, 1, g_data.get_data().length, true)
+    skipGenesSlider.set_max(0, 0, g_data.get_data().length, true)
+
+    update_data()
+
+calc_max_parcoords_width = () ->
+    w = $('.container').width()
+    w -= $('.conditions').outerWidth(true) if $('.conditions').is(':visible')
+    w -= $('div.filter').outerWidth(true) if $('div.filter').is(':visible')
+
 init_charts = () ->
-    parcoords = new ParCoords({elem: '#dge-pc', filter: expr_filter})
+    gene_table = new GeneTable(
+        elem: '#grid'
+        elem_info: '#grid-info'
+        sorter: do_sort
+        mouseover: gene_table_mouseover
+        mouseout: gene_table_mouseout
+        dblclick: gene_table_dblclick
+        filter: gene_table_filter
+        )
+
+    parcoords = new ParCoords(
+        elem: '#dge-pc'
+        width: calc_max_parcoords_width()
+        filter: expr_filter
+        )
+
     ma_plot = new MAPlot({elem: '#dge-ma', filter: expr_filter})
 
-    gene_table = new GeneTable({elem: '#grid', elem_info: '#grid-info', sorter: do_sort, mouseover: gene_table_mouseover, mouseout: gene_table_mouseout, dblclick: gene_table_dblclick, filter: gene_table_filter})
-    kegg = new Kegg({elem: 'div#kegg-image', mouseover: kegg_mouseover, mouseout: () -> expr_plot.unhighlight()})
+    pca_plot = new GenePCA(
+        elem: '#dge-pca'
+        filter: expr_filter
+        gene_table: gene_table
+        sel_dimension: (d) => pcaDimsSlider.set_val(+d, true)
+        params: () ->
+            skip: +skipGenesThreshold
+            num: +numGenesThreshold
+            dims: [+pcaDimension, +pcaDimension+1]
+        )
+
+    kegg = new Kegg(
+        elem: 'div#kegg-image'
+        mouseover: kegg_mouseover
+        mouseout: () -> expr_plot.unhighlight()
+        )
 
     # update grid on brush
     parcoords.on("brush", (d) ->
@@ -389,10 +450,14 @@ set_gene_table = (data) ->
 fc_div = (n, column, row) ->
     colour = if n>0.1 then "pos" else if n<-0.1 then "neg" else ""
     countStr = ""
-    if show_counts
+    if show_counts=='yes'
         count_columns = g_data.assoc_column_by_type('count',column.name)
-        counts = count_columns.map((c) -> row[c.idx])
-        countStr = "<span class='counts'>(#{counts})</span>"
+        vals = count_columns.map((c) -> row[c.idx])
+        countStr = "<span class='counts'>(#{vals})</span>"
+    else if show_counts=='cpm'
+        count_columns = g_data.assoc_column_by_type('count',column.name)
+        vals = count_columns.map((c) -> tot=g_data.get_total(c) ; (1000000 * row[c.idx]/tot).toFixed(1))
+        countStr = "<span class='counts'>(#{vals})</span>"
     "<div class='#{colour}'>#{n.toFixed(2)}#{countStr}</div>"
 
 
@@ -477,13 +542,56 @@ init_slider = () ->
                h_runfilters = window.setTimeout(redraw_plot, 10)
                fcThreshold = v
     )
+    numGenesSlider = new Slider(
+          id: "#numGenesSlider"
+          input_id: "input.num-genes-fld"
+          val: numGenesThreshold
+          validator: (v) ->
+             n = Number(v)
+             !(isNaN(n) || n<0)
+          on_change: (v) ->
+             Slick.GlobalEditorLock.cancelCurrentEdit()
+             if (numGenesThreshold != v)
+               window.clearTimeout(h_runfilters)
+               h_runfilters = window.setTimeout(redraw_plot, 10)
+               numGenesThreshold = v
+    )
+    skipGenesSlider = new Slider(
+          id: "#skipGenesSlider"
+          input_id: "input.skip-genes-fld"
+          val: skipGenesThreshold
+          validator: (v) ->
+             n = Number(v)
+             !(isNaN(n) || n<0)
+          on_change: (v) ->
+             Slick.GlobalEditorLock.cancelCurrentEdit()
+             if (skipGenesThreshold != v)
+               window.clearTimeout(h_runfilters)
+               h_runfilters = window.setTimeout(redraw_plot, 10)
+               skipGenesThreshold = v
+    )
+    pcaDimsSlider = new Slider(
+          id: "#pcaDimsSlider"
+          input_id: "input.pca-dims-fld"
+          step_values: [1..10]
+          val: pcaDimension
+          fmt: (v) -> v+" vs "+(v+1)
+          validator: (v) ->
+             n = Number(v)
+             !(isNaN(n) || n<0)
+          on_change: (v) ->
+            if (pcaDimension != v)
+                window.clearTimeout(h_runfilters)
+                h_runfilters = window.setTimeout(redraw_plot, 10)
+                pcaDimension = v
+    )
     $('#fc-relative').change((e) ->
         update_data()
     )
     $('#ma-fc-col').change((e) ->
         update_data()
     )
-    $('#show-counts-cb').on("click", (e) ->
+    $('#show-counts').change((e) ->
         update_flags()
         gene_table.invalidate()
     )
@@ -560,8 +668,10 @@ process_dge_data = (data, columns) ->
 
     if g_data.columns_by_type('count').length == 0
         $('.show-counts-opt').hide()
+        $('#select-pca').hide()
     else
         $('.show-counts-opt').show()
+        $('#select-pca').show()
 
 
     if g_data.columns_by_type(['fc','primary']).length>2
@@ -575,7 +685,7 @@ process_dge_data = (data, columns) ->
         setup_tour(if settings.show_tour? then settings.show_tour else true)
 
 update_flags = () ->
-    show_counts = $('#show-counts-cb').is(":checked")
+    show_counts = $('select#show-counts option:selected').val()
 
 # Called whenever the data is changed, or the "checkboxes" are modified
 update_data = () ->
@@ -607,12 +717,19 @@ update_data = () ->
                             color,
                             g_data.columns_by_type('info'),
                             pval_col)
+    else if expr_plot == pca_plot
+        cols = g_data.columns_by_type('fc_calc').map((c) -> c.name)
+        count_cols = g_data.columns_by_type('count').filter((c) -> cols.indexOf(c.parent)>=0)
+        pca_plot.update_data(g_data.get_data(), count_cols)
 
     set_gene_table(g_data.get_data())
 
     # Update the heatmap
-    heatmap.schedule_update(g_data.get_data())
-    heatmap.update_columns(dims, extent, pval_col)
+    if heatmap.enabled()
+        heatmap_dims = g_data.columns_by_type('fc_calc_avg')
+        heatmap_extent = ParCoords.calc_extent(g_data.get_data(), heatmap_dims)
+        heatmap.update_columns(heatmap_dims, heatmap_extent, pval_col)
+        heatmap.schedule_update(g_data.get_data())
 
     # Ensure the brush callbacks are called (updates heatmap & table)
     expr_plot.brush()
@@ -660,6 +777,7 @@ init_page = (use_backend) ->
 
     $('#select-pc a').click(() -> activate_parcoords())
     $('#select-ma a').click(() -> activate_ma_plot())
+    $('#select-pca a').click(() -> activate_pca_plot())
     $('a.show-r-code').click(() -> show_r_code())
 
     init_charts()

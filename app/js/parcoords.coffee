@@ -1,10 +1,7 @@
 class ParCoords
     constructor: (@opts) ->
-        @opts.h ?= 50
-        @opts.width ?= 1000
-        @opts.label_width ?= 120
-        @opts.limit ?= @opts.width - @opts.label_width
 
+        d3.select(@opts.elem).style('width', @opts.width) if @opts.width?
         @parcoords = d3.parcoords()(@opts.elem)
             .alpha(0.4)
             .reorderable()

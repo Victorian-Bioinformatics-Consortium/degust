@@ -47,10 +47,32 @@
             <label for='ma-fc-col'>MA-Plot FC</label>
             <select id='ma-fc-col'></select>
           </div>
-          <div title='Show raw counts in the table' data-placement='left' class='show-counts-opt'>
-            <label for='show-counts-cb'>Show Counts</label>
-            <input type="checkbox" id='show-counts-cb'>
+          <div title='Show raw counts (or counts-per-million) in the table' data-placement='left' class='show-counts-opt'>
+            <label for='show-counts'>Show Counts</label>
+            <select id='show-counts'>
+              <option value='no'>No</option>
+              <option value='yes'>Yes</option>
+              <option value='cpm'>As counts-per-million</option>
+            </select>
           </div>
+          <div class='pca-opts'>
+            <div class='pca-title'>MDS options</div>
+            <div title='Number of genes to use for the MDS plot' data-placement='left' class='pca-num-genes-opt'>
+              <label>Num genes</label>
+              <input class="num-genes-fld" type="text" value="50" />
+              <div id='numGenesSlider'></div>
+            </div>
+            <div title='Number of genes to ignore for the MDS plot' data-placement='left' class='pca-skip-genes-opt'>
+              <label>Skip genes</label>
+              <input class="skip-genes-fld" type="text" value="50" />
+              <div id='skipGenesSlider'></div>
+            </div>
+            <div title='MDS dimensions to plot' data-placement='left' class='pca-dims-opt'>
+              <label>Dimensions</label>
+              <input class="pca-dims-fld" type="text" value="50" disabled />
+              <div id='pcaDimsSlider'></div>
+            </div>
+          </div><!-- div.pca-opts -->
         </div>
 
         <div class='filter kegg-filter'>
@@ -74,11 +96,13 @@
           <ul class="nav nav-tabs">
             <li id='select-pc'><a href="#">Expression : Parallel Coordinates</a></li>
             <li id='select-ma'><a href="#">Expression : MA plot</a></li>
+            <li id='select-pca'><a href="#">MDS plot</a></li>
           </ul>
           <div id="dge-pc" class="parcoords"></div>
           <div id="dge-ma" class="dge-ma"></div>
-        </div>
-      </div>
+          <div id="dge-pca"></div>
+        </div><!-- expression -->
+      </div><!-- row -->
 
       <div class='row'>
         <div id="heatmap-info"></div>

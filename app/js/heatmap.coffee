@@ -1,3 +1,85 @@
+
+# Calculate an ordering for the genes.
+# This uses a greedy N^2 algorithm to find the next closest data point on each iteration.
+# Seems to do a decent job.
+# The optimal solution is actually a travelling salesman problem.  I'm happy
+# for better heuristics than this.  I did try an MDS of the data points and order
+# those by the first dimension, but that did not give a nice heatmap.
+# NOTE: this is intended to be used in a web-worker so has no external dependencies
+calc_order = (e) ->
+    [data, columns] = e.data
+
+    t1 = new Date()
+
+    if !data?
+        self.postMessage({error: "Data missing"})
+        return
+
+    if !columns?
+        self.postMessage({error: "Columns missing"})
+        return
+
+    if data? && data.length==0
+        self.postMessage({done: []})
+        return
+
+    # Distance calc for 2 genes. (for clustering)
+    dist = (r1,r2) ->
+        s = 0
+        for c in columns
+            v = r1[c.idx]-r2[c.idx]
+            s += v*v
+            #s = Math.max(s,v)
+        s
+
+    # Calculate the most extreme point.  First calculate the "centre" of all the data-points
+    # Then find the data-point most distant from it.  Will be used to start the clustering
+    # Seems like a reasonable heuristic
+    calc_extreme_point = () ->
+        centroid = []
+        tot = 0
+        data.forEach((r) =>
+            columns.map((c) ->
+                centroid[c.idx]||=0
+                centroid[c.idx] += r[c.idx])
+            tot+=1)
+        for k,v of centroid
+            centroid[k] = v/tot
+        max_i=0
+        max_d=0
+        for i in [0 .. data.length-1]
+            d = dist(centroid, data[i])
+            if d>max_d
+                max_d=d
+                max_i=i
+        return max_i
+
+    used = {}
+    order = [calc_extreme_point()]
+    used[order[0]] = true
+
+    # Greedy clustering.  Find closest data-point and append
+    message_after = 0
+    while order.length < data.length
+        if (message_after++)>=50
+            message_after = 0
+            postMessage({upto: order.length})
+        row = data[order[order.length-1]]
+        best_i = best_d = null
+        for i in [0 .. data.length-1]
+            continue if used[i]
+            r = data[i]
+            d = dist(row,r)
+            if !best_d or d<best_d
+                best_d = d
+                best_i = i
+        order.push(best_i)
+        used[best_i] = true
+
+    # Done.
+    order_ids = order.map((i) => data[i].id)
+    postMessage({done: order_ids, took: (new Date())-t1})
+
 class Heatmap
     constructor: (@opts) ->
         @opts.h_pad ?= 20
@@ -16,71 +98,89 @@ class Heatmap
                     .attr("x", @opts.width-200)
                     .attr("y", 10)
 
+        @legend = d3.select(@opts.elem).append('svg')
+                    .attr("class", "legend")
+                    .attr("width", @opts.width)
+                    .attr("height", 50)
+
+        # Create a single wrapper for later use
+        @worker = new WorkerWrapper(calc_order, (d) => @_worker_callback(d))
+        @_enabled = true
+
+    # Enable/disable the heatmap.  When disabled it is hidden and does not update
+    enabled: (enabled) ->
+        if enabled?
+            @_enabled = enabled
+            $(@opts.elem).toggle(enabled)
+        else
+            @_enabled
+
+    _make_legend: () ->
+        @legend.selectAll("*").remove()
+
+        @legend.append('text')
+               .attr("x", @opts.width-110)
+               .attr("y", 20)
+               .attr("text-anchor", "end")
+               .text("Heatmap log-fold-change ")
+
+        width = 100
+        steps = width
+        stepToVal = d3.scale.linear().domain([0, steps-1]).range([-@max, @max])
+        vals = (v for v in [0 ... steps])
+
+        g = @legend.append('g')
+                   .attr('transform', "translate(#{@opts.width-width},0)")
+
+        rects = g.selectAll('rect')
+                       .data(vals)
+        rects.enter().append("rect")
+                     .attr("x", (v) -> v*1.0*width/steps)
+                     .attr("height", 30)
+                     .attr("width", 1.0*width/steps)
+                     .style("fill", (v) => @colorScale(stepToVal(v)))
+
+        sc = d3.scale.linear().domain([-@max,@max]).range([0,width])
+        axis = d3.svg.axis()
+                  .scale(sc)
+                  .orient("bottom")
+                  .tickSize(5)
+        g.append('g')
+         .attr('transform', "translate(0, 30)")
+         .call(axis)
+
+
     set_order: (@order) ->
         # Nothing
 
     _show_calc_info: (str) ->
         @info.text(str)
 
-    # Calculate a rough ordering.  Proper clustering would be better!
-    # The clustering is calculated by "calc_routine" which does part
-    # of the computation then yields and reschedules itself until done.
-    # This allows the large (slow) clusterings to be done without impacting
-    # the browser too much
+    _worker_callback: (d) ->
+        if d.error?
+            log_error("Worker error : #{d.error}")
+        if d.upto?
+            @_show_calc_info("Clustered #{d.upto} of #{@data.length}")
+        if d.done?
+            @order = d.done
+            @_render_heatmap()
+            @_show_calc_info("")
+        if d.took?
+            log_debug("calc_order: took=#{d.took}ms for #{@data.length} points")
+
+    # Calculate the order of genes for the heatmap.  This uses the 'calc_order' function
+    # from above, wrapped in a web-worker
     _calc_order: () ->
-        if @data.length==0
-            @order = []
-            return
+        @worker.start([@data,@columns.map((c) -> {idx: c.idx})])
 
-        t1 = new Date()
-        used = {0: true}
-        order=[0]
-        calc_routine = () =>
-            yield_after = 50     # Should be a function of @data.length
-            while order.length < @data.length && (yield_after--)>0
-                row = @data[order[order.length-1]]
-                best_i = best_d = null
-                for i in [0..@data.length-1]
-                    continue if used[i]
-                    r = @data[i]
-                    d = @_dist(row,r)
-                    if !best_d or d<best_d
-                        best_d = d
-                        best_i = i
-                order.push(best_i)
-                used[best_i] = true
-            if order.length >= @data.length
-                # Done.  Render the heatmap
-                @order = order.map((i) => @data[i].id)
-                log_debug("calc_order: took=#{new Date()-t1}ms for #{@data.length} points",order,@order)
-                @_render_heatmap()
-                @_show_calc_info("")
-            else
-                # Still more work.  Re-schedule ourselves
-                scheduler.schedule('heatmap.calc', calc_routine, 50)
-                @_show_calc_info("Clustered #{order.length} of #{@data.length}")
-
-        # If there are many data points, start the calc after a few seconds to give an other
-        # rendering a chance (ie. parcoords).  A better solution would be to have priorities
-        # but that needs parcoords to be changed to use the same scheduling interface
-        if @data.length>3000
-            scheduler.schedule('heatmap.calc', calc_routine, 10*1000)
-        else
-            scheduler.schedule('heatmap.calc', calc_routine, 10)
-
-    # Distance calc for 2 genes. (for clustering)
-    _dist: (r1,r2) ->
-        s = 0
-        for c in @columns
-            v = r1[c.idx]-r2[c.idx]
-            s += v*v
-            #s = d3.max([s,v])
-        s
+    _thinking: (bool) ->
+        @svg.select("g.genes").attr('opacity',if bool then 0.4 else 1)
 
     schedule_update: (data) ->
         @data=data if data
+        return if !@data? || !@columns? || !@_enabled
 
-        @svg.attr('opacity',0.4)
+        @_thinking(true)
         @_calc_order()
 
     # update_columns(columns,extent,sel_column)
@@ -91,9 +191,9 @@ class Heatmap
         @max = d3.max(extent.map(Math.abs))
         @colorScale = d3.scale.linear()
                         .domain([-@max, 0, @max])
-                        .range(["red", "white", "blue"]);
+                        .range(["blue", "white", "red"]);
 
-        cols = @svg.select('#heatmap .labels').selectAll('.label')
+        cols = @svg.select('.labels').selectAll('.label')
                    .data(@columns)
         cols.enter().append('text').attr("class","label")
         cols.exit().remove()
@@ -101,9 +201,10 @@ class Heatmap
             .attr('y', (d,i) => i * @opts.h + @opts.h/2)
             .attr("text-anchor", "end")
             .text((d) -> d.name)
+        @_make_legend()
 
     _render_heatmap: () ->
-        @svg.attr('opacity',1)
+        @_thinking(false)
         kept_data = {}
         sorted = @data[0..]
         sorted.sort((a,b) => a[@sel_column] - b[@sel_column])
@@ -123,7 +224,7 @@ class Heatmap
 
         # @_create_brush(w)
 
-        genes = @svg.select("#heatmap .genes").selectAll("g.gene")
+        genes = @svg.select(".genes").selectAll("g.gene")
                     .data(d3.values(kept_data)) #, (d) -> d.id)
 
         genes.enter().append("g").attr("class","gene")
@@ -178,9 +279,6 @@ class Heatmap
             # .call(brush.event)
         gBrush.selectAll("rect")
               .attr("height", 100*@opts.h_pad + @opts.h * @columns.length);
-
-
-
 
 
 window.Heatmap = Heatmap

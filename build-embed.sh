@@ -19,7 +19,7 @@ case "$1" in
         url='http://victorian-bioinformatics-consortium.github.io/degust/dist/latest/'
         ;;
     *)
-      echo "Usage: ./build-embed.sh local|remote"
+      echo "Usage: ./build-embed.sh local|local-srv|remote"
       exit 1
       ;;
 esac
@@ -44,3 +44,6 @@ sed -e "/HTML-HERE/r xx.html" \
     -e "s/VERSION-HERE/$ver/g" \
     -e "s^ASSET-HERE^$url^g"  app/scripts/embed.py > build/degust.py
 
+rm -f xx.html
+
+echo "Built: build/degust.py"

@@ -11,6 +11,9 @@ class Slider
       @slider.slider("value", set_i)
 
     fmt: (v) ->
+      if @opts.fmt?
+        return @opts.fmt(v)
+
       n=Number(v)
       if n==undefined
           v
@@ -18,6 +21,24 @@ class Slider
           n.toExponential(0)
       else
           v
+
+    set_max: (val, min, max, log) ->
+        if !log
+            @stepValues = (x for x in [min..max] by 10)
+        else
+            # FIXME
+            @stepValues = [0,1,2,3,4,5,10,20,100,200,Math.floor(max/3),Math.floor(max/2),max]
+            @stepValues = @stepValues.filter((v) -> v>=min && v<=max)
+        @slider.slider("option", "max", @stepValues.length-1)
+        @set_slider(val)
+        $(@opts.input_id).val(@fmt(val))
+        @opts.on_change(val)
+
+    set_val: (val, fire_change) ->
+        $(@opts.input_id).val(@fmt(val))
+        @set_slider(val)
+        if fire_change?
+            @opts.on_change(val)
 
     constructor: (@opts) ->
         @stepValues = opts.step_values || [0..10]
@@ -31,9 +52,8 @@ class Slider
             $(opts.input_id).val(@fmt(v))
             opts.on_change(v)
         })
-        if opts.val != undefined
-            $(opts.input_id).val(opts.val)
-            @set_slider(opts.val)
+
+        @set_val(@opts.val) if @opts.val?
 
         self = this
         $(opts.input_id).keyup(() ->

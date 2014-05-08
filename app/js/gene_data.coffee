@@ -15,13 +15,37 @@ class GeneData
         @columns_by_type_cache = {}
         @_process_data()
         @set_relative( 'avg' )
+        @_store_fc_avg()
         #log_debug 'data',@data
-
 
     set_relative: (relative) ->
         if relative != @relative
             @relative = relative
             @_calc_fc()
+
+    # Expects fc_calc to be already done relative to 'avg'.
+    # This will store those in columns of type : fc_calc_avg
+    _store_fc_avg: () ->
+        if @relative != 'avg'
+            log_error("Relative is not 'avg' : #{@relative}")
+            return
+        if @columns_by_type('fc_calc_avg').length != 0
+            log_error("fc_calc_avg already computed")
+            return
+
+        cols = @columns_by_type('fc_calc')
+        new_cols = cols.map((c) ->
+                       idx: c.idx + "_avg"
+                       name: c.name + "_avg"
+                       type: 'fc_calc_avg'
+                       calc: (d) => d[c.idx]
+                    )
+
+        @columns = @columns.concat(new_cols)
+        for d in @data
+            for col in new_cols
+                d[col.idx] = col.calc(d)
+
 
     # Ensure numbers are numbers!
     # Add an "id" to each row.
@@ -34,6 +58,7 @@ class GeneData
                     d[c.idx] = +d[c.idx]
         fdr_col = @column_by_type('fdr')
         @data.sort((a,b) -> a[fdr_col] - b[fdr_col])
+        @_totals = {}
         null
 
     _calc_fc: () ->
@@ -99,6 +124,12 @@ class GeneData
         for col in @columns
             res.push(col) if col.type==type && col.parent==parent_name
         res
+
+    # Get the sum of the specified column.  Results are cached.
+    get_total: (col) ->
+        return @_totals[col.name] if col.name of @_totals
+        @_totals[col.name] = d3.sum( @data.map( (d) -> d[col.idx] ) )
+        @_totals[col.name]
 
     #get_columns: () -> @columns
 
