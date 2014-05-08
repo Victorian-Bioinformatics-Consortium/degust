@@ -92,16 +92,15 @@ class PCA
         # We expect 1 row per sample.  Each column is a different gene
         # Subtract column-wise mean (need zero-mean for PCA).
         X = numeric.transpose(numeric.transpose(matrix).map((r) -> mean = 1.0*numeric.sum(r)/r.length; numeric.sub(r,mean)))
-        #console.log("matrix",matrix,"X",X)
 
 
-        #sigma = numeric.div(numeric.dot(numeric.transpose(X), X), X.length)
-        #sigma = numeric.dot(numeric.transpose(X), X)
         sigma = numeric.dot(X,numeric.transpose(X))
         svd = numeric.svd(sigma)
+
         # scale the coordinates back
         # (from http://www.ats.ucla.edu/stat/r/pages/svd_demos.htm)
         r = numeric.dot(svd.V, numeric.sqrt(numeric.diag(svd.S)))
+
         # Want RMS distance (like in Limma), so divide by sqrt(n)
         r = numeric.div(r, Math.sqrt(matrix[0].length))
         r
@@ -110,35 +109,7 @@ class PCA
         sz = X.length
         numeric.sum(numeric.pow(X,2))/sz - Math.pow(numeric.sum(X),2)/(sz*sz)
 
-    @to_dist: (a,b) ->
-        diffs = numeric.sub(a,b)
-        return Math.sqrt(numeric.sum(numeric.pow(diffs,2))/a.length)
-
-    @dist_matrix: (by_gene) ->
-        # Compute pair-wise distances
-        dist = []
-        for i in [0...by_gene.length]
-            dist[i] ?= []
-            for j in [i...by_gene.length]
-                dist[j] ?= []
-                if i==j
-                    dist[i][j] = 0
-                else
-                    dist[i][j] = dist[j][i] = PCA.to_dist(by_gene[i], by_gene[j])
-        console.log "DIST"
-        str = ""
-        for r in dist
-            for c in r
-                str += c.toFixed(1)
-                str += " | "
-            str += "\n"
-        console.log str
-        dist
-
-# Implement Paul Harrison's glog moderation
 log_moderation = 10.0
-glog = (x,m) ->
-    Math.log( (x + Math.sqrt(x*x + 4*m*m))/2 ) / Math.log(2)
 
 variance_key = "_variance"
 transform_key = "_transformed_"
@@ -150,10 +121,8 @@ class GenePCA
     # Note, this is naughty - it writes to the 'data' array a "_variance" column
     # and several "_transformed_" columns
     update_data: (@data, @columns) ->
-        # 'data' - one row per gene.
-        max = @data.length
-        #@top_n.set_max(max)
 
+        #max = @data.length
         # Counts is an array for each gene.  Each of those is an array of counts
         #raw_counts = @data.map((row) => @columns.map((c) -> row[c.idx]) )
 
@@ -165,7 +134,6 @@ class GenePCA
     _compute_variance: (row) ->
         transformed =  @columns.map((col) ->
             val = row[col.idx]
-            #t_val = glog(1000000.0 * val/size, 1000000.0 * log_moderation / avg_lib_size)
             t_val = Math.log(log_moderation + val)/Math.log(2)
             row[transform_key+col.idx] = t_val
             t_val
@@ -192,10 +160,9 @@ class GenePCA
         # Transpose to row per sample.
         by_gene = numeric.transpose(transformed)
 
-        #dist = PCA.dist_matrix(by_gene)
 
         comp = PCA.pca(by_gene)
-        #console.log("dist",dist,"comp",comp)
+
         @scatter.draw(numeric.transpose(comp), @columns, dims)
 
     brush: () ->
@@ -207,19 +174,3 @@ class GenePCA
         # Pass
 
 window.GenePCA = GenePCA
-window.PCA = PCA
-
-
-# mat<-matrix(c(10,4,34,46,1204,4798,510,  771,439,3,3,827,1660,549,  56,44,47,51,966,2146,470),nrow=3,byrow=T)
-#
-# dd <- matrix(c(0,1,1,1, 1,0,1,1, 1,1,0,1, 1,1,1,0), nrow=4)
-# mds <- cmdscale(as.dist(dd))
-# plot(mds[,1],mds[,2])
-# dist(mds[c(4,4),])
-# loc3 <- t(cmdscale(as.dist(dd), k=3))
-# plotMDS(loc3,dim.plot=c(1,2))
-#
-# cc <- c(2,4,4,367,393,569)
-# v <- log(10+cc,base=2)
-# diff <- function(a,b) abs(a-b)
-# dd <- as.dist(outer(v,v,FUN="diff"))
