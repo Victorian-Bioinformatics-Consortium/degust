@@ -465,7 +465,8 @@ gene_table_filter = (item) ->
     return true if searchStr == ""
     for col in g_data.columns_by_type('info')
         str = item[col.idx]
-        return true if str && str.toLowerCase().indexOf(searchStr)>=0
+        return true if str? && typeof str == 'string' &&
+                       str.toLowerCase().indexOf(searchStr)>=0
     false
 
 # Filter to decide which rows to plot on the parallel coordinates widget
