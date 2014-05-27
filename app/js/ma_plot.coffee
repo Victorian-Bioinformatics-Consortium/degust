@@ -2,7 +2,7 @@ class MAPlot
     constructor: (@opts) ->
         @opts.height ?= 300
         @opts.width ?= 600
-        @opts.padding ?= 20
+        @opts.padding ?= 30
 
 
         @gDot = d3.select(@opts.elem).append('canvas')
