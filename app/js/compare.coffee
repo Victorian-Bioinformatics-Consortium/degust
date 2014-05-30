@@ -130,7 +130,7 @@ class WithBackendAnalysis
         return if columns.length <= 1
 
         # load csv file and create the chart
-        req = BackendCommon.script("query=dge&fields=#{JSON.stringify columns}")
+        req = BackendCommon.script("query=dge&fields=#{encodeURIComponent(JSON.stringify columns)}")
         start_loading()
         d3.csv(req, (err, data) =>
             log_info("Downloaded DGE counts : rows=#{data.length}")
@@ -173,7 +173,7 @@ class WithBackendAnalysis
 
     request_r_code: (callback) ->
         columns = @_get_selected_cols()
-        req = BackendCommon.script("query=dge_r_code&fields=#{JSON.stringify columns}")
+        req = BackendCommon.script("query=dge_r_code&fields=#{encodeURIComponent(JSON.stringify columns)}")
         d3.text(req, (err,data) ->
             log_debug("Downloaded R Code : len=#{data.length}",data,err)
             callback(data)
