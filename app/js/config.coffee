@@ -90,8 +90,11 @@ set_multi_select = (el, opts, selected) ->
 update_data = () ->
     return if !data
 
+    title = mod_settings.name || "Unnamed"
+    $(".exp-name").text(title)
+    document.title = title
+
     $("input.name").val(mod_settings.name || "")
-    $(".exp-name").text(mod_settings.name || "Unnamed")
     $("input.primary").val(mod_settings.primary_name || "")
     $("input.link-url").val(mod_settings.link_url || "")
     if mod_settings.hasOwnProperty('min_counts')

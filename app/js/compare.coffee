@@ -769,7 +769,10 @@ init_page = (use_backend) ->
     else
         g_backend = new WithoutBackend(settings, process_dge_data)
 
-    $(".exp-name").text(settings.name || "Unnamed")
+
+    title = settings.name || "Unnamed"
+    $(".exp-name").text(title)
+    document.title = title
 
     fdrThreshold = settings['fdrThreshold'] if settings['fdrThreshold'] != undefined
     fcThreshold  = settings['fcThreshold']  if settings['fcThreshold'] != undefined
