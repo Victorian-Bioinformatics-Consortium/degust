@@ -80,10 +80,14 @@ calc_order = (e) ->
     order_ids = order.map((i) => data[i].id)
     postMessage({done: order_ids, took: (new Date())-t1})
 
+
+######################################################################
+# Heatmap widget
+
 class Heatmap
     constructor: (@opts) ->
-        @opts.h_pad ?= 20
-        @opts.h ?= 50
+        @opts.h_pad ?= 10     # Padding above and below
+        @opts.h ?= 50         # The height on 1 heatmap row
         @opts.width ?= 1000
         @opts.label_width ?= 120
         @opts.limit ?= @opts.width - @opts.label_width
@@ -203,7 +207,7 @@ class Heatmap
         cols.enter().append('text').attr("class","label")
         cols.exit().remove()
         cols.attr('x', @opts.label_width)
-            .attr('y', (d,i) => i * @opts.h + @opts.h/2)
+            .attr('y', (d,i) => @opts.h_pad + i * @opts.h + @opts.h/2)
             .attr("text-anchor", "end")
             .text((d) -> d.name)
         @_make_legend()
@@ -215,19 +219,21 @@ class Heatmap
         sorted.sort((a,b) => a[@sel_column] - b[@sel_column])
         kept_data[d.id]=d for d in sorted[0..@opts.limit-1]
 
+        @data_by_xpos = []
         row_ids={}
         num_kept=0
         for id in (@order || data.map((d) -> d.id))
             if kept_data[id]
                 row_ids[id]=num_kept
+                @data_by_xpos[num_kept] = kept_data[id]
                 num_kept += 1
 
-        @svg.attr("width", @opts.width).attr("height", @opts.h_pad + @opts.h * @columns.length)
+        @svg.attr("width", @opts.width).attr("height", 2*@opts.h_pad + @opts.h * @columns.length)
         w = d3.min([@opts.h, (@opts.width - @opts.label_width) / num_kept])
 
         #console.log("max",@max,"kept",kept_data,"num", num_kept, w)
 
-        # @_create_brush(w)
+        @_create_brush(w)
 
         genes = @svg.select(".genes").selectAll("g.gene")
                     .data(d3.values(kept_data)) #, (d) -> d.id)
@@ -247,7 +253,7 @@ class Heatmap
                          (d) -> d.col)
         cells.enter().append("rect").attr('class','cell')
         cells.attr("x", (d) => d.row * w)
-             .attr("y", (d) => d.col * @opts.h)
+             .attr("y", (d) => @opts.h_pad + d.col * @opts.h)
              .attr("width",  w)
              .attr("height", @opts.h)
              .style("fill", (d) => @colorScale(d.score))
@@ -256,34 +262,59 @@ class Heatmap
         genes.on('mouseover', @opts.mouseover) if @opts.mouseover
         genes.on('mouseout', @opts.mouseout) if @opts.mouseout
 
-        #genes.on('mousedown', (e,l) -> console.log 'down', e,l)
-        #genes.on('mouseup', (e,l) -> console.log 'up', e,l)
+        #genes.on('mousedown', (e,l) => @_enable_brush(true))
+        #genes.on('mouseup', (e,l) => @_enable_brush(false))
         #genes.on('mousemove', (e,l) -> console.log 'move', e,l)
 
-
-    # NOT IN USE - not sure how to get it right.  How should it interact with parallel-coords or ma-plot?
+    # Allow dragging a region on the heatmap
     _create_brush: (w) ->
+        @svg.select("g.genes").style("pointer-events","none")
+
         # Create brush
         x = d3.scale.identity().domain([0, (@opts.width - @opts.label_width)])
         brush = d3.svg.brush()
              .x(x)
-             #.extent([0,200])
-             #.on("brush", () -> console.log 'brushed', brush.extent())
+             .on("brush", () =>
+                ex = brush.extent()
+                @svg.select("rect.top-extent").remove()
+                if ex[1]>ex[0]
+                    @svg.append("rect")
+                        .attr("class","top-extent")
+                        .attr("x",@opts.label_width + ex[0])
+                        .attr("width",ex[1]-ex[0])
+                        .attr("height", 2*@opts.h_pad + @opts.h * @columns.length)
+             )
              .on("brushend", () =>
                 ex = brush.extent()
-                data = @svg.selectAll("rect.cell").data()
-                d = data.filter((d) -> d.col=='0' && ex[0]<=d.row*w && ex[1]>=d.row*w)
-                #console.log "in range=",d
+                if ex[1]>ex[0]
+                    @brush_on = true
+                    lo = Math.round(ex[0]/w)
+                    hi = Math.round(ex[1]/w)
+                    d = @data_by_xpos[lo...hi]
+                    @opts.mouseover(d) if @opts.mouseover
+                else
+                    @brush_on = false
+                    @opts.mouseout() if @opts.mouseout
                 )
 
+        @brush_on=false
+        @opts.mouseout() if @opts.mouseout
+        @svg.select("rect.top-extent").remove()
         @svg.select("g.brush").remove()
-        gBrush = @svg.append("g")
+        gBrush = @svg.insert("g",":first-child")
              .attr("class", "brush")
              .attr("transform", "translate(#{@opts.label_width},0)")
              .call(brush)
-            # .call(brush.event)
         gBrush.selectAll("rect")
-              .attr("height", 100*@opts.h_pad + @opts.h * @columns.length);
-
+              .attr("height", 2*@opts.h_pad + @opts.h * @columns.length)
+              .on("mousemove", () =>
+                  x = d3.mouse(gBrush[0][0])[0]
+                  d = @data_by_xpos[Math.floor(x/w)]
+                  if @opts.mouseover && d?
+                      @opts.mouseover([d]) if !@brush_on
+                  if @opts.mouseout && !d?
+                      @opts.mouseout() if !@brush_on
+              )
+              .on("mouseout", () => @opts.mouseout() if @opts.mouseout && !@brush_on)
 
 window.Heatmap = Heatmap

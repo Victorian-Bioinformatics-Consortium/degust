@@ -400,13 +400,17 @@ init_charts = () ->
     heatmap = new Heatmap(
         elem: '#heatmap'
         width: $('.container').width()
-        mouseover: (d) ->
-            expr_plot.highlight([d])
+        mouseover: (ds) ->
+            expr_plot.highlight(ds)
             msg = ""
-            for col in g_data.columns_by_type(['info'])
-              msg += "<span class='lbl'>#{col.name}: </span><span>#{d[col.idx]}</span>"
+            if ds.length==1
+                d=ds[0]
+                for col in g_data.columns_by_type(['info'])
+                    msg += "<span class='lbl'>#{col.name}: </span><span>#{d[col.idx]}</span>"
+            else
+                msg += "Selected : #{ds.length}"
             $('#heatmap-info').html(msg)
-        mouseout:  (d) ->
+        mouseout:  () ->
             expr_plot.unhighlight()
             $('#heatmap-info').html("")
     )

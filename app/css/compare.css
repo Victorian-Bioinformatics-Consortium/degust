@@ -74,9 +74,14 @@ div.filter { font-size: 8pt; border: 1px solid #aaa; border-radius: 5px; backgro
 #heatmap-info .lbl { margin-left: 20px; font-weight: bold; display: inline-block;}
 
 #heatmap .extent {
+  fill-opacity: 0;
+}
+
+#heatmap .top-extent {
   fill: #990;
   fill-opacity: .2;
   stroke: #000;
+  pointer-events: none;
 }
 
 #heatmap .info {
