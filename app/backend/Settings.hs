@@ -18,6 +18,7 @@ import Data.Time
 import Data.List
 import Data.Maybe
 import System.FilePath
+import System.Directory (renameFile)
 import Text.JSON
 import Text.JSON.Types (set_field)
 import qualified Data.ByteString.Lazy as BS
@@ -44,7 +45,7 @@ data UserSettings =
                , _link_col :: Maybe String -- ^ Optional gene-link column (used in link_url)
                , _link_url :: Maybe String -- ^ Optional gene-link URL
 
-               -- Only used on the frontent
+               -- Only used on the frontend
                , _hide :: [String] -- ^ Used in the frontend to hide some columns
                , _title :: String -- ^ Title to use in UI
 
@@ -197,9 +198,12 @@ writeUserSettings settings userSettings = do
 writeSettings :: Code -> Settings -> IO ()
 writeSettings code settings
     | not valid = error "Invalid settings"
-    | otherwise = Prelude.writeFile (settingsFile code) $ encode settings
+    | otherwise = do
+         Prelude.writeFile tmpFile $ encode settings
+         renameFile tmpFile (settingsFile code)
   where
     valid = True
+    tmpFile = settingsFile code++".tmp"
 
 createSettings ::  BS.ByteString -> String -> UTCTime -> IO Code
 createSettings dat remote_ip now = do
