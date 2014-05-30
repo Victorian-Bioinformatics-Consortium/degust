@@ -145,10 +145,15 @@ class Heatmap
                   .scale(sc)
                   .orient("bottom")
                   .tickSize(5)
+        # Draw the ticks and rotate labels by 90%
         g.append('g')
          .attr('transform', "translate(0, 30)")
          .call(axis)
-
+          .selectAll("text")
+            .style("text-anchor", "end")
+            .attr("dx", "-.8em")
+            .attr("dy", "-0.4em")
+            .attr("transform", "rotate(-90)");
 
     set_order: (@order) ->
         # Nothing

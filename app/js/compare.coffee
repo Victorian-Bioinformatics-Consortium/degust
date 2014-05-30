@@ -130,7 +130,7 @@ class WithBackendAnalysis
         return if columns.length <= 1
 
         # load csv file and create the chart
-        req = BackendCommon.script("query=dge&fields=#{JSON.stringify columns}")
+        req = BackendCommon.script("query=dge&fields=#{encodeURIComponent(JSON.stringify columns)}")
         start_loading()
         d3.csv(req, (err, data) =>
             log_info("Downloaded DGE counts : rows=#{data.length}")
@@ -173,7 +173,7 @@ class WithBackendAnalysis
 
     request_r_code: (callback) ->
         columns = @_get_selected_cols()
-        req = BackendCommon.script("query=dge_r_code&fields=#{JSON.stringify columns}")
+        req = BackendCommon.script("query=dge_r_code&fields=#{encodeURIComponent(JSON.stringify columns)}")
         d3.text(req, (err,data) ->
             log_debug("Downloaded R Code : len=#{data.length}",data,err)
             callback(data)
@@ -465,7 +465,8 @@ gene_table_filter = (item) ->
     return true if searchStr == ""
     for col in g_data.columns_by_type('info')
         str = item[col.idx]
-        return true if str && str.toLowerCase().indexOf(searchStr)>=0
+        return true if str? && typeof str == 'string' &&
+                       str.toLowerCase().indexOf(searchStr)>=0
     false
 
 # Filter to decide which rows to plot on the parallel coordinates widget
@@ -768,7 +769,10 @@ init_page = (use_backend) ->
     else
         g_backend = new WithoutBackend(settings, process_dge_data)
 
-    $(".exp-name").text(settings.name || "Unnamed")
+
+    title = settings.name || "Unnamed"
+    $(".exp-name").text(title)
+    document.title = title
 
     fdrThreshold = settings['fdrThreshold'] if settings['fdrThreshold'] != undefined
     fcThreshold  = settings['fcThreshold']  if settings['fcThreshold'] != undefined

@@ -147,10 +147,6 @@ The resulting build/ directory can then be installed as a CGI site.
 
 ## Known Issues
 
-#### Heatmap 
-
-  * Clustering algorithm is naive greedy N^2.  So, not fast, and not a great clustering. 
-
 #### Documentation
 
   * Installing the full back-end is barely documented
