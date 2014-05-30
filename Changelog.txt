@@ -1,3 +1,9 @@
+v0.16
+  * Fix table search when number column included in table
+  * Fix bug when '&' used in condition name
+  * Add title to page
+  * Rotate heatmap scale so it fits better.
+
 v0.15
   * Update heatmap to use web-worker to compute clustering
   * Change colours in heatmap, table, kegg to be consistent with red is +ve, blue is -ve
