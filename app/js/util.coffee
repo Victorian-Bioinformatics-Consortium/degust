@@ -68,12 +68,13 @@ window.scheduler = new ScheduleTasks()
 
 # Convert any parameters in the pages url into a hash+array
 window.get_url_vars = () ->
+    loc = window.location.search
     vars = []
     hash = null
-    idx = window.location.href.indexOf('?')
+    idx = loc.indexOf('?')
     return vars if idx<0
 
-    hashes = window.location.href.slice(idx + 1).split('&')
+    hashes = loc.slice(idx + 1).split('&')
     for i in [0..hashes.length-1]
         hash = hashes[i].split('=')
         vars.push(hash[0])
