@@ -66,10 +66,9 @@ class ScheduleTasks
 
 window.scheduler = new ScheduleTasks()
 
-# Convert any parameters in the pages url into a hash+array
-window.get_url_vars = () ->
-    loc = window.location.search
-    vars = []
+# Convert any parameters in the pages url into a hash
+split_params = (loc) ->
+    vars = {}
     hash = null
     idx = loc.indexOf('?')
     return vars if idx<0
@@ -77,9 +76,23 @@ window.get_url_vars = () ->
     hashes = loc.slice(idx + 1).split('&')
     for i in [0..hashes.length-1]
         hash = hashes[i].split('=')
-        vars.push(hash[0])
-        vars[hash[0]] = hash[1].replace(/\#$/,'')
+        vars[hash[0]] = decodeURIComponent(hash[1].replace(/\#$/,''))
     vars
+
+window.get_url_vars = () ->
+    split_params(window.location.search)
+
+window.get_hash_vars = () ->
+    split_params(window.location.hash)
+
+window.set_hash_var = (set) ->
+    p = get_hash_vars()
+    for k,v of set
+        p[k] = v
+
+    loc = (for k,v of p
+               k + "=" + encodeURIComponent(v)).join("&")
+    window.location.hash = '#?'+loc
 
 window.setup_nav_bar = () ->
     about = $(require("../templates/about.hbs")(version: degust_version))
