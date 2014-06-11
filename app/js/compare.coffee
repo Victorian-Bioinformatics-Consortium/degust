@@ -160,15 +160,6 @@ class WithBackendAnalysis
             )
 
             @process_dge_data(data, data_cols)
-
-            # Disable backend clustering for now - TODO
-            # if data.length<5000
-            #     req = @_script("query=clustering&fields=#{JSON.stringify columns}")
-            #     d3.csv(req, (err, data) ->
-            #         log_info("Downloaded clustering : rows=#{data.length}",data,err)
-            #         heatmap.set_order(data.map((d) -> d.id))
-            #         heatmap.schedule_update()
-            #     )
         )
 
     request_r_code: (callback) ->
