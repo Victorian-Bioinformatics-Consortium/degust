@@ -76,7 +76,8 @@ split_params = (loc) ->
     hashes = loc.slice(idx + 1).split('&')
     for i in [0..hashes.length-1]
         hash = hashes[i].split('=')
-        vars[hash[0]] = decodeURIComponent(hash[1].replace(/\#$/,''))
+        if hash[0].length>0
+            vars[hash[0]] = decodeURIComponent(hash[1].replace(/\#$/,''))
     vars
 
 window.get_url_vars = () ->
@@ -88,11 +89,17 @@ window.get_hash_vars = () ->
 window.set_hash_var = (set) ->
     p = get_hash_vars()
     for k,v of set
-        p[k] = v
+        if v?
+            p[k] = v
+        else
+            delete p[k]
 
     loc = (for k,v of p
                k + "=" + encodeURIComponent(v)).join("&")
-    window.location.hash = '#?'+loc
+    if loc.length>0
+        window.location.hash = '?'+loc
+    else
+        window.location.hash = ''
 
 window.setup_nav_bar = () ->
     about = $(require("../templates/about.hbs")(version: degust_version))

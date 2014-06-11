@@ -307,8 +307,20 @@ gene_table_dblclick = (item) ->
             window.open(link)
             window.focus()
 
+get_default_plot_typ = () ->
+    if g_data.columns_by_type(['fc','primary']).length>2
+        'parcoords'
+    else
+        'ma'
+
+may_set_plot_var = (typ) ->
+    if typ == get_default_plot_typ()
+        set_hash_var({plot: null})
+    else
+        set_hash_var({plot: typ})
+
 activate_parcoords = () ->
-    set_hash_var({plot: 'parcoords'})
+    may_set_plot_var('parcoords')
     expr_plot = parcoords
     $('#dge-ma,#dge-pca').hide()
     $('#dge-pc').show()
@@ -320,7 +332,7 @@ activate_parcoords = () ->
     update_data()
 
 activate_ma_plot = () ->
-    set_hash_var({plot: 'ma'})
+    may_set_plot_var('ma')
     expr_plot = ma_plot
     $('#dge-pc,#dge-pca').hide()
     $('#dge-ma').show()
@@ -332,7 +344,7 @@ activate_ma_plot = () ->
     update_data()
 
 activate_pca_plot = () ->
-    set_hash_var({plot: 'mds'})
+    may_set_plot_var('mds')
     expr_plot = pca_plot
     $('#dge-pc,#dge-ma').hide()
     $('#dge-pca').show()
@@ -676,16 +688,14 @@ process_dge_data = (data, columns) ->
         $('#select-pca').show()
 
 
-    p = get_hash_vars()
-    switch p['plot']
-        when 'mds'       then activate_pca_plot()
-        when 'ma'        then activate_ma_plot()
-        when 'parcoords' then activate_parcoords()
-        else
-            if g_data.columns_by_type(['fc','primary']).length>2
-                activate_parcoords()
-            else
-                activate_ma_plot()
+    set_plot = (typ) ->
+        switch typ
+            when 'mds'       then activate_pca_plot() ; true
+            when 'ma'        then activate_ma_plot() ; true
+            when 'parcoords' then activate_parcoords() ; true
+            else false
+
+    set_plot(get_hash_vars()['plot']) || set_plot(get_default_plot_typ())
 
     # First time throught?  Setup the tutorial tour
     if !g_tour_setup
