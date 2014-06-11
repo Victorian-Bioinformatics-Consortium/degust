@@ -1,3 +1,5 @@
+  * New condition selector.  Better when changing many conditions
+
 v0.17
   * Allow linking directly to a plot type using a hash parameter
   * Fix bug in labelling of MDS plot when changing condition slection

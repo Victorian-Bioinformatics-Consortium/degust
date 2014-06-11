@@ -161,3 +161,32 @@ div.filter { font-size: 8pt; border: 1px solid #aaa; border-radius: 5px; backgro
   stroke: #222;
   shape-rendering: crispEdges;
 }
+
+/* Edit overlay ***********************************************************************/
+
+.edit-overlay {
+    position: fixed;
+    top:0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: black;
+    opacity: 0.4;
+    z-index: 200;
+}
+
+.edit-backdrop {
+    position: absolute;
+    border-radius: 5px;
+    background: inherit;
+    z-index: 200;
+}
+
+.edit-elem {
+    position: relative;
+    z-index: 201;
+}
+
+.edit-btns {
+    padding: 2px;
+}

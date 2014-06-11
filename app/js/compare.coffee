@@ -172,16 +172,27 @@ class WithBackendAnalysis
 
 
     _select_sample: (e) ->
-        @_update_samples()
+        new EditList(
+            elem: '.conditions'
+            apply: () => @_update_samples()
+            cancel: () => @_set_selected_cols(@current_selection)
+        )
 
     _get_selected_cols: () ->
         cols = []
         # Create a list of conditions that are selected
         $('#files input:checked').each( (i, n) =>
-            rep_name = $(n).data('rep')
-            cols.push(rep_name)
+            name = $(n).data('rep')
+            cols.push(name)
         )
+        @current_selection = cols
         cols
+
+    _set_selected_cols: (cols) ->
+        $('#files input:checkbox').each( (i, n) =>
+            name = $(n).data('rep')
+            $(n).prop('checked', name in cols)
+        )
 
     _update_samples: () ->
         @request_dge_data(@_get_selected_cols())
@@ -195,16 +206,13 @@ class WithBackendAnalysis
                        </label>
                     """)
 
-            if name in init_select
-                $("input",div).prop('checked', true)
-
             $("#files").append(div)
             $("input",div).data('rep',name)
         )
         $("#files input").change((e) => @_select_sample(e))
+
+        @_set_selected_cols(init_select)
         @_update_samples()
-
-
 
 blue_to_brown = d3.scale.linear()
   .domain([0,0.05,1])
