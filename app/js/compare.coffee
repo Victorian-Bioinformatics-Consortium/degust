@@ -181,14 +181,12 @@ class WithBackendAnalysis
 
 
     _select_sample: (e) ->
-        el = $(e.target).parent('div')
-        $(el).toggleClass('selected')
         @_update_samples()
 
     _get_selected_cols: () ->
         cols = []
         # Create a list of conditions that are selected
-        $('#files div.selected').each( (i, n) =>
+        $('#files input:checked').each( (i, n) =>
             rep_name = $(n).data('rep')
             cols.push(rep_name)
         )
@@ -201,17 +199,18 @@ class WithBackendAnalysis
         init_select = @settings['init_select'] || []
         $.each(@settings.replicates, (i, rep) =>
             name = rep[0]
-            div = $("<div class='rep_#{i}'>"+
-                    "  <a class='file' href='#' title='Select this condition' data-placement='right'>#{name}</a>"+
-                    "</div>")
-            $("#files").append(div)
-            div.data('rep',name)
+            div = $("""<label>
+                        <input type='checkbox' title='Select this condition' data-placement='right'> #{name}
+                       </label>
+                    """)
 
-            # Select those in init_select
             if name in init_select
-                div.addClass('selected')
+                $("input",div).prop('checked', true)
+
+            $("#files").append(div)
+            $("input",div).data('rep',name)
         )
-        $("#files a.file").click((e) => e.preventDefault(); @_select_sample(e))
+        $("#files input").change((e) => @_select_sample(e))
         @_update_samples()
 
 
