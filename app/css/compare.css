@@ -1,11 +1,8 @@
 
 #main-loading { position: absolute; top: 100px; left: 250px; }
 
-.selected { background-color: #ddd; }
-.primary { border: 2px solid #d99; }
-#files .pri { font-size: 8pt; float: right; display: none; color: #d99; padding-right: 2px; }
-#files .selected .pri { display: block;}
-#files .selected.primary .pri { display: none;}
+#files { border: 1px solid #aaa; border-radius: 5px; background-color: #eee; padding: 3px 8px; margin-top: 10px}
+#files label { display: block; font-weight: normal; }
 
 #dge-pc { height: 250px; }
 
@@ -163,4 +160,33 @@ div.filter { font-size: 8pt; border: 1px solid #aaa; border-radius: 5px; backgro
   fill: none;
   stroke: #222;
   shape-rendering: crispEdges;
+}
+
+/* Edit overlay ***********************************************************************/
+
+.edit-overlay {
+    position: fixed;
+    top:0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: black;
+    opacity: 0.4;
+    z-index: 200;
+}
+
+.edit-backdrop {
+    position: absolute;
+    border-radius: 5px;
+    background: inherit;
+    z-index: 200;
+}
+
+.edit-elem {
+    position: relative;
+    z-index: 201;
+}
+
+.edit-btns {
+    padding: 2px;
 }

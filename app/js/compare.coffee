@@ -160,15 +160,6 @@ class WithBackendAnalysis
             )
 
             @process_dge_data(data, data_cols)
-
-            # Disable backend clustering for now - TODO
-            # if data.length<5000
-            #     req = @_script("query=clustering&fields=#{JSON.stringify columns}")
-            #     d3.csv(req, (err, data) ->
-            #         log_info("Downloaded clustering : rows=#{data.length}",data,err)
-            #         heatmap.set_order(data.map((d) -> d.id))
-            #         heatmap.schedule_update()
-            #     )
         )
 
     request_r_code: (callback) ->
@@ -181,18 +172,27 @@ class WithBackendAnalysis
 
 
     _select_sample: (e) ->
-        el = $(e.target).parent('div')
-        $(el).toggleClass('selected')
-        @_update_samples()
+        new EditList(
+            elem: '.conditions'
+            apply: () => @_update_samples()
+            cancel: () => @_set_selected_cols(@current_selection)
+        )
 
     _get_selected_cols: () ->
         cols = []
         # Create a list of conditions that are selected
-        $('#files div.selected').each( (i, n) =>
-            rep_name = $(n).data('rep')
-            cols.push(rep_name)
+        $('#files input:checked').each( (i, n) =>
+            name = $(n).data('rep')
+            cols.push(name)
         )
+        @current_selection = cols
         cols
+
+    _set_selected_cols: (cols) ->
+        $('#files input:checkbox').each( (i, n) =>
+            name = $(n).data('rep')
+            $(n).prop('checked', name in cols)
+        )
 
     _update_samples: () ->
         @request_dge_data(@_get_selected_cols())
@@ -201,20 +201,18 @@ class WithBackendAnalysis
         init_select = @settings['init_select'] || []
         $.each(@settings.replicates, (i, rep) =>
             name = rep[0]
-            div = $("<div class='rep_#{i}'>"+
-                    "  <a class='file' href='#' title='Select this condition' data-placement='right'>#{name}</a>"+
-                    "</div>")
+            div = $("""<label>
+                        <input type='checkbox' title='Select this condition' data-placement='right'> #{name}
+                       </label>
+                    """)
+
             $("#files").append(div)
-            div.data('rep',name)
-
-            # Select those in init_select
-            if name in init_select
-                div.addClass('selected')
+            $("input",div).data('rep',name)
         )
-        $("#files a.file").click((e) => e.preventDefault(); @_select_sample(e))
+        $("#files input").change((e) => @_select_sample(e))
+
+        @_set_selected_cols(init_select)
         @_update_samples()
-
-
 
 blue_to_brown = d3.scale.linear()
   .domain([0,0.05,1])
@@ -309,8 +307,20 @@ gene_table_dblclick = (item) ->
             window.open(link)
             window.focus()
 
+get_default_plot_typ = () ->
+    if g_data.columns_by_type(['fc','primary']).length>2
+        'parcoords'
+    else
+        'ma'
+
+may_set_plot_var = (typ) ->
+    if typ == get_default_plot_typ()
+        set_hash_var({plot: null})
+    else
+        set_hash_var({plot: typ})
+
 activate_parcoords = () ->
-    set_hash_var({plot: 'parcoords'})
+    may_set_plot_var('parcoords')
     expr_plot = parcoords
     $('#dge-ma,#dge-pca').hide()
     $('#dge-pc').show()
@@ -322,7 +332,7 @@ activate_parcoords = () ->
     update_data()
 
 activate_ma_plot = () ->
-    set_hash_var({plot: 'ma'})
+    may_set_plot_var('ma')
     expr_plot = ma_plot
     $('#dge-pc,#dge-pca').hide()
     $('#dge-ma').show()
@@ -334,7 +344,7 @@ activate_ma_plot = () ->
     update_data()
 
 activate_pca_plot = () ->
-    set_hash_var({plot: 'mds'})
+    may_set_plot_var('mds')
     expr_plot = pca_plot
     $('#dge-pc,#dge-ma').hide()
     $('#dge-pca').show()
@@ -678,16 +688,14 @@ process_dge_data = (data, columns) ->
         $('#select-pca').show()
 
 
-    p = get_hash_vars()
-    switch p['plot']
-        when 'mds'       then activate_pca_plot()
-        when 'ma'        then activate_ma_plot()
-        when 'parcoords' then activate_parcoords()
-        else
-            if g_data.columns_by_type(['fc','primary']).length>2
-                activate_parcoords()
-            else
-                activate_ma_plot()
+    set_plot = (typ) ->
+        switch typ
+            when 'mds'       then activate_pca_plot() ; true
+            when 'ma'        then activate_ma_plot() ; true
+            when 'parcoords' then activate_parcoords() ; true
+            else false
+
+    set_plot(get_hash_vars()['plot']) || set_plot(get_default_plot_typ())
 
     # First time throught?  Setup the tutorial tour
     if !g_tour_setup

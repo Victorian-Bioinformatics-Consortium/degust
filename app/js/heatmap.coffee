@@ -101,7 +101,7 @@ class Heatmap
         @legend = d3.select(@opts.elem).append('svg')
                     .attr("class", "legend")
                     .attr("width", @opts.width)
-                    .attr("height", 50)
+                    .attr("height", 58)
 
         # Create a single wrapper for later use
         @worker = new WorkerWrapper(calc_order, (d) => @_worker_callback(d))
