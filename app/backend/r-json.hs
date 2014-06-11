@@ -45,6 +45,9 @@ import Settings
 
 debug = False
 
+_log_stderr :: (MonadIO m) => String -> m ()
+_log_stderr = liftIO . hPutStrLn stderr
+
 main = do
   runCGI $ catchCGI doQuery
                  (\ex -> do logMsg $ "Exception : "++show ex

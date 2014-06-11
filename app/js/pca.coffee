@@ -76,15 +76,19 @@ class ScatterPlot
              .attr("r", 3.5)
              .attr("cx",0)
              .attr("cy",0)
-             .style("fill", (d,i) => @color(labels[i].parent))
         dot_g.append("text")
              .attr('class',"labels")
-             .text((d,i) -> labels[i].name)
              .attr('x',3)
              .attr('y',-3)
-             .style("fill", (d,i) => @color(labels[i].parent))
 
-        # Position the dots
+        # Ensure the correct colour and text
+        dots.select("circle")
+              .style("fill", (d,i) => @color(labels[i].parent))
+        dots.select("text")
+              .style("fill", (d,i) => @color(labels[i].parent))
+              .text((d,i) -> labels[i].name)
+
+        # And animate the moving dots
         dots.transition()
             .attr("transform", (d) => "translate(#{@x(d[dim1-1])},#{@y(d[dim2-1])})")
 
@@ -200,7 +204,6 @@ class GenePCA
     # Note, this is naughty - it writes to the 'data' array a "_variance" column
     # and several "_transformed_" columns
     update_data: (@data, @columns) ->
-
         #max = @data.length
         # Counts is an array for each gene.  Each of those is an array of counts
         #raw_counts = @data.map((row) => @columns.map((c) -> row[c.idx]) )

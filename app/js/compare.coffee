@@ -211,7 +211,7 @@ class WithBackendAnalysis
             if name in init_select
                 div.addClass('selected')
         )
-        $("#files a.file").click((e) => @_select_sample(e))
+        $("#files a.file").click((e) => e.preventDefault(); @_select_sample(e))
         @_update_samples()
 
 
@@ -310,6 +310,7 @@ gene_table_dblclick = (item) ->
             window.focus()
 
 activate_parcoords = () ->
+    set_hash_var({plot: 'parcoords'})
     expr_plot = parcoords
     $('#dge-ma,#dge-pca').hide()
     $('#dge-pc').show()
@@ -321,6 +322,7 @@ activate_parcoords = () ->
     update_data()
 
 activate_ma_plot = () ->
+    set_hash_var({plot: 'ma'})
     expr_plot = ma_plot
     $('#dge-pc,#dge-pca').hide()
     $('#dge-ma').show()
@@ -332,6 +334,7 @@ activate_ma_plot = () ->
     update_data()
 
 activate_pca_plot = () ->
+    set_hash_var({plot: 'mds'})
     expr_plot = pca_plot
     $('#dge-pc,#dge-ma').hide()
     $('#dge-pca').show()
@@ -675,10 +678,16 @@ process_dge_data = (data, columns) ->
         $('#select-pca').show()
 
 
-    if g_data.columns_by_type(['fc','primary']).length>2
-        activate_parcoords()
-    else
-        activate_ma_plot()
+    p = get_hash_vars()
+    switch p['plot']
+        when 'mds'       then activate_pca_plot()
+        when 'ma'        then activate_ma_plot()
+        when 'parcoords' then activate_parcoords()
+        else
+            if g_data.columns_by_type(['fc','primary']).length>2
+                activate_parcoords()
+            else
+                activate_ma_plot()
 
     # First time throught?  Setup the tutorial tour
     if !g_tour_setup
@@ -779,10 +788,10 @@ init_page = (use_backend) ->
 
     $("select#kegg").change(kegg_selected)
 
-    $('#select-pc a').click(() -> activate_parcoords())
-    $('#select-ma a').click(() -> activate_ma_plot())
-    $('#select-pca a').click(() -> activate_pca_plot())
-    $('a.show-r-code').click(() -> show_r_code())
+    $('#select-pc a').click((e) ->  e.preventDefault(); activate_parcoords())
+    $('#select-ma a').click((e) ->  e.preventDefault(); activate_ma_plot())
+    $('#select-pca a').click((e) -> e.preventDefault(); activate_pca_plot())
+    $('a.show-r-code').click((e) -> e.preventDefault(); show_r_code())
 
     init_charts()
     init_search()
