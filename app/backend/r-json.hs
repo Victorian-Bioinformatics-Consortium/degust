@@ -40,6 +40,7 @@ import Data.Digest.Pure.MD5 (md5)
 
 import System.Environment (getProgName)
 
+import R_Functions
 import Utils
 import Settings
 
@@ -254,8 +255,8 @@ saveSettings = do
 
 runR :: (Settings -> FilePath -> String) -> CGI String
 runR script = do
-    settings <- findSettings
-    liftIO $ do
+  settings <- findSettings
+  liftIO $ do
     (inF, hIn) <- openTempFile "tmp" "Rin.tmp"
     (outF, hOut) <- openTempFile "tmp" "Rout.tmp"
     let errFname = outF ++ "-err"
@@ -322,6 +323,28 @@ contMatrix settings (c1:cs) =  "matrix(data=c("++intercalate "," (concat allCols
     conditions = map fst $ get_replicates settings
     oneCol col = map (\c -> if c==col then "1" else if c==c1 then "-1" else "0") conditions
     allCols = map oneCol cs
+
+commonVars settings =
+    [("sep_char", case get_csv_format settings of {"TAB" -> "\\t" ; "CSV" -> ","; _ -> ","})
+    ,("counts_file", get_counts_file settings)
+    ,("counts_skip", show $ get_counts_skip settings)
+    ,("columns", columns settings)
+    ,("min_counts", show $ get_min_counts settings)
+    ,("design", design settings)
+    ]
+
+countsVars settings file =
+    commonVars settings ++
+    [("extra_cols", colsToRList extra_cols)
+    ,("file", file)
+    ]
+  where
+    extra_cols = nub $ get_info_columns settings ++
+                     maybeToList (get_ec_column settings)
+
+
+getCountsR2 :: Settings -> FilePath -> String
+getCountsR2 settings file = render countsR (countsVars settings file)
 
 -- | Common R setup code
 initR settings =
