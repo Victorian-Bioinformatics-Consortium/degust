@@ -10,15 +10,13 @@
 
 import Prelude hiding (catch)
 import Control.Applicative ((<$>))
-import Data.Maybe (fromJust,fromMaybe,maybeToList)
+import Data.Maybe (fromMaybe,maybeToList)
 import Data.List
 import Data.List.Split
 import Network.CGI
 import Control.Monad (when,filterM)
 import Control.Concurrent (forkIO)
-import Control.Concurrent.MVar (newEmptyMVar,putMVar,readMVar,MVar)
-import System.IO.Unsafe (unsafePerformIO)
-import Control.Exception (try, handle, IOException, catch)
+import Control.Exception (try, IOException, catch)
 import System.Exit (ExitCode(..))
 import qualified System.IO.Strict as SIO (run, hGetContents, readFile)
 import System.IO (openTempFile, hClose, hPutStr, hPutStrLn, stderr)
@@ -26,37 +24,33 @@ import System.Process
 import System.Directory (removeFile, doesFileExist, getModificationTime, getDirectoryContents)
 import Data.Text.Lazy.Encoding
 import qualified Data.Text.Lazy as T
-import Data.Text.Lazy.Builder (toLazyText)
 import qualified Data.ByteString.Lazy as BS
 import Text.Regex.PCRE
-import Text.JSON (encode,decode,Result(..))
+import Text.JSON (decode,Result(..))
 import Data.Time (getCurrentTime)
 import Text.Printf
 
 import Data.ByteString.Lazy (pack)
 import Data.Digest.Pure.MD5 (md5)
 
-import System.Environment (getProgName)
-
 import R_Functions
 import Utils
 import Settings
 
+debug :: Bool
 debug = False
 
 _log_stderr :: (MonadIO m) => String -> m ()
 _log_stderr = liftIO . hPutStrLn stderr
 
+main :: IO ()
 main = do
   runCGI $ catchCGI doQuery
                  (\ex -> do logMsg $ "Exception : "++show ex
                             outputError 400 "Bad request" []
                  )
 
-fromRight (Right r) = r
-fromRight (Left e) = error e
-
---doQuery :: CGI String
+doQuery :: CGI CGIResult
 doQuery = do query <- getInput "query"
              case query of
                Nothing -> redirectMainPage -- Support old style links
@@ -91,7 +85,7 @@ cached typ act = do
   out2 <- case out of
             Right out -> do -- liftIO $ hPutStrLn stderr $ "using cache"
                             return out
-            Left err -> do -- liftIO $ putStrLn $ "cache : "++show err
+            Left _err -> do -- liftIO $ putStrLn $ "cache : "++show err
                      out <- act
                      liftIO $ when (not $ null out) $ writeFile cache_file out
                      return out
@@ -188,11 +182,12 @@ getKeggTitles =  liftIO $ do
     return $ unlines (map (intercalate "\t") $ header : withEC)
   where
     header = ["code","title","ec"]
-    lookupEC line@(mp:_) = do xml <- catch (Prelude.readFile $ "kegg/kgml/map/map"++mp++".xml")
-                                     ((\_ -> return "" ) :: IOException -> IO String)
-                              let ecs = xml =~ ("name=\"ec:([.\\d]+)\"" ::String) :: [[String]]
-                              return $ line ++ [intercalate " " $ map (!!1) ecs]
-
+    lookupEC [] = return []
+    lookupEC line@(mp:_) = do
+        xml <- catch (Prelude.readFile $ "kegg/kgml/map/map"++mp++".xml")
+                     ((\_ -> return "" ) :: IOException -> IO String)
+        let ecs = xml =~ ("name=\"ec:([.\\d]+)\"" ::String) :: [[String]]
+        return $ line ++ [intercalate " " $ map (!!1) ecs]
 
 -- | Portable count lines.  Handle just LF (unix), just CR+LF (windows), just CR (macos)
 -- Actually not exact since won't count last line correctly if doesn't finish with a eol marker
@@ -202,7 +197,7 @@ countLines txt = snd $ T.foldl' go (False,0) txt
     go (True, !num)  '\n' = (False,num)    -- Don't increment on CR+LF (we incremented on the CR already)
     go (False, !num) '\n' = (False, num+1) -- Increment LF
     go (_, !num) '\r' = (True, num+1)      -- Increment on CR
-    go (_, !num) c = (False, num)          -- Any other non-line charater
+    go (_, !num) _ = (False, num)          -- Any other non-line charater
 
 doUpload :: CGI CGIResult
 doUpload = do
@@ -262,7 +257,7 @@ runR gen_script = do
     script <- gen_script settings outF
     hPutStr hIn script
     hClose hIn
-    (_,out,err,pid) <- runInteractiveProcess "Rscript" ["--vanilla",inF] Nothing
+    (_,_out,err,pid) <- runInteractiveProcess "Rscript" ["--vanilla",inF] Nothing
                              (Just [("R_LIBS_SITE","/bio/sw/R:")])
     forkIO $ do str <- SIO.run $ SIO.hGetContents err
                 case str of {"" -> return (); x -> writeFile errFname x}
@@ -287,10 +282,12 @@ colsToRList :: [String] -> String
 colsToRList ls = intercalate "," . map (\c -> "'"++c++"'") $ ls
 
 -- | Build an R list of the columns
+columns :: Settings -> String
 columns settings = let columns = concatMap snd $ get_replicates settings
                    in "c("++colsToRList columns++")"
 
 -- | Build the R design matrix
+design :: Settings -> String
 design settings = "matrix(data=c("++intercalate "," (concat allCols)++")"
                   ++ ", nrow="++show (length columns)++", ncol="++show (length reps)
                   ++ ", dimnames = list(c(), c("++colsToRList conditions++"))"
@@ -304,6 +301,7 @@ design settings = "matrix(data=c("++intercalate "," (concat allCols)++")"
 
 -- | Build an R contrast matrix
 contMatrix :: Settings -> [String] -> String
+contMatrix _ [] = error "Unexpected empty fields to contMatrix"
 contMatrix settings (c1:cs) =  "matrix(data=c("++intercalate "," (concat allCols)++")"
                   ++ ", nrow="++show (length conditions)++", ncol="++show (length cs)
                   ++ ", dimnames = list(c(), c("++colsToRList cs++")))"
@@ -321,19 +319,6 @@ commonVars settings =
     ,("min_counts", show $ get_min_counts settings)
     ,("design", design settings)
     ]
-
-countsVars :: Settings -> FilePath -> [(String, String)]
-countsVars settings file =
-    commonVars settings ++
-    [("file", file)
-    ,("extra_cols", colsToRList extra_cols)
-    ]
-  where
-    extra_cols = nub $ get_info_columns settings ++
-                     maybeToList (get_ec_column settings)
-
-getCountsR :: Settings -> FilePath -> IO String
-getCountsR settings outFile = render "counts.R" (countsVars settings outFile)
 
 dgeR :: Settings -> [String] -> FilePath -> IO String
 dgeR settings cs outFile = render "voom.R" vars

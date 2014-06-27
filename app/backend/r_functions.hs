@@ -4,16 +4,12 @@ module R_Functions
 
 import Control.Applicative
 import Data.Maybe
-import qualified Data.ByteString as BS
-import Data.ByteString.Internal (w2c)
-import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import qualified Data.Text.Lazy as LT
 import Text.Hastache
 import Text.Hastache.Context
 
-import Data.FileEmbed
-
+template_dir :: String
 template_dir = "r-templates/"
 
 hConfig :: MuConfig IO
@@ -29,5 +25,5 @@ render file ctxt = do
     ctx_f str = MuVariable $ fromMaybe (error $ "Missing variable '"++str++"' for :"++file)
                            $ lookup str ctxt
 
-bs2T :: BS.ByteString -> T.Text
-bs2T bs = T.pack . map w2c . BS.unpack $ bs
+-- bs2T :: BS.ByteString -> T.Text
+-- bs2T bs = T.pack . map w2c . BS.unpack $ bs

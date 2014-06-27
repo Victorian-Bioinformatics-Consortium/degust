@@ -64,6 +64,7 @@ data UserSettings =
                } deriving Show
 makeLenses ''UserSettings
 
+defUserSettings :: UserSettings
 defUserSettings = UserSettings { _ec_col = Nothing
                                , _link_col = Nothing
                                , _link_url = Nothing
@@ -101,6 +102,7 @@ instance JSON Settings where
 
 instance JSON UserSettings where
     readJSON (JSObject obj) = chkUserSettingsValid =<< foldM (\u (get,_) -> get u obj) defUserSettings user_settings_cols
+    readJSON _ = Error "Unable to read UserSettings"
     showJSON u = JSObject $ foldl' (\obj (_,set) -> set u obj) (toJSObject []) user_settings_cols
 
 chkUserSettingsValid :: UserSettings -> Result UserSettings
@@ -174,7 +176,7 @@ strToCode s | badChars || null s = error $ "Bad code :"++s
 codeToFilePath :: Code -> FilePath
 codeToFilePath (Code s) = user_dir </> s
 
-settingsFile,countsFile :: Code -> String
+settingsFile,countsFile,annotFile :: Code -> String
 settingsFile code = codeToFilePath code ++ "-settings.js"
 countsFile code = codeToFilePath code ++ "-counts.csv"
 annotFile code = codeToFilePath code ++ "-annot.csv"
@@ -222,10 +224,6 @@ fromOk :: Show t => Result t -> t
 fromOk (Ok r) = r
 fromOk x = error $ "json parse failure : "++show x
 
-resToMaybe :: Result t -> Maybe t
-resToMaybe (Ok r) = Just r
-resToMaybe _ = Nothing
-
 ----------------------------------------------------------------------
 initSettings :: Code -> Settings
 initSettings code = Settings { code = code
@@ -268,3 +266,4 @@ get_js_user_settings :: Settings -> String
 get_js_user_settings s = -- encode $ get_user_settings s
     case showJSON $ get_user_settings s of
       JSObject obj -> encode $ set_field obj "locked" (showJSON $ is_locked s)
+      _ -> error "Unable to read user settings"
