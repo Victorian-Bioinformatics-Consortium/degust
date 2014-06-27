@@ -3,7 +3,7 @@
 {-# LANGUAGE QuasiQuotes, OverloadedStrings, TemplateHaskell, BangPatterns #-}
 
 {- Test on the command line:
-      QUERY_STRING=query=code=2456dfc6c20a6ff4b43129fd6ac00ac5&query=counts ./r-json.hs
+      QUERY_STRING='code=d742e14cdf68a896d426376604046227&query=settings' ./r-json
       QUERY_STRING=query=dge ./r-json.hs
       QUERY_STRING=query=kegg_titles ./r-json.hs
 -}
@@ -24,8 +24,6 @@ import qualified System.IO.Strict as SIO (run, hGetContents, readFile)
 import System.IO (openTempFile, hClose, hPutStr, hPutStrLn, stderr)
 import System.Process
 import System.Directory (removeFile, doesFileExist, getModificationTime, getDirectoryContents)
-import Text.Shakespeare.Text
-import Text.Hamlet
 import Data.Text.Lazy.Encoding
 import qualified Data.Text.Lazy as T
 import Data.Text.Lazy.Builder (toLazyText)
@@ -158,7 +156,7 @@ getAnnot = do
     settings <- findSettings
     liftIO $ Prelude.readFile $ annotFile $ getCode settings
 
-getWithFields :: (Settings -> [String] -> FilePath -> String) -> CGI String
+getWithFields :: (Settings -> [String] -> FilePath -> IO String) -> CGI String
 getWithFields act = do jsonString <- getInput "fields"
                        let flds = decode $ fromMaybe (error "No fields") jsonString
                        case flds of
@@ -167,7 +165,7 @@ getWithFields act = do jsonString <- getInput "fields"
                          Ok [_] -> return ""
                          Ok flds -> runR (\s -> act s flds)
 
-getRCodeWithFields :: (Settings -> [String] -> FilePath -> String) -> CGI String
+getRCodeWithFields :: (Settings -> [String] -> FilePath -> IO String) -> CGI String
 getRCodeWithFields act = do jsonString <- getInput "fields"
                             let flds = decode $ fromMaybe (error "No fields") jsonString
                             case flds of
@@ -175,7 +173,7 @@ getRCodeWithFields act = do jsonString <- getInput "fields"
                               Ok [] -> return ""
                               Ok [_] -> return ""
                               Ok flds -> do s <- findSettings
-                                            return $ act s flds "out-file.csv"
+                                            liftIO $ act s flds "out-file.csv"
 
 findSettings :: CGI Settings
 findSettings = do
@@ -253,15 +251,16 @@ saveSettings = do
                        setHeader "Content-type" "text/json"
                        output "{\"result\": \"ok!\"}"
 
-runR :: (Settings -> FilePath -> String) -> CGI String
-runR script = do
+runR :: (Settings -> FilePath -> IO String) -> CGI String
+runR gen_script = do
   settings <- findSettings
   liftIO $ do
     (inF, hIn) <- openTempFile "tmp" "Rin.tmp"
     (outF, hOut) <- openTempFile "tmp" "Rout.tmp"
     let errFname = outF ++ "-err"
 
-    hPutStr hIn (script settings outF)
+    script <- gen_script settings outF
+    hPutStr hIn script
     hClose hIn
     (_,out,err,pid) <- runInteractiveProcess "Rscript" ["--vanilla",inF] Nothing
                              (Just [("R_LIBS_SITE","/bio/sw/R:")])
@@ -282,17 +281,6 @@ runR script = do
     delFile = try . removeFile
 
 -- instance ToText Int where toText = toText . show
-
-getCountsR :: Settings -> FilePath -> String
-getCountsR settings file =
-    let extra_cols = nub $ get_info_columns settings ++
-                           maybeToList (get_ec_column settings)
-    in
-  T.unpack . toLazyText $ [text|
-  #{initR settings}
-  counts <- cbind(x[,c(#{colsToRList extra_cols})], counts)
-  write.csv(counts, file="#{file}", row.names=FALSE)
- |] ()
 
 -- | Convert the array of string columns to R array of string names
 colsToRList :: [String] -> String
@@ -324,6 +312,7 @@ contMatrix settings (c1:cs) =  "matrix(data=c("++intercalate "," (concat allCols
     oneCol col = map (\c -> if c==col then "1" else if c==c1 then "-1" else "0") conditions
     allCols = map oneCol cs
 
+commonVars :: Settings -> [(String, String)]
 commonVars settings =
     [("sep_char", case get_csv_format settings of {"TAB" -> "\\t" ; "CSV" -> ","; _ -> ","})
     ,("counts_file", get_counts_file settings)
@@ -333,74 +322,36 @@ commonVars settings =
     ,("design", design settings)
     ]
 
+countsVars :: Settings -> FilePath -> [(String, String)]
 countsVars settings file =
     commonVars settings ++
-    [("extra_cols", colsToRList extra_cols)
-    ,("file", file)
+    [("file", file)
+    ,("extra_cols", colsToRList extra_cols)
     ]
   where
     extra_cols = nub $ get_info_columns settings ++
                      maybeToList (get_ec_column settings)
 
+getCountsR :: Settings -> FilePath -> IO String
+getCountsR settings outFile = render "counts.R" (countsVars settings outFile)
 
-getCountsR2 :: Settings -> FilePath -> String
-getCountsR2 settings file = render countsR (countsVars settings file)
-
--- | Common R setup code
-initR settings =
-    let sep_char = case get_csv_format settings of {"TAB" -> "\\t" ; "CSV" -> ","; _ -> ","} :: String
-    in T.unpack . toLazyText $ [text|
-  library(limma)
-  library(edgeR)
-
-  x<-read.delim('#{get_counts_file settings}',skip=#{get_counts_skip settings}, sep="#{sep_char}", check.names=FALSE)
-  counts <- x[,#{columns settings}]
-  keep <- apply(counts, 1, max) >= #{get_min_counts settings}
-  x <- x[keep,]
-  counts <- counts[keep,]
-  design <- #{design settings}
- |] ()
-
-dgeR :: Settings -> [String] -> FilePath -> String
-dgeR settings cs file =
-  let export_cols =  get_info_columns settings
+dgeR :: Settings -> [String] -> FilePath -> IO String
+dgeR settings cs outFile = render "voom.R" vars
+  where
+    vars = commonVars settings ++
+           [("file", outFile)
+           ,("cont_matrix", contMatrix settings cs)
+           ,("export_cols", colsToRList export_cols)
+           ]
+    export_cols =  get_info_columns settings
                      ++ concatMap snd (get_replicates settings)
                      ++ maybeToList (get_ec_column settings)
-  in T.unpack . toLazyText $ [text|
-  #{initR settings}
 
-  nf <- calcNormFactors(counts)
-  y<-voom(counts, design, plot=FALSE,lib.size=colSums(counts)*nf)
 
-  cont.matrix <- #{contMatrix settings cs}
-
-  fit <- lmFit(y,design)
-  fit2 <- contrasts.fit(fit, cont.matrix)
-  fit2 <- eBayes(fit2)
-
-  out <- topTable(fit2, n=Inf, sort.by='none')
-
-  out2 <- cbind(fit2$coef,
-                out[, c('adj.P.Val','AveExpr')],
-                x[, c(#{colsToRList export_cols})] )
-
-  write.csv(out2, file="#{file}", row.names=FALSE,na='')
- |] ()
-
-clusteringR settings cs file =
-    T.unpack . toLazyText $ [text|
-  #{initR settings}
-
-  nf <- calcNormFactors(counts)
-  y<-voom(counts, design, plot=FALSE,lib.size=colSums(counts)*nf)
-
-  fit <- lmFit(y,design)
-
-  # Cluster ordering...
-  library(seriation)
-  d <- dist(fit$coefficients[,c(#{colsToRList cs})])
-  c <- list(hclust = hclust(d))
-  s <- seriate(d, method='OLO', control=c)
-  order <- get_order(s[[1]])
-  write.csv(list(id=order), file="#{file}", row.names=FALSE)
-  |] ()
+clusteringR :: Settings -> [String] -> FilePath -> IO String
+clusteringR settings cs outFile = render "clustering.R" vars
+  where
+    vars = commonVars settings ++
+           [("file", outFile)
+           ,("columns", colsToRList cs)
+           ]
