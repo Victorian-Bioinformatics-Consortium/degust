@@ -172,7 +172,8 @@ getWithFields act = do jsonString <- getInput "fields"
                          Error e -> logMsg ("ERR:"++e) >> return ""
                          Ok [] -> return ""
                          Ok [_] -> return ""
-                         Ok flds -> runR (\s -> act s flds)
+                         Ok flds -> do (res,_) <- runR (\s -> act s flds)
+                                       return res
 
 getRCodeWithFields :: DGEMethod -> CGI String
 getRCodeWithFields act = do jsonString <- getInput "fields"
@@ -182,7 +183,12 @@ getRCodeWithFields act = do jsonString <- getInput "fields"
                               Ok [] -> return ""
                               Ok [_] -> return ""
                               Ok flds -> do s <- findSettings
-                                            liftIO $ act s flds "out-file.csv"
+                                            str <- liftIO $ act s flds "out-file.csv"
+                                            ver_cmd <- liftIO $ versions
+                                            (_,ver_str) <- runR (\_ _ -> versions)
+                                            return $ str ++ ver_cmd ++ ver_str
+  where
+    versions =  render "versions.R" []
 
 findSettings :: CGI Settings
 findSettings = do
@@ -261,7 +267,11 @@ saveSettings = do
                        setHeader "Content-type" "text/json"
                        output "{\"result\": \"ok!\"}"
 
-runR :: (Settings -> FilePath -> IO String) -> CGI String
+-- Takes a function "gen_script".  gen_script should take 2 parameters
+--  settings and an output filename.  It should create an R script that will write
+--  to that file.
+-- This returns a pair.  The first is the contents of the output file, the second is stdout
+runR :: (Settings -> FilePath -> IO String) -> CGI (String,String)
 runR gen_script = do
   settings <- findSettings
   liftIO $ do
@@ -272,20 +282,22 @@ runR gen_script = do
     script <- gen_script settings outF
     hPutStr hIn script
     hClose hIn
-    (_,_out,err,pid) <- runInteractiveProcess "Rscript" ["--vanilla",inF] Nothing
-                             (Just [("R_LIBS_SITE","/bio/sw/R:")])
-    forkIO $ do str <- SIO.run $ SIO.hGetContents err
+    (_,stdoutH,stderrH,pid) <- runInteractiveProcess "Rscript" ["--vanilla",inF] Nothing
+                                   (Just [("R_LIBS_SITE","/bio/sw/R:")])
+    forkIO $ do str <- SIO.run $ SIO.hGetContents stderrH
                 case str of {"" -> return (); x -> writeFile errFname x}
-                hClose err
+                hClose stderrH
+
+    stdout <- SIO.run $ SIO.hGetContents stdoutH
 
     exCode <- waitForProcess pid
 
-    out <- SIO.run $ SIO.hGetContents hOut
+    res <- SIO.run $ SIO.hGetContents hOut
 
     when (exCode == ExitSuccess && not debug) $
        mapM_ delFile [inF, outF, errFname]
 
-    return out
+    return (res,stdout)
   where
     delFile :: FilePath -> IO (Either IOException ())
     delFile = try . removeFile
