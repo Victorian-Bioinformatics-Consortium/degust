@@ -111,7 +111,7 @@ chkUserSettingsValid s = if any invalidChar allColumns
                            else return s
   where
     invalidChar :: String -> Bool
-    invalidChar str = not . null $ intersect "\\'\"" str
+    invalidChar str = not . null $ intersect "\\'\"\n" str
     allColumns :: [String]
     allColumns = (map fst $ s ^. replicates) ++ (concatMap snd $ s ^. replicates)
                  ++ maybeToList (s ^. ec_col)

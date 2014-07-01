@@ -134,13 +134,28 @@ getJSSettings = do
     setHeader "Content-type" "text/json"
     output settingStr
 
+type DGEMethod = Settings -> [String] -> FilePath -> IO String
+
+getDGEMethod :: CGI DGEMethod
+getDGEMethod = do
+    typ <- getInput "method"
+    return $ case typ of
+               Nothing -> voomR
+               Just "voom" -> voomR
+               Just "edgeR" -> edgeR
+               x -> error $ "Unknown method : "++show x
+
 getDGERCode :: CGI CGIResult
-getDGERCode = do s <- getRCodeWithFields dgeR
-                 setHeader "Content-type" "text/plain"
-                 output s
+getDGERCode = do
+    method <- getDGEMethod
+    s <- getRCodeWithFields method
+    setHeader "Content-type" "text/plain"
+    output s
 
 getDGE :: CGI String
-getDGE = getWithFields dgeR
+getDGE = do
+    method <- getDGEMethod
+    getWithFields method
 
 getClustering :: CGI String
 getClustering = getWithFields clusteringR
@@ -150,7 +165,7 @@ getAnnot = do
     settings <- findSettings
     liftIO $ Prelude.readFile $ annotFile $ getCode settings
 
-getWithFields :: (Settings -> [String] -> FilePath -> IO String) -> CGI String
+getWithFields :: DGEMethod -> CGI String
 getWithFields act = do jsonString <- getInput "fields"
                        let flds = decode $ fromMaybe (error "No fields") jsonString
                        case flds of
@@ -159,7 +174,7 @@ getWithFields act = do jsonString <- getInput "fields"
                          Ok [_] -> return ""
                          Ok flds -> runR (\s -> act s flds)
 
-getRCodeWithFields :: (Settings -> [String] -> FilePath -> IO String) -> CGI String
+getRCodeWithFields :: DGEMethod -> CGI String
 getRCodeWithFields act = do jsonString <- getInput "fields"
                             let flds = decode $ fromMaybe (error "No fields") jsonString
                             case flds of
@@ -320,8 +335,15 @@ commonVars settings =
     ,("design", design settings)
     ]
 
-dgeR :: Settings -> [String] -> FilePath -> IO String
-dgeR settings cs outFile = render "voom.R" vars
+
+voomR :: DGEMethod
+voomR = voom_or_edgeR "voom.R"
+
+edgeR :: DGEMethod
+edgeR = voom_or_edgeR "edgeR.R"
+
+voom_or_edgeR :: String -> DGEMethod
+voom_or_edgeR r_file settings cs outFile = render r_file vars
   where
     vars = commonVars settings ++
            [("file", outFile)
