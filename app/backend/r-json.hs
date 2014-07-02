@@ -71,9 +71,10 @@ hash key = show . md5 . pack . map (fromIntegral . fromEnum) $ key
 
 newest_file_time :: IO String
 newest_file_time = do
-  ts <- mapM getModificationTime =<< filterM doesFileExist =<< getDirectoryContents "."
+  ts1 <- mapM getModificationTime =<< filterM doesFileExist =<< getDirectoryContents "."
+  ts2 <- mapM getModificationTime =<< filterM doesFileExist =<< getDirectoryContents "r-templates"
   -- hPrintf stderr "%s\n" (show . maximum $ ts)
-  return $ show . maximum $ ts
+  return $ show . maximum $ ts1 ++ ts2
 
 cached :: String -> CGI String -> CGI CGIResult
 cached typ act = do
