@@ -106,8 +106,13 @@ case "$1" in
 
         # Copy production server specific files
         cp -r kegg "$dest"
-        cp htaccess "$dest"/.htaccess
-        mkdir -p "$dest"/tmp "$dest"/cached "$dest"/user-files
+        cp htaccess-main "$dest"/.htaccess
+        for f in tmp cached user-files; do
+            dir = "$dest/$f"
+            mkdir -p "$dir"
+            chmod o= "$dir"
+            cp htaccess-deny "$dir"/.htaccess
+        done
         ;;
 esac
 
