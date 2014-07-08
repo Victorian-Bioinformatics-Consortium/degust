@@ -7,7 +7,7 @@ fit <- lmFit(y,design)
 
 # Cluster ordering...
 library(seriation)
-d <- dist(fit$coefficients[,c({{columns}})])
+d <- dist(fit$coefficients[,c({{count_columns}})])
 c <- list(hclust = hclust(d))
 s <- seriate(d, method='OLO', control=c)
 order <- get_order(s[[1]])

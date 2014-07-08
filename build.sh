@@ -15,34 +15,35 @@ case "$1" in
 esac
 
 mkdir -p "$dest"
-mkdir -p "$dest"/css
+mkdir -p "$dest"/public/css
 
 case "$1" in
     dev)
         echo "Building 'dev'"
         echo "Linking in backend files for 'dev' deploy"
         (cd "$dest" ;
-            for f in ../app/backend/*.hs ; do
+            for f in ../app/backend/*.rb ; do
                 rm -f `basename "$f"`
                 ln -s $f .
-            done )
-        (cd "$dest" ; rm -f r-json.cgi ; ln -s r-json.hs r-json.cgi)
+            done
+            ln -s ../app/backend/r-templates .
+        )
         mkdir -p "$dest"/tmp "$dest"/user-files "$dest"/cached
 
         echo "Linking in CSS and HTML"
         # Combine the lib CSS
-        cat app/css/lib/*.css > "$dest"/css/lib.css
+        cat app/css/lib/*.css > "$dest"/public/css/lib.css
 
         # Link our CSS
-        (cd "$dest"/css ;
-            for f in ../../app/css/*.css ; do
+        (cd "$dest"/public/css ;
+            for f in ../../../app/css/*.css ; do
                 rm -f `basename "$f"`
                 ln -s "$f" .
             done )
 
         # Link the HTML
-        (cd "$dest" ;
-            for f in ../app/html/* ; do
+        (cd "$dest"/public ;
+            for f in ../../app/html/* ; do
                 rm -f `basename "$f"`
                 ln -s "$f" .
             done )
@@ -51,28 +52,28 @@ case "$1" in
         echo "Building '$1'"
         echo "Combining css and minifying..."
         # Combine the lib CSS
-        cat app/css/lib/*.css | cleancss > "$dest"/css/lib.css
+        cat app/css/lib/*.css | cleancss > "$dest"/public/css/lib.css
         # Minify our CSS
         for f in app/css/*.css; do
-            t="$dest"/css/`basename "$f"`
+            t="$dest"/public/css/`basename "$f"`
             rm -f "$t"
             cat "$f" | cleancss > "$t"
         done
 
-        rm -f "$dest"/*.html
-        cp -r app/html/* "$dest"
+        rm -f "$dest"/public/*.html
+        cp -r app/html/* "$dest"/public
         ;;
     *)
         echo "This did not happen..."
         exit 1
 esac
 
-cp -r app/css/lib/images "$dest"/css/
-cp -r app/images "$dest"
+cp -r app/css/lib/images "$dest"/public/css/
+cp -r app/images "$dest"/public
 
 echo "Compiling CoffeeScript and bundling all js..."
 for f in app/js/*-req.coffee; do
-    t="$dest/"$(basename "${f%-req.coffee}")".js"
+    t="$dest/public/"$(basename "${f%-req.coffee}")".js"
     echo "Building $f -> $t"
 
     case "$1" in
@@ -97,11 +98,8 @@ case "$1" in
         )
         ;;
     prod-server)
-        echo "Building backend"
-        # Build the backend
-        cabal build
-        rm -f "$dest"/r-json.cgi "$dest"/*.hs
-        cp dist/build/r-json/r-json "$dest"/r-json.cgi
+        echo "Copying backend"
+        cp app/backend/*.rb "$dest"/
         cp -r app/backend/r-templates "$dest"
 
         # Copy production server specific files
@@ -119,7 +117,7 @@ esac
 
 case "$1" in
     dev)
-        echo "Dev build ready.  Now run (cd $dest ; ../server.py)"
+        echo "Dev build ready.  Now run (cd $dest ; rerun -b -d ../app 'ruby ./degust-serve.rb')"
         ;;
     prod-server)
         echo "Production server build ready in $dest/"
