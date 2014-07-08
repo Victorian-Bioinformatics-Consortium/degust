@@ -18,8 +18,16 @@ get '/' do
   send_file "public/index.html"
 end
 
-# All other pages
+# Other pages
 get '/r-json.cgi' do
+  main_dispatch
+end
+
+post '/r-json.cgi' do
+  main_dispatch
+end
+
+def main_dispatch
   q = params[:query]
   code = params[:code]
   case q
@@ -30,7 +38,7 @@ get '/r-json.cgi' do
   when 'csv'
     raise "unimplemented csv"
   when 'partial_csv'
-    raise "unimplemented partial_csv"
+    do_partial_csv(code)
   when 'dge'
     do_dge(code, params[:method], JSON.parse(params[:fields]))
   when 'dge_r_code'
@@ -38,7 +46,7 @@ get '/r-json.cgi' do
   when 'kegg_titles'
     do_kegg(code)
   when 'upload'
-    raise "unimplemented upload"
+    do_upload
   when 'save'
     raise "unimplemented save"
   else
@@ -78,21 +86,66 @@ class DGESettings
     user_settings['locked'] = @settings['locked']
   end
 
+  def self.create(file, ip_addr)
+    now = Time.now.to_i
+    code=''
+    while true
+      code = Digest::MD5.hexdigest("#{now}#{rand}")
+      begin
+        File.open("#{DGESettings.user_dir}/#{code}", File::WRONLY|File::CREAT|File::EXCL)
+      rescue
+        # Do nothing, just loop
+      else
+        break
+      end
+    end
+
+    settings = {
+      :code => code,
+      :create => Time.now,
+      :locked => false,
+      :remote_addr => ip_addr,
+      :user_settings => {
+        :name => "",
+        :fdr_column => "",
+        :analyze_server_side => true,
+        :avg_column => "",
+        :primary_name => "",
+        :fc_columns => [],
+        :hide_columns => [],
+        :init_select => [],
+        :skip => 0,
+        :csv_format => true,
+        :replicates => [],
+        :info_columns => [],
+      },
+    }
+    File.write(DGESettings.settings_file(code), settings.to_json)
+    settings = DGESettings.new(code)
+
+    FileUtils.cp(file.path, settings.counts_file)
+    settings
+  end
+
+  def code
+    @code
+  end
+
   def user_settings
     @settings['user_settings']
   end
 
   def counts_file
-    "#{user_dir}/#{@code}-counts.csv"
+    "#{DGESettings.user_dir}/#{@code}-counts.csv"
   end
 
   private
 
-  def user_dir
+  def self.user_dir
     "user-files"
   end
 
-  def settings_file(code)
+  def self.settings_file(code)
     "#{user_dir}/#{code}-settings.js"
   end
 
@@ -107,7 +160,7 @@ class DGESettings
   end
 
   def load_settings(code)
-    f = settings_file(code)
+    f = DGESettings.settings_file(code)
     if !File.exist?(f)
       raise NoSuchCode, "no such code : #{code}"
     end
@@ -281,4 +334,41 @@ def do_kegg(code)
     csv << ["code","title","ec"]
     files.each {|f| csv << f}
   end
+end
+
+def isValid(file)
+  nlines = %x{wc -l "#{file.path}"}.to_i
+  if nlines < 10
+    raise "too few lines : #{nlines}"
+  end
+  if nlines > 100000
+    raise "too many lines"
+  end
+  true
+end
+
+def do_upload
+  unless params[:filename] &&
+         (tmpfile = params[:filename][:tempfile]) &&
+         (name = params[:filename][:filename])
+    return "Error : no file selected"
+  end
+
+  isValid(tmpfile)
+  ip = request.ip
+  settings = DGESettings.create(tmpfile, request.ip)
+  redirect to("compare.html?code=#{settings.code}")
+end
+
+def do_partial_csv(code)
+  settings = DGESettings.new(code)
+  res = ""
+  n=0
+  File.foreach(settings.counts_file) do |l|
+    res += l
+    n+=1
+    break if n>=20
+  end
+  content_type 'text/csv'
+  res
 end
