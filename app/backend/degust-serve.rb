@@ -39,14 +39,14 @@ def main_dispatch
     redirect_main(code)
   when 'settings'
     get_settings(code)
-  when 'csv'
-    raise "unimplemented csv"
   when 'partial_csv'
     do_partial_csv(code)
   when 'dge'
-    do_dge(code, params[:method], JSON.parse(params[:fields]))
+    dge = DGE_Method.new(code, params[:method], JSON.parse(params[:fields]))
+    send_file(dge.do_dge)
   when 'dge_r_code'
-    raise "unimplemented dge_r_code"
+    dge = DGE_Method.new(code, params[:method], JSON.parse(params[:fields]))
+    dge.show_code
   when 'kegg_titles'
     do_kegg(code)
   when 'upload'
@@ -78,12 +78,12 @@ end
 
 def get_settings(code)
   content_type :json
-  s = DGESettings.new(code)
+  s = DGE_Settings.new(code)
   s.user_settings.to_json
 end
 
 
-class DGESettings
+class DGE_Settings
   def initialize(unsafe_code)
     @code = sanitize_code(unsafe_code)
     @settings = load_settings(@code)
@@ -96,7 +96,7 @@ class DGESettings
     while true
       code = Digest::MD5.hexdigest("#{now}#{rand}")
       begin
-        File.open("#{DGESettings.user_dir}/#{code}", File::WRONLY|File::CREAT|File::EXCL)
+        File.open("#{DGE_Settings.user_dir}/#{code}", File::WRONLY|File::CREAT|File::EXCL)
       rescue
         # Do nothing, just loop
       else
@@ -124,15 +124,15 @@ class DGESettings
         :info_columns => [],
       },
     }
-    File.write(DGESettings.settings_file(code), settings.to_json)
-    settings = DGESettings.new(code)
+    File.write(DGE_Settings.settings_file(code), settings.to_json)
+    settings = DGE_Settings.new(code)
 
     FileUtils.cp(file.path, settings.counts_file)
     settings
   end
 
   def write(s)
-    f = DGESettings.settings_file(code)
+    f = DGE_Settings.settings_file(code)
     tmp = f + '.tmp'
     @settings['user_settings'] = s
     File.write(tmp, @settings.to_json)
@@ -148,7 +148,7 @@ class DGESettings
   end
 
   def counts_file
-    "#{DGESettings.user_dir}/#{@code}-counts.csv"
+    "#{DGE_Settings.user_dir}/#{@code}-counts.csv"
   end
 
   private
@@ -172,7 +172,7 @@ class DGESettings
   end
 
   def load_settings(code)
-    f = DGESettings.settings_file(code)
+    f = DGE_Settings.settings_file(code)
     if !File.exist?(f)
       raise NoSuchCode, "no such code : #{code}"
     end
@@ -271,66 +271,92 @@ class R_Params
 
 end
 
-def do_dge(code, method, fields)
-  settings = DGESettings.new(code)
-  r_file = case method
-           when 'voom'
-             'voom'
-           when 'edgeR'
-             'edgeR'
-           else
-             'voom'
-           end
-  r_params = R_Params.new(settings)
-  hsh = {
-    :sep_char => r_params.sep_char,
-    :counts_file => settings.counts_file,
-    :counts_skip => settings.user_settings["skip"],
-    :count_columns => r_params.count_columns,
-    :min_counts => settings.user_settings["min_counts"],
-    :design => r_params.design_matrix,
-
-    :cont_matrix => r_params.contrast_matrix(fields),
-    :export_cols => r_params.export_cols,
-  }
-  fOut = runR(r_file, hsh)
-  send_file(fOut.path)
-end
-
-def runR(r_file, hsh)
-  fIn  = Tempfile.new('Rtmp', 'tmp')
-  fOut = Tempfile.new('Rtmp', 'tmp')
-  hsh[:file] = fOut.path
-
-  str = handlebars_simple(r_file, hsh)
-  File.write(fIn, str)
-
-  out,err = Open3.capture3({"R_LIBS_SITE" => "/bio/sw/R:"}, "RScript --vanilla #{fIn.path}")
-
-  if $debug
-    stem="tmp/#{Time.now.to_i}"
-    File.write(stem + '-stdin', str)
-    File.write(stem + '-stdout', out)
-    File.write(stem + '-stderr', err)
+class DGE_Method
+  def initialize(code, method, fields)
+    (@code, @method, @fields) = [code, method, fields]
   end
 
-  fOut
-end
+  def do_dge
+    hsh = param_hash
+    fOut = runR(method_file, hsh)[:out]
+    fOut.path
+  end
 
-def handlebars_simple(fname, hsh)
-  f = File.read("r-templates/#{fname.strip}.R")
-  f.gsub(/{{(.*?)}}/) do |m|
-    if $1[0] == '>'
-      handlebars_simple($1[1..-1], hsh)
+  def show_code
+    hsh = param_hash
+    hsh[:file] = "outfile.csv"
+    str = handlebars_simple(method_file, hsh)
+
+    ver = runR("versions", hsh)
+
+    str + "-"*60 + "\n" + ver[:stdout]
+  end
+
+  private
+
+  def method_file
+    case @method
+    when 'voom'
+      'voom'
+    when 'edgeR'
+      'edgeR'
     else
-      hsh[$1.to_sym]
+      'voom'
+    end
+  end
+
+  def param_hash
+    settings = DGE_Settings.new(@code)
+    r_params = R_Params.new(settings)
+    hsh = {
+      :sep_char => r_params.sep_char,
+      :counts_file => settings.counts_file,
+      :counts_skip => settings.user_settings["skip"],
+      :count_columns => r_params.count_columns,
+      :min_counts => settings.user_settings["min_counts"],
+      :design => r_params.design_matrix,
+
+      :cont_matrix => r_params.contrast_matrix(@fields),
+      :export_cols => r_params.export_cols,
+    }
+    hsh
+  end
+
+  def runR(r_file, hsh)
+    fIn  = Tempfile.new('Rtmp', 'tmp')
+    fOut = Tempfile.new('Rtmp', 'tmp')
+    hsh[:file] = fOut.path
+
+    str = handlebars_simple(r_file, hsh)
+    File.write(fIn, str)
+
+    out,err = Open3.capture3({"R_LIBS_SITE" => "/bio/sw/R:"}, "RScript --vanilla #{fIn.path}")
+
+    if $debug
+      stem="tmp/#{Time.now.to_i}"
+      File.write(stem + '-stdin', str)
+      File.write(stem + '-stdout', out)
+      File.write(stem + '-stderr', err)
+    end
+
+    {:out => fOut, :stdout => out, :stderr => err, :in => str}
+  end
+
+  def handlebars_simple(fname, hsh)
+    f = File.read("r-templates/#{fname.strip}.R")
+    f.gsub(/{{(.*?)}}/) do |m|
+      if $1[0] == '>'
+        handlebars_simple($1[1..-1], hsh)
+      else
+        hsh[$1.to_sym]
+      end
     end
   end
 end
 
 
 def do_kegg(code)
-  settings = DGESettings.new(code)
+  settings = DGE_Settings.new(code)
 
   files = CSV.read('public/kegg/pathway/map_title.tab', :col_sep=>"\t")
   files.each do |file|
@@ -368,12 +394,12 @@ def do_upload
 
   isValid(tmpfile)
   ip = request.ip
-  settings = DGESettings.create(tmpfile, request.ip)
+  settings = DGE_Settings.create(tmpfile, request.ip)
   redirect to("compare.html?code=#{settings.code}")
 end
 
 def do_partial_csv(code)
-  settings = DGESettings.new(code)
+  settings = DGE_Settings.new(code)
   res = ""
   n=0
   File.foreach(settings.counts_file) do |l|
@@ -386,7 +412,7 @@ def do_partial_csv(code)
 end
 
 def do_save(code, user_settings)
-  settings = DGESettings.new(code)
+  settings = DGE_Settings.new(code)
 
   settings.write(user_settings)
 
