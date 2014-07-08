@@ -5,6 +5,10 @@ require 'json'
 require 'open3'
 require 'csv'
 
+
+# TODO : clean column names before sending to R
+#        check 'locked' on save
+
 # Standard links to suppport
 # http://vicbioinformatics.com/degust/compare.html?code=example
 
@@ -48,7 +52,7 @@ def main_dispatch
   when 'upload'
     do_upload
   when 'save'
-    raise "unimplemented save"
+    do_save(code, JSON.parse(params[:settings]))
   else
     status 404
     body 'Unknown query'
@@ -127,6 +131,14 @@ class DGESettings
     settings
   end
 
+  def write(s)
+    f = DGESettings.settings_file(code)
+    tmp = f + '.tmp'
+    @settings['user_settings'] = s
+    File.write(tmp, @settings.to_json)
+    FileUtils.mv(tmp, f, :force => true)
+  end
+
   def code
     @code
   end
@@ -170,12 +182,12 @@ class DGESettings
       'init_select'  => [],
       'hide_columns' => [],
       'name' => "",
-      'min_counts' => 0,
       'fc_columns' => [],
       'primary_name' => "",
       'avg_column' => "",
       'analyze_server_side' => true,
       'fdr_column' => "",
+      'min_counts' => 0,
     }
     may_set(res['user_settings'], defaults)
     res
@@ -371,4 +383,13 @@ def do_partial_csv(code)
   end
   content_type 'text/csv'
   res
+end
+
+def do_save(code, user_settings)
+  settings = DGESettings.new(code)
+
+  settings.write(user_settings)
+
+  content_type :json
+  {:result => "ok!"}.to_json
 end
