@@ -7,7 +7,6 @@ require 'csv'
 
 
 # TODO : clean column names before sending to R
-#        check 'locked' on save
 
 # Standard links to suppport
 # http://vicbioinformatics.com/degust/compare.html?code=example
@@ -141,6 +140,10 @@ class DGE_Settings
 
   def code
     @code
+  end
+
+  def as_hash
+    @settings
   end
 
   def user_settings
@@ -413,6 +416,9 @@ end
 
 def do_save(code, user_settings)
   settings = DGE_Settings.new(code)
+
+
+  raise "File is locked" if settings.as_hash['locked']
 
   settings.write(user_settings)
 
