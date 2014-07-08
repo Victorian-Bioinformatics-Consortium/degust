@@ -26,6 +26,7 @@ case "$1" in
                 rm -f `basename "$f"`
                 ln -s $f .
             done
+            rm -f r-templates
             ln -s ../app/backend/r-templates .
         )
         mkdir -p "$dest"/tmp "$dest"/user-files "$dest"/cached
@@ -92,9 +93,9 @@ done
 
 case "$1" in
     dev)
-        (cd "$dest"
+        (cd "$dest"/public
             rm -f kegg
-            ln -s ../kegg .
+            ln -s ../../kegg .
         )
         ;;
     prod-server)
@@ -103,7 +104,7 @@ case "$1" in
         cp -r app/backend/r-templates "$dest"
 
         # Copy production server specific files
-        cp -r kegg "$dest"
+        cp -r kegg "$dest"/public
         cp htaccess-main "$dest"/.htaccess
         for f in tmp cached user-files; do
             dir = "$dest/$f"

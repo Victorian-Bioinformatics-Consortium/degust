@@ -3,7 +3,7 @@
 require 'sinatra'
 require 'json'
 require 'open3'
-
+require 'csv'
 
 # Standard links to suppport
 # http://vicbioinformatics.com/degust/compare.html?code=example
@@ -36,7 +36,7 @@ get '/r-json.cgi' do
   when 'dge_r_code'
     raise "unimplemented dge_r_code"
   when 'kegg_titles'
-    raise "unimplemented kegg_titles"
+    do_kegg(code)
   when 'upload'
     raise "unimplemented upload"
   when 'save'
@@ -260,5 +260,25 @@ def handlebars_simple(fname, hsh)
     else
       hsh[$1.to_sym]
     end
+  end
+end
+
+
+def do_kegg(code)
+  settings = DGESettings.new(code)
+
+  files = CSV.read('public/kegg/pathway/map_title.tab', :col_sep=>"\t")
+  files.each do |file|
+    begin
+      str = File.read("public/kegg/kgml/map/map#{file[0]}.xml")
+      file.push(str.scan(/name="ec:([.\d]+)"/).join(" "))
+    rescue
+      file.push("")
+    end
+  end
+
+  CSV.generate(:col_sep =>"\t") do |csv|
+    csv << ["code","title","ec"]
+    files.each {|f| csv << f}
   end
 end
