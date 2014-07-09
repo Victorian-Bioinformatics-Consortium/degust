@@ -320,9 +320,9 @@ class DGE_Method
     hsh = {
       :sep_char => r_params.sep_char,
       :counts_file => settings.counts_file,
-      :counts_skip => settings.user_settings["skip"],
+      :counts_skip => settings.user_settings["skip"].to_i,
       :count_columns => r_params.count_columns,
-      :min_counts => settings.user_settings["min_counts"],
+      :min_counts => settings.user_settings["min_counts"].to_i,
       :design => r_params.design_matrix,
 
       :cont_matrix => r_params.contrast_matrix(@fields),
