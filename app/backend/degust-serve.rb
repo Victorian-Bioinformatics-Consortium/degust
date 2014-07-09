@@ -6,8 +6,6 @@ require 'open3'
 require 'csv'
 
 
-# TODO : clean column names before sending to R
-
 # Standard links to suppport
 # http://vicbioinformatics.com/degust/compare.html?code=example
 
@@ -130,7 +128,7 @@ class DGE_Settings
     settings
   end
 
-  def write(s)
+  def write_user_settings(s)
     f = DGE_Settings.settings_file(code)
     tmp = f + '.tmp'
     @settings['user_settings'] = s
@@ -234,14 +232,22 @@ class R_Params
 
   private
 
-  def r_list_chr(lst)
-    r_list_lit(lst.map{|x| "'#{x}'"})
+  # Escape the given string for R
+  def esc(str)
+    "'" + str.to_s.gsub(/(['\\])/) {|x| "\\" + x} + "'"
   end
 
+  # Convert the array of strings, to an R list of strings
+  def r_list_chr(lst)
+    r_list_lit(lst.map{|x| esc(x)})
+  end
+
+  # Convert the array of numbers (or other literals) to an R list
   def r_list_lit(lst)
     "c(" + (lst.map{|x| x}).join(',') + ")"
   end
 
+  # Convert an array of arrays of ints (or other literals) to an R matrix with the given column names
   def r_matrix(mat, colNames)
     "matrix(c(" + (mat.map{|lst| r_list_lit(lst)}).join(',') + "), byrow=F, nrow=#{mat[0].length}, dimnames=list(c(),#{r_list_chr(colNames)}))"
   end
@@ -420,7 +426,7 @@ def do_save(code, user_settings)
 
   raise "File is locked" if settings.as_hash['locked']
 
-  settings.write(user_settings)
+  settings.write_user_settings(user_settings)
 
   content_type :json
   {:result => "ok!"}.to_json
