@@ -83,7 +83,7 @@ def parse_counts_arg(str):
     lst = str.split(':',2)
     return [[x, lst[0]] for x in lst[1].split(',')]
 
-def cuffdiff_avg(str):
+def cuffdiff_avg(csv_file,args):
     """Given a string that is the output from cuffdiff, create and log2(average expression) column.
     Acutally, it is just the average log2() of the FPKM, but that should be enough for visualisation
     """
@@ -105,64 +105,68 @@ def cuffdiff_avg(str):
             cw.writerow(r + [v])
     return si.getvalue()
 
-parser = argparse.ArgumentParser(description='Produce a standalone Degust html file from a CSV file containing DGE.')
-parser.add_argument('csvfile', type=argparse.FileType('r'), 
-                    nargs='?', default='-', 
-                    help="CSV file to process (default stdin)")
-parser.add_argument('-o','--out', type=argparse.FileType('w'), 
-                    default='-', 
-                    help="Output file (default stdout)")
 
-parser.add_argument('--name', default='Unnamed', 
-                    help='Name for this DGE comparison')
-parser.add_argument('--notour',  
-                    help='Do not show the tour on first load')
-parser.add_argument('--primary', default='pri', 
-                    help='Name for the primary condition that the fold-changes are relative to')
-parser.add_argument('--avg',
-                    help='Name for average intensity column in CSV file')
-parser.add_argument('--fdr', default='adj.P.Val', 
-                    help='Name for "FDR" column in CSV file (default "adj.P.Val")')
-parser.add_argument('--logFC',
-                    help='Comma separated names for "logFC" columns in CSV file')
-parser.add_argument('--info',
-                    help='Comma separated names for info columns in CSV file')
-parser.add_argument('--counts', action='append', default=[],
-                    help="Specify 'count' columns - only used for display in the table.  Specify the name of the logFC column then a colon followed by comma separate count columns.  Use multiple times for multiple conditions.  Example: --counts cond1:cond1-rep1,cond1-rep2")
-parser.add_argument('--link-col',
-                    help='Name for column to use with "--link-url"')
-parser.add_argument('--link-url',
-                    help='Gene info URL.  Used when double-clicking the gene-table.  Any "%%s" will be replaced with the value from the specified "--link-col"')
-parser.add_argument('--tab', action='store_true', default=False,
-                    help='Specify that the csv file is actually tab delimited')
-parser.add_argument('--cuffdiff', action='store_true', default=False,
-                    help='Input file is from cuffdiff (gene_exp.diff).  This will set the columns automatically.  Note this is still experimental')
+def arguments():
+    parser = argparse.ArgumentParser(description='Produce a standalone Degust html file from a CSV file containing DGE.')
+    parser.add_argument('csvfile', type=argparse.FileType('r'), 
+                        nargs='?', default='-', 
+                        help="CSV file to process (default stdin)")
+    parser.add_argument('-o','--out', type=argparse.FileType('w'), 
+                        default='-', 
+                        help="Output file (default stdout)")
+    
+    parser.add_argument('--name', default='Unnamed', 
+                        help='Name for this DGE comparison')
+    parser.add_argument('--notour',  
+                        help='Do not show the tour on first load')
+    parser.add_argument('--primary', default='pri', 
+                        help='Name for the primary condition that the fold-changes are relative to')
+    parser.add_argument('--avg',
+                        help='Name for average intensity column in CSV file')
+    parser.add_argument('--fdr', default='adj.P.Val', 
+                        help='Name for "FDR" column in CSV file (default "adj.P.Val")')
+    parser.add_argument('--logFC',
+                        help='Comma separated names for "logFC" columns in CSV file')
+    parser.add_argument('--info',
+                        help='Comma separated names for info columns in CSV file')
+    parser.add_argument('--counts', action='append', default=[],
+                        help="Specify 'count' columns - only used for display in the table.  Specify the name of the logFC column then a colon followed by comma separate count columns.  Use multiple times for multiple conditions.  Example: --counts cond1:cond1-rep1,cond1-rep2")
+    parser.add_argument('--link-col',
+                        help='Name for column to use with "--link-url"')
+    parser.add_argument('--link-url',
+                        help='Gene info URL.  Used when double-clicking the gene-table.  Any "%%s" will be replaced with the value from the specified "--link-col"')
+    parser.add_argument('--tab', action='store_true', default=False,
+                        help='Specify that the csv file is actually tab delimited')
+    parser.add_argument('--cuffdiff', action='store_true', default=False,
+                        help='Input file is from cuffdiff (gene_exp.diff).  This will set the columns automatically.  Note this is still experimental')
+                        
+    return parser
+    
 
-args = parser.parse_args()
+def degust (args):    
+    #print args
+    if args.info:  args.info = args.info.split(",")
+    if args.logFC: args.logFC = args.logFC.split(",")
+    args.counts = [parse_counts_arg(x) for x in args.counts]
+    args.link_col = [args.link_col] if args.link_col else []
+    
+    csv_file = args.csvfile.read()
+       
+    if args.cuffdiff:
+        args.info = ['gene_id','gene']
+        args.logFC = ['log2(fold_change)']
+        args.tab = True
+        args.fdr = 'q_value'
+        args.avg = 'Avg'
+        csv_file = cuffdiff_avg(csv_file,args)
+    
+    #err = check_args(args, csv_file)
+    
+    return embed(csv_file, args)
+        
+if __name__ == '__main__':
 
-#print args
-if args.info:  args.info = args.info.split(",")
-if args.logFC: args.logFC = args.logFC.split(",")
-args.counts = [parse_counts_arg(x) for x in args.counts]
-args.link_col = [args.link_col] if args.link_col else []
-
-# print args
-
-if args.csvfile == sys.stdin:
-    sys.stderr.write("Reading from stdin...\n")
-
-csv_file = args.csvfile.read()
-
-if args.cuffdiff:
-    args.info = ['gene_id','gene']
-    args.logFC = ['log2(fold_change)']
-    args.tab = True
-    args.fdr = 'q_value'
-    args.avg = 'Avg'
-    csv_file = cuffdiff_avg(csv_file)
-
-err = check_args(args, csv_file)
-
-if not err:
-    args.out.write(embed(csv_file, args))
+    parser = arguments()
+    args = parser.parse_args()
+    args.out.write( degust(args) )
 
