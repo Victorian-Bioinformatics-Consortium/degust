@@ -60,7 +60,7 @@ class DGE
     str = handlebars_simple(r_file, hsh)
     File.write(fIn, str)
 
-    out,err = Open3.capture3({"R_LIBS_SITE" => "/bio/sw/R:"}, "RScript --vanilla #{fIn.path}")
+    out,err = Open3.capture3({"R_LIBS_SITE" => "/bio/sw/R:"}, "Rscript --vanilla #{fIn.path}")
 
     if $debug
       stem="tmp/#{Time.now.to_i}"
