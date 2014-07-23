@@ -68,8 +68,6 @@ class BackendCommon
         @setup_genesets()
 
     setup_genesets: () ->
-        window.xx = @settings['sets']
-        console.log @settings['sets']
         if @settings['sets'] && @settings['sets'].length>0
             opts = "<option value=''>--- No set selected ---</option>"
             @settings['sets'].forEach( (s) ->
