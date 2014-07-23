@@ -1,0 +1,55 @@
+<html>
+  <head profile="http://www.w3.org/2005/10/profile">
+    <link rel="icon" type="image/png" href="images/favicon.png"/>
+
+    <!-- Externals CSS -->
+    <link rel="stylesheet" href="./css/lib.css" />
+
+    <link rel="stylesheet" href="./css/common.css" type="text/css"/>
+
+    <script type="text/javascript" src="./common.js"></script>
+    <script type="text/javascript" src='./geneset.js'></script>
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+      <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  </head>
+
+  <body>
+
+    <div class="navbar navbar-inverse navbar-static-top">
+      <div class="container">
+        <div class="navbar-header">
+          <a class="navbar-brand" href="index.html">Degust</a>
+        </div>
+        <ul class="nav navbar-nav">
+          <li><a href="#about-modal" data-toggle="modal">About</a>
+        </ul>
+      </div>
+    </div>
+
+    <div class="container">
+      <h1>Geneset Upload</h1>
+
+      Upload a single geneset.  Expects a file with a single column, with a header.  One gene-symbol per-line.
+
+      <form name="upload" action="r-json.cgi" method="post" enctype="multipart/form-data">
+        <input type="hidden" name="query" value="geneset_upload"/>
+        <input type="hidden" name="code" value="xxx"/>
+        <div class="form-group">
+          <label for="filename">Gene-set File Upload</label>
+          <input type="file" id="filename" name="filename" />
+          <p class="help-block">Upload your file.</p>
+        </div>
+        <button type="submit" class="btn btn-primary">Upload</button>
+      </form>
+
+      <div class='browser-warning-outer'></div>
+    </div>
+  </body>
+</html>
+
+
