@@ -63,6 +63,24 @@ class BackendCommon
         else
             $('a.config').removeClass('hide')
             $('a.config').attr('href', BackendCommon.config_url())
+            $('a.geneset-upload').attr('href', "geneset-upload.html?code=#{window.my_code}")
+
+        @setup_genesets()
+
+    setup_genesets: () ->
+        window.xx = @settings['sets']
+        console.log @settings['sets']
+        if @settings['sets'] && @settings['sets'].length>0
+            opts = "<option value=''>--- No set selected ---</option>"
+            @settings['sets'].forEach( (s) ->
+                opts += "<option value='#{s.file}'>#{s.name}</option>"
+            )
+            $('.geneset-filter select').html(opts)
+
+            $('.geneset-filter').removeClass('hide')
+            $('.geneset-filter').show()
+        else
+            $('.geneset-filter').hide()
 
     request_kegg_data: (callback) ->
         d3.tsv(BackendCommon.script('query=kegg_titles'), (err,ec_data) ->
@@ -275,6 +293,8 @@ pcaDimsSlider = null
 
 searchStr = ""
 kegg_filter = []
+geneset_filter = []
+geneset_filter_column = null
 h_runfilters = null
 g_tour_setup = false
 
@@ -520,6 +540,10 @@ expr_filter = (row) ->
         ec_col = g_data.column_by_type('ec')
         return row[ec_col] in kegg_filter
 
+    # If a gene set is selected, filter to that
+    if geneset_filter.length>0
+        return row[geneset_filter_column] in geneset_filter
+
     true
 
 init_search = () ->
@@ -629,6 +653,31 @@ init_slider = () ->
         update_flags()
         gene_table.invalidate()
     )
+
+geneset_selected = () ->
+    code = $('.geneset-filter select option:selected').val()
+    if !code
+        geneset_filter = []
+        update_data()
+    else
+        url = "r-json.cgi?code=#{code}&query=geneset_get"
+        d3.tsv(url, (err, dat) ->
+            possible_keys = d3.keys(dat[0])
+            columns = g_data.columns_by_type('info').map((c) -> c.name)
+            key=null
+            for k in possible_keys
+                if k in columns
+                    key=k
+                    break
+            if !key?
+                log_error "No valid key column in data set : #{possible_keys}"
+            else
+                log_info "Loaded geneset.  Matching on key=#{key} : rows=#{dat.length}"
+
+            geneset_filter_column = key
+            geneset_filter = dat.map((r) -> r[key])
+            update_data()
+        )
 
 calc_kegg_colours = () ->
     ec_dirs = {}
@@ -815,6 +864,7 @@ init_page = (use_backend) ->
     fcThreshold  = settings['fcThreshold']  if settings['fcThreshold'] != undefined
 
     $("select#kegg").change(kegg_selected)
+    $(".geneset-filter select").change(geneset_selected)
 
     $('#select-pc a').click((e) ->  e.preventDefault(); activate_parcoords())
     $('#select-ma a').click((e) ->  e.preventDefault(); activate_ma_plot())

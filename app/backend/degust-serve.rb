@@ -53,6 +53,10 @@ def main_dispatch
     do_upload
   when 'save'
     do_save(code, JSON.parse(params[:settings]))
+  when 'geneset_get'
+    do_geneset_get(code)
+  when 'geneset_upload'
+    do_geneset_upload(code)
   else
     status 404
     body 'Unknown query'
@@ -123,6 +127,41 @@ def do_upload
   isValid(tmpfile)
   ip = request.ip
   settings = Settings.create(tmpfile, request.ip)
+  redirect to("compare.html?code=#{settings.code}")
+end
+
+def do_geneset_get(geneset_code)
+  geneset_code.gsub!(/\.|\//,'')
+  send_file("#{Settings.user_dir}/#{geneset_code}-set")
+end
+
+def do_geneset_upload(code)
+  unless params[:filename] &&
+         (tmpfile = params[:filename][:tempfile]) &&
+         (name = params[:filename][:filename])
+    return "Error : no file selected"
+  end
+
+  settings = Settings.new(code)
+  user_settings = settings.user_settings
+
+  now = Time.now.to_i
+  new_code=''
+  while true
+    new_code = Digest::MD5.hexdigest("#{now}#{rand}")
+    begin
+      File.open("#{Settings.user_dir}/#{new_code}", File::WRONLY|File::CREAT|File::EXCL)
+    rescue
+      # Do nothing, just loop
+    else
+      break
+    end
+  end
+  FileUtils.cp(tmpfile.path, "#{Settings.user_dir}/#{new_code}-set")
+
+  user_settings['sets'] ||= []
+  user_settings['sets'].push({:name => name, :file => new_code})
+  settings.write_user_settings(user_settings)
   redirect to("compare.html?code=#{settings.code}")
 end
 
