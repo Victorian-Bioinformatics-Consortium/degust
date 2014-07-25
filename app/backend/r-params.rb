@@ -4,10 +4,10 @@ class R_Params
   end
 
   def sep_char
-    case @settings.user_settings['csv_format']
-    when "TAB"; "\\t"
-    when "CSV"; ","
-    else ","
+    if @settings.user_settings['csv_format']
+      ","
+    else
+      "\\t"
     end
   end
 
