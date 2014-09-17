@@ -187,5 +187,5 @@ class SVG
           .attr("href-lang", "image/svg+xml")
           .attr("href", "data:image/svg+xml;base64,\n" + btoa(html))
 
-@download_svg = SVG.download_svg
+window.download_svg = SVG.download_svg
 # ------------------------------------------------------------

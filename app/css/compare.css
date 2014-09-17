@@ -96,8 +96,10 @@ div.filter { font-size: 8pt; border: 1px solid #aaa; border-radius: 5px; backgro
 /* PCA-plot / MDS-plot ***********************************************************/
 #dge-pca .bar-chart { position: absolute; bottom: 0; left: 510px; }
 
-#dge-pca .label { font-size: 100%; }
+#dge-pca .label { font-size: 10pt; }
 #dge-pca .title { font-size: 70%; font-weight: bold; }
+
+#dge-pca .axis .tick { font-size: 8pt; }
 
 #dge-pca .scatter .axis line {
   stroke: #000;
@@ -190,3 +192,11 @@ div.filter { font-size: 8pt; border: 1px solid #aaa; border-radius: 5px; backgro
 .edit-btns {
     padding: 2px;
 }
+
+/* SVG Download ***********************************************************************/
+.svg-download {
+  float: right;
+  color: #999;
+  font-size: 9px;
+}
+

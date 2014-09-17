@@ -778,6 +778,12 @@ show_r_code = () ->
         $('div#code-modal').modal()
     )
 
+
+setup_download = (sel) ->
+    d3.selectAll(".svg-download")
+          .on("mousedown", (e) -> download_svg(d3.event.target))
+
+
 render_page = (template) ->
     # Show the main html
     opts =
@@ -795,6 +801,7 @@ render_fail_page = () -> render_page(require("../templates/fail.hbs"))
 
 init_page = (use_backend) ->
     render_main_page()
+    setup_download(".svg_download")
 
     g_data = new GeneData([],[])
 
