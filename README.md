@@ -92,7 +92,7 @@ For building from sources, you will need nodejs and the following modules.
 
     npm install -g browserify
     npm install -g clean-css
-    npm install hbsfy
+    npm install hbsfy@1.3
     npm install handlebars-runtime
     npm install uglify-js
     npm install coffeeify

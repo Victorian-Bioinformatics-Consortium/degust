@@ -99,15 +99,20 @@ case "$1" in
     prod-server)
         echo "Building backend"
         # Build the backend
-        (cd app/backend ; ghc -O2 --make r-json)
+        cabal build
         rm -f "$dest"/r-json.cgi "$dest"/*.hs
-        cp app/backend/r-json "$dest"/r-json.cgi
+        cp dist/build/r-json/r-json "$dest"/r-json.cgi
+        cp -r app/backend/r-templates "$dest"
 
         # Copy production server specific files
         cp -r kegg "$dest"
-        cp htaccess "$dest"/.htaccess
-        mkdir -p "$dest"/tmp "$dest"/cached "$dest"/user-files
-        cp examples/example-counts.csv "$dest"
+        cp htaccess-main "$dest"/.htaccess
+        for f in tmp cached user-files; do
+            dir = "$dest/$f"
+            mkdir -p "$dir"
+            chmod o= "$dir"
+            cp htaccess-deny "$dir"/.htaccess
+        done
         ;;
 esac
 

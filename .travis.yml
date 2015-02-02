@@ -3,7 +3,7 @@ before_install:
   - npm install coffee-script
   - npm install -g browserify
   - npm install -g clean-css
-  - npm install hbsfy
+  - npm install hbsfy@1.3
   - npm install handlebars-runtime
   - npm install uglify-js
   - npm install coffeeify

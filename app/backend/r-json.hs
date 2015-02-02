@@ -3,61 +3,54 @@
 {-# LANGUAGE QuasiQuotes, OverloadedStrings, TemplateHaskell, BangPatterns #-}
 
 {- Test on the command line:
-      QUERY_STRING=query=code=2456dfc6c20a6ff4b43129fd6ac00ac5&query=counts ./r-json.hs
+      QUERY_STRING='code=d742e14cdf68a896d426376604046227&query=settings' ./r-json
       QUERY_STRING=query=dge ./r-json.hs
       QUERY_STRING=query=kegg_titles ./r-json.hs
 -}
 
 import Prelude hiding (catch)
 import Control.Applicative ((<$>))
-import Data.Maybe (fromJust,fromMaybe,maybeToList)
+import Data.Maybe (fromMaybe,maybeToList)
 import Data.List
 import Data.List.Split
 import Network.CGI
 import Control.Monad (when,filterM)
 import Control.Concurrent (forkIO)
-import Control.Concurrent.MVar (newEmptyMVar,putMVar,readMVar,MVar)
-import System.IO.Unsafe (unsafePerformIO)
-import Control.Exception (try, handle, IOException, catch)
+import Control.Exception (try, IOException, catch)
 import System.Exit (ExitCode(..))
 import qualified System.IO.Strict as SIO (run, hGetContents, readFile)
 import System.IO (openTempFile, hClose, hPutStr, hPutStrLn, stderr)
 import System.Process
 import System.Directory (removeFile, doesFileExist, getModificationTime, getDirectoryContents)
-import Text.Shakespeare.Text
-import Text.Hamlet
 import Data.Text.Lazy.Encoding
 import qualified Data.Text.Lazy as T
-import Data.Text.Lazy.Builder (toLazyText)
 import qualified Data.ByteString.Lazy as BS
 import Text.Regex.PCRE
-import Text.JSON (encode,decode,Result(..))
+import Text.JSON (decode,Result(..))
 import Data.Time (getCurrentTime)
 import Text.Printf
 
 import Data.ByteString.Lazy (pack)
 import Data.Digest.Pure.MD5 (md5)
 
-import System.Environment (getProgName)
-
+import R_Functions
 import Utils
 import Settings
 
+debug :: Bool
 debug = False
 
 _log_stderr :: (MonadIO m) => String -> m ()
 _log_stderr = liftIO . hPutStrLn stderr
 
+main :: IO ()
 main = do
   runCGI $ catchCGI doQuery
                  (\ex -> do logMsg $ "Exception : "++show ex
                             outputError 400 "Bad request" []
                  )
 
-fromRight (Right r) = r
-fromRight (Left e) = error e
-
---doQuery :: CGI String
+doQuery :: CGI CGIResult
 doQuery = do query <- getInput "query"
              case query of
                Nothing -> redirectMainPage -- Support old style links
@@ -78,9 +71,10 @@ hash key = show . md5 . pack . map (fromIntegral . fromEnum) $ key
 
 newest_file_time :: IO String
 newest_file_time = do
-  ts <- mapM getModificationTime =<< filterM doesFileExist =<< getDirectoryContents "."
+  ts1 <- mapM getModificationTime =<< filterM doesFileExist =<< getDirectoryContents "."
+  ts2 <- mapM getModificationTime =<< filterM doesFileExist =<< getDirectoryContents "r-templates"
   -- hPrintf stderr "%s\n" (show . maximum $ ts)
-  return $ show . maximum $ ts
+  return $ show . maximum $ ts1 ++ ts2
 
 cached :: String -> CGI String -> CGI CGIResult
 cached typ act = do
@@ -92,7 +86,7 @@ cached typ act = do
   out2 <- case out of
             Right out -> do -- liftIO $ hPutStrLn stderr $ "using cache"
                             return out
-            Left err -> do -- liftIO $ putStrLn $ "cache : "++show err
+            Left _err -> do -- liftIO $ putStrLn $ "cache : "++show err
                      out <- act
                      liftIO $ when (not $ null out) $ writeFile cache_file out
                      return out
@@ -141,13 +135,28 @@ getJSSettings = do
     setHeader "Content-type" "text/json"
     output settingStr
 
+type DGEMethod = Settings -> [String] -> FilePath -> IO String
+
+getDGEMethod :: CGI DGEMethod
+getDGEMethod = do
+    typ <- getInput "method"
+    return $ case typ of
+               Nothing -> voomR
+               Just "voom" -> voomR
+               Just "edgeR" -> edgeR
+               x -> error $ "Unknown method : "++show x
+
 getDGERCode :: CGI CGIResult
-getDGERCode = do s <- getRCodeWithFields dgeR
-                 setHeader "Content-type" "text/plain"
-                 output s
+getDGERCode = do
+    method <- getDGEMethod
+    s <- getRCodeWithFields method
+    setHeader "Content-type" "text/plain"
+    output s
 
 getDGE :: CGI String
-getDGE = getWithFields dgeR
+getDGE = do
+    method <- getDGEMethod
+    getWithFields method
 
 getClustering :: CGI String
 getClustering = getWithFields clusteringR
@@ -157,16 +166,17 @@ getAnnot = do
     settings <- findSettings
     liftIO $ Prelude.readFile $ annotFile $ getCode settings
 
-getWithFields :: (Settings -> [String] -> FilePath -> String) -> CGI String
+getWithFields :: DGEMethod -> CGI String
 getWithFields act = do jsonString <- getInput "fields"
                        let flds = decode $ fromMaybe (error "No fields") jsonString
                        case flds of
                          Error e -> logMsg ("ERR:"++e) >> return ""
                          Ok [] -> return ""
                          Ok [_] -> return ""
-                         Ok flds -> runR (\s -> act s flds)
+                         Ok flds -> do (res,_) <- runR (\s -> act s flds)
+                                       return res
 
-getRCodeWithFields :: (Settings -> [String] -> FilePath -> String) -> CGI String
+getRCodeWithFields :: DGEMethod -> CGI String
 getRCodeWithFields act = do jsonString <- getInput "fields"
                             let flds = decode $ fromMaybe (error "No fields") jsonString
                             case flds of
@@ -174,7 +184,12 @@ getRCodeWithFields act = do jsonString <- getInput "fields"
                               Ok [] -> return ""
                               Ok [_] -> return ""
                               Ok flds -> do s <- findSettings
-                                            return $ act s flds "out-file.csv"
+                                            str <- liftIO $ act s flds "out-file.csv"
+                                            ver_cmd <- liftIO $ versions
+                                            (_,ver_str) <- runR (\_ _ -> versions)
+                                            return $ str ++ ver_cmd ++ ver_str
+  where
+    versions =  render "versions.R" []
 
 findSettings :: CGI Settings
 findSettings = do
@@ -189,11 +204,12 @@ getKeggTitles =  liftIO $ do
     return $ unlines (map (intercalate "\t") $ header : withEC)
   where
     header = ["code","title","ec"]
-    lookupEC line@(mp:_) = do xml <- catch (Prelude.readFile $ "kegg/kgml/map/map"++mp++".xml")
-                                     ((\_ -> return "" ) :: IOException -> IO String)
-                              let ecs = xml =~ ("name=\"ec:([.\\d]+)\"" ::String) :: [[String]]
-                              return $ line ++ [intercalate " " $ map (!!1) ecs]
-
+    lookupEC [] = return []
+    lookupEC line@(mp:_) = do
+        xml <- catch (Prelude.readFile $ "kegg/kgml/map/map"++mp++".xml")
+                     ((\_ -> return "" ) :: IOException -> IO String)
+        let ecs = xml =~ ("name=\"ec:([.\\d]+)\"" ::String) :: [[String]]
+        return $ line ++ [intercalate " " $ map (!!1) ecs]
 
 -- | Portable count lines.  Handle just LF (unix), just CR+LF (windows), just CR (macos)
 -- Actually not exact since won't count last line correctly if doesn't finish with a eol marker
@@ -203,7 +219,7 @@ countLines txt = snd $ T.foldl' go (False,0) txt
     go (True, !num)  '\n' = (False,num)    -- Don't increment on CR+LF (we incremented on the CR already)
     go (False, !num) '\n' = (False, num+1) -- Increment LF
     go (_, !num) '\r' = (True, num+1)      -- Increment on CR
-    go (_, !num) c = (False, num)          -- Any other non-line charater
+    go (_, !num) _ = (False, num)          -- Any other non-line charater
 
 doUpload :: CGI CGIResult
 doUpload = do
@@ -252,56 +268,54 @@ saveSettings = do
                        setHeader "Content-type" "text/json"
                        output "{\"result\": \"ok!\"}"
 
-runR :: (Settings -> FilePath -> String) -> CGI String
-runR script = do
-    settings <- findSettings
-    liftIO $ do
+-- Takes a function "gen_script".  gen_script should take 2 parameters
+--  settings and an output filename.  It should create an R script that will write
+--  to that file.
+-- This returns a pair.  The first is the contents of the output file, the second is stdout
+runR :: (Settings -> FilePath -> IO String) -> CGI (String,String)
+runR gen_script = do
+  settings <- findSettings
+  liftIO $ do
     (inF, hIn) <- openTempFile "tmp" "Rin.tmp"
     (outF, hOut) <- openTempFile "tmp" "Rout.tmp"
     let errFname = outF ++ "-err"
 
-    hPutStr hIn (script settings outF)
+    script <- gen_script settings outF
+    hPutStr hIn script
     hClose hIn
-    (_,out,err,pid) <- runInteractiveProcess "Rscript" ["--vanilla",inF] Nothing
-                             (Just [("R_LIBS_SITE","/bio/sw/R:")])
-    forkIO $ do str <- SIO.run $ SIO.hGetContents err
+    (_,stdoutH,stderrH,pid) <- runInteractiveProcess "Rscript" ["--vanilla",inF] Nothing
+                                   (Just [("R_LIBS_SITE","/bio/sw/R:")])
+    forkIO $ do str <- SIO.run $ SIO.hGetContents stderrH
                 case str of {"" -> return (); x -> writeFile errFname x}
-                hClose err
+                hClose stderrH
+
+    stdout <- SIO.run $ SIO.hGetContents stdoutH
 
     exCode <- waitForProcess pid
 
-    out <- SIO.run $ SIO.hGetContents hOut
+    res <- SIO.run $ SIO.hGetContents hOut
 
     when (exCode == ExitSuccess && not debug) $
        mapM_ delFile [inF, outF, errFname]
 
-    return out
+    return (res,stdout)
   where
     delFile :: FilePath -> IO (Either IOException ())
     delFile = try . removeFile
 
 -- instance ToText Int where toText = toText . show
 
-getCountsR :: Settings -> FilePath -> String
-getCountsR settings file =
-    let extra_cols = nub $ get_info_columns settings ++
-                           maybeToList (get_ec_column settings)
-    in
-  T.unpack . toLazyText $ [text|
-  #{initR settings}
-  counts <- cbind(x[,c(#{colsToRList extra_cols})], counts)
-  write.csv(counts, file="#{file}", row.names=FALSE)
- |] ()
-
 -- | Convert the array of string columns to R array of string names
 colsToRList :: [String] -> String
 colsToRList ls = intercalate "," . map (\c -> "'"++c++"'") $ ls
 
 -- | Build an R list of the columns
+columns :: Settings -> String
 columns settings = let columns = concatMap snd $ get_replicates settings
                    in "c("++colsToRList columns++")"
 
 -- | Build the R design matrix
+design :: Settings -> String
 design settings = "matrix(data=c("++intercalate "," (concat allCols)++")"
                   ++ ", nrow="++show (length columns)++", ncol="++show (length reps)
                   ++ ", dimnames = list(c(), c("++colsToRList conditions++"))"
@@ -315,6 +329,7 @@ design settings = "matrix(data=c("++intercalate "," (concat allCols)++")"
 
 -- | Build an R contrast matrix
 contMatrix :: Settings -> [String] -> String
+contMatrix _ [] = error "Unexpected empty fields to contMatrix"
 contMatrix settings (c1:cs) =  "matrix(data=c("++intercalate "," (concat allCols)++")"
                   ++ ", nrow="++show (length conditions)++", ncol="++show (length cs)
                   ++ ", dimnames = list(c(), c("++colsToRList cs++")))"
@@ -323,61 +338,40 @@ contMatrix settings (c1:cs) =  "matrix(data=c("++intercalate "," (concat allCols
     oneCol col = map (\c -> if c==col then "1" else if c==c1 then "-1" else "0") conditions
     allCols = map oneCol cs
 
--- | Common R setup code
-initR settings =
-    let sep_char = case get_csv_format settings of {"TAB" -> "\\t" ; "CSV" -> ","; _ -> ","} :: String
-    in T.unpack . toLazyText $ [text|
-  library(limma)
-  library(edgeR)
+commonVars :: Settings -> [(String, String)]
+commonVars settings =
+    [("sep_char", case get_csv_format settings of {"TAB" -> "\\t" ; "CSV" -> ","; _ -> ","})
+    ,("counts_file", get_counts_file settings)
+    ,("counts_skip", show $ get_counts_skip settings)
+    ,("columns", columns settings)
+    ,("min_counts", show $ get_min_counts settings)
+    ,("design", design settings)
+    ]
 
-  x<-read.delim('#{get_counts_file settings}',skip=#{get_counts_skip settings}, sep="#{sep_char}", check.names=FALSE)
-  counts <- x[,#{columns settings}]
-  keep <- apply(counts, 1, max) >= #{get_min_counts settings}
-  x <- x[keep,]
-  counts <- counts[keep,]
-  design <- #{design settings}
- |] ()
 
-dgeR :: Settings -> [String] -> FilePath -> String
-dgeR settings cs file =
-  let export_cols =  get_info_columns settings
+voomR :: DGEMethod
+voomR = voom_or_edgeR "voom.R"
+
+edgeR :: DGEMethod
+edgeR = voom_or_edgeR "edgeR.R"
+
+voom_or_edgeR :: String -> DGEMethod
+voom_or_edgeR r_file settings cs outFile = render r_file vars
+  where
+    vars = commonVars settings ++
+           [("file", outFile)
+           ,("cont_matrix", contMatrix settings cs)
+           ,("export_cols", colsToRList export_cols)
+           ]
+    export_cols =  get_info_columns settings
                      ++ concatMap snd (get_replicates settings)
                      ++ maybeToList (get_ec_column settings)
-  in T.unpack . toLazyText $ [text|
-  #{initR settings}
 
-  nf <- calcNormFactors(counts)
-  y<-voom(counts, design, plot=FALSE,lib.size=colSums(counts)*nf)
 
-  cont.matrix <- #{contMatrix settings cs}
-
-  fit <- lmFit(y,design)
-  fit2 <- contrasts.fit(fit, cont.matrix)
-  fit2 <- eBayes(fit2)
-
-  out <- topTable(fit2, n=Inf, sort.by='none')
-
-  out2 <- cbind(fit2$coef,
-                out[, c('adj.P.Val','AveExpr')],
-                x[, c(#{colsToRList export_cols})] )
-
-  write.csv(out2, file="#{file}", row.names=FALSE,na='')
- |] ()
-
-clusteringR settings cs file =
-    T.unpack . toLazyText $ [text|
-  #{initR settings}
-
-  nf <- calcNormFactors(counts)
-  y<-voom(counts, design, plot=FALSE,lib.size=colSums(counts)*nf)
-
-  fit <- lmFit(y,design)
-
-  # Cluster ordering...
-  library(seriation)
-  d <- dist(fit$coefficients[,c(#{colsToRList cs})])
-  c <- list(hclust = hclust(d))
-  s <- seriate(d, method='OLO', control=c)
-  order <- get_order(s[[1]])
-  write.csv(list(id=order), file="#{file}", row.names=FALSE)
-  |] ()
+clusteringR :: Settings -> [String] -> FilePath -> IO String
+clusteringR settings cs outFile = render "clustering.R" vars
+  where
+    vars = commonVars settings ++
+           [("file", outFile)
+           ,("columns", colsToRList cs)
+           ]

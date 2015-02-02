@@ -1,4 +1,10 @@
+v0.19
+  * Fix MDS plots.  Previously was not normalising for library size.
+
+v0.18
   * New condition selector.  Better when changing many conditions
+  * Change to external R templates
+  * Add selector for DGE method:  currently voom/limma or edgeR
 
 v0.17
   * Allow linking directly to a plot type using a hash parameter

@@ -1,5 +1,6 @@
+.cabal-sandbox/
+dist/
 build/
 node_modules/
-app/backend/r-json
 *.o
 *.hi

@@ -120,17 +120,21 @@ class WithBackendAnalysis
         $('.conditions').show()
         $('a.show-r-code').show()
 
+        $('select#dge-method').click((e) => @_select_sample())
+
     request_kegg_data: (callback) ->
         @backend.request_kegg_data(callback)
 
     request_init_data: () ->
         @_init_condition_selector()
 
-    request_dge_data: (columns) ->
+    _request_dge_data: () ->
+        columns = @current_selection
         return if columns.length <= 1
 
         # load csv file and create the chart
-        req = BackendCommon.script("query=dge&fields=#{encodeURIComponent(JSON.stringify columns)}")
+        method = @_get_dge_method()
+        req = BackendCommon.script("query=dge&method=#{method}&fields=#{encodeURIComponent(JSON.stringify columns)}")
         start_loading()
         d3.csv(req, (err, data) =>
             log_info("Downloaded DGE counts : rows=#{data.length}")
@@ -163,22 +167,38 @@ class WithBackendAnalysis
         )
 
     request_r_code: (callback) ->
-        columns = @_get_selected_cols()
-        req = BackendCommon.script("query=dge_r_code&fields=#{encodeURIComponent(JSON.stringify columns)}")
+        columns = @current_selection
+        method = @_get_dge_method()
+        req = BackendCommon.script("query=dge_r_code&method=#{method}&fields=#{encodeURIComponent(JSON.stringify columns)}")
         d3.text(req, (err,data) ->
             log_debug("Downloaded R Code : len=#{data.length}",data,err)
             callback(data)
         )
 
+    _get_dge_method: () ->
+        $('select#dge-method option:selected').val()
 
+    _set_dge_method: (method) ->
+        $('select#dge-method').val(method)
+
+    # Display the sample selector.
     _select_sample: (e) ->
+        current_dge_method = @_get_dge_method()
+
+        # EditList will do nothing if the specified element is already in "edit" mode
         new EditList(
             elem: '.conditions'
             apply: () => @_update_samples()
-            cancel: () => @_set_selected_cols(@current_selection)
+            cancel: () =>
+                @_set_selected_cols(@current_selection)
+                @_set_dge_method(current_dge_method)
         )
 
-    _get_selected_cols: () ->
+    # This reads the state of the form checkboxes and stores it in @current_selection
+    # Note we do it this way rather than a getter because we can't seem to capture
+    # a checkbox change event *before* the checkbox is updated.  So, doing it
+    # this way allows us to "cancel" an checkbox changes after the fact
+    _update_selected_cols: () ->
         cols = []
         # Create a list of conditions that are selected
         $('#files input:checked').each( (i, n) =>
@@ -186,7 +206,6 @@ class WithBackendAnalysis
             cols.push(name)
         )
         @current_selection = cols
-        cols
 
     _set_selected_cols: (cols) ->
         $('#files input:checkbox').each( (i, n) =>
@@ -195,7 +214,8 @@ class WithBackendAnalysis
         )
 
     _update_samples: () ->
-        @request_dge_data(@_get_selected_cols())
+        @_update_selected_cols()
+        @_request_dge_data()
 
     _init_condition_selector: () ->
         init_select = @settings['init_select'] || []

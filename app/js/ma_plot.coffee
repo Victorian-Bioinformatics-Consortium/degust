@@ -71,7 +71,7 @@ class MAPlot
             .attr("x", xScale.range()[1])
             .attr("y", -6)
             .style("text-anchor", "end")
-            .text("Avg Expression")
+            .text("Avg log expr")
 
         @svg.append("g")
             .attr("class", "axis")
