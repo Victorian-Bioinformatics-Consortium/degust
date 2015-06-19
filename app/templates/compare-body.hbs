@@ -33,11 +33,36 @@
             <label>FDR cut-off</label>
             <input class="fdr-fld" type="text" value="0.01" />
             <div id='fdrSlider'></div>
+            <span class="dropdown">
+              <button class="btn-link dropdown-toggle" type="button" id="dropFDR" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                <span class="caret"></span>
+              </button>
+              <ul class="dropdown-menu shortcut-fdr" aria-labelledby="dropFDR">
+                <li><a href="#" data-val='1'>1</a></li>
+                <li><a href="#" data-val='0.05'>0.05</a></li>
+                <li><a href="#" data-val='0.01'>0.01</a></li>
+                <li><a href="#" data-val='0.001'>0.001</a></li>
+                <li><a href="#" data-val='0.0001'>0.0001</a></li>
+              </ul>
+            </span>
           </div>
           <div title='Filter genes by absolute log fold change between any pair of samples' data-placement='left'>
             <label>abs log FC</label>
             <input class="fc-fld" type="text" value="0" />
             <div id='fcSlider'></div>
+            <span class="dropdown">
+              <button class="btn-link dropdown-toggle" type="button" id="dropFC" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                <span class="caret"></span>
+              </button>
+              <ul class="dropdown-menu shortcut-fc" aria-labelledby="dropFC">
+                <li><a href="#" data-val='0'>0 (all)</a></li>
+                <li><a href="#" data-val='0.585'>0.585 (&gt; 1.5x)</a></li>
+                <li><a href="#" data-val='1'>1 (&gt; 2x)</a></li>
+                <li><a href="#" data-val='2'>2 (&gt; 4x)</a></li>
+                <li><a href="#" data-val='3'>3 (&gt; 8x)</a></li>
+                <li><a href="#" data-val='4'>4 (&gt; 16x)</a></li>
+              </ul>
+            </span>
           </div>
           <div title='Show FC from selected condition' data-placement='left'>
             <label for='fc-relative'>FC relative to</label>

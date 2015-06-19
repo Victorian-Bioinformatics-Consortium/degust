@@ -1,3 +1,6 @@
+v0.20
+  * Add pulldown to select FDR & FC cutoffs
+
 v0.19
   * Fix MDS plots.  Previously was not normalising for library size.
 

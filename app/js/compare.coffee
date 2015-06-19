@@ -546,7 +546,7 @@ redraw_plot = () ->
 
 init_slider = () ->
     # wire up the slider to apply the filter to the model
-    new Slider(
+    fdrSlider = new Slider(
           id: "#fdrSlider"
           input_id: "input.fdr-fld"
           step_values: [0, 1e-6, 1e-5, 1e-4, 0.001, .01, .02, .03, .04, .05, 0.1, 1]
@@ -561,7 +561,9 @@ init_slider = () ->
                h_runfilters = window.setTimeout(redraw_plot, 10)
                fdrThreshold = v
     )
-    new Slider(
+    $('.shortcut-fdr a').click(() -> fdrSlider.set_val($(this).data('val'), true))
+
+    fcSlider = new Slider(
           id: "#fcSlider"
           input_id: "input.fc-fld"
           step_values: (Number(x.toFixed(2)) for x in [0..5] by 0.01)
@@ -576,6 +578,8 @@ init_slider = () ->
                h_runfilters = window.setTimeout(redraw_plot, 10)
                fcThreshold = v
     )
+    $('.shortcut-fc a').click(() -> fcSlider.set_val($(this).data('val'), true))
+
     numGenesSlider = new Slider(
           id: "#numGenesSlider"
           input_id: "input.num-genes-fld"
