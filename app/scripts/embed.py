@@ -160,8 +160,11 @@ def degust (args):
         args.avg = 'Avg'
         csv_file = cuffdiff_avg(csv_file,args)
     
-    #err = check_args(args, csv_file)
+    err = check_args(args, csv_file)
     
+    if err:
+        sys.exit(1)
+
     return embed(csv_file, args)
         
 if __name__ == '__main__':
