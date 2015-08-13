@@ -143,6 +143,7 @@ getDGEMethod = do
     return $ case typ of
                Nothing -> voomR
                Just "voom" -> voomR
+               Just "voom-weights" -> voomWeightsR
                Just "edgeR" -> edgeR
                x -> error $ "Unknown method : "++show x
 
@@ -351,6 +352,9 @@ commonVars settings =
 
 voomR :: DGEMethod
 voomR = voom_or_edgeR "voom.R"
+
+voomWeightsR :: DGEMethod
+voomWeightsR = voom_or_edgeR "voom-weights.R"
 
 edgeR :: DGEMethod
 edgeR = voom_or_edgeR "edgeR.R"
