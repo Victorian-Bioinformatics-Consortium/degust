@@ -139,17 +139,13 @@ Requirements:
 
 The resulting build/ directory can then be installed as a CGI site.
 
+These [specific steps](README-backend.md) are known to work on an ubuntu 14.04 install.
+
 #### Troubleshooting
 
   * The directories "tmp/", "cached/" and "user-files/" under the CGI directory must be writable by the web-server user
   * Any runtime errors relating to R will be logged in the directory "tmp/" under the CGI directory
   * If your R libraries are not installed in the default location, you may need to edit r-json.hs and modify the setting for R_LIBS_SITE
-
-## Known Issues
-
-#### Documentation
-
-  * Installing the full back-end is barely documented
 
 ## License ##
 Degust is released under the GPL v3 (or later) license, see <a href='http://github.com/Victorian-Bioinformatics-Consortium/degust/blob/master/COPYING.txt'>COPYING.txt</a>
