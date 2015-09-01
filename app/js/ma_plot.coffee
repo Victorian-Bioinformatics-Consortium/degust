@@ -40,10 +40,10 @@ class MAPlot
         @a_dim = a_dim = (d) -> d[ave_dim[0].idx]
 
         @xScale = xScale = d3.scale.linear()
-                     .domain(d3.extent(data, (d) -> a_dim(d)).map((x) -> x*1.05))
+                     .domain(d3.extent(@data, (d) -> a_dim(d)).map((x) -> x*1.05))
                      .range([@opts.padding, @opts.width-@opts.padding]);
         @yScale = yScale = d3.scale.linear()
-                     .domain(d3.extent(data, (d) -> m_dim(d)).map((x) -> x*1.05))
+                     .domain(d3.extent(@data, (d) -> m_dim(d)).map((x) -> x*1.05))
                      .range([@opts.height-@opts.padding, @opts.padding]);
 
         xAxis = d3.svg.axis()

@@ -41,27 +41,27 @@ class Slider
             @opts.on_change(val)
 
     constructor: (@opts) ->
-        @stepValues = opts.step_values || [0..10]
-        @slider = $(opts.id).slider({
+        @stepValues = @opts.step_values || [0..10]
+        @slider = $(@opts.id).slider({
           animate: true,
           min: 0,
           max: @stepValues.length-1,
           value: 1,
           slide: (event, ui) =>
             v = @stepValues[ui.value]
-            $(opts.input_id).val(@fmt(v))
-            opts.on_change(v)
+            $(@opts.input_id).val(@fmt(v))
+            @opts.on_change(v)
         })
 
         @set_val(@opts.val) if @opts.val?
 
         self = this
-        $(opts.input_id).keyup(() ->
+        $(@opts.input_id).keyup(() ->
           v = $(this).val()
-          if opts.validator(v)
+          if self.opts.validator(v)
             $(this).removeClass('error')
             self.set_slider(v)
-            opts.on_change(v)
+            self.opts.on_change(v)
           else
             $(this).addClass('error')
         )
