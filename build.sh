@@ -108,7 +108,7 @@ case "$1" in
         cp -r kegg "$dest"
         cp htaccess-main "$dest"/.htaccess
         for f in tmp cached user-files; do
-            dir = "$dest/$f"
+            dir="$dest/$f"
             mkdir -p "$dir"
             chmod o= "$dir"
             cp htaccess-deny "$dir"/.htaccess
