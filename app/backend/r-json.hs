@@ -284,8 +284,7 @@ runR gen_script = do
     script <- gen_script settings outF
     hPutStr hIn script
     hClose hIn
-    (_,stdoutH,stderrH,pid) <- runInteractiveProcess "Rscript" ["--vanilla",inF] Nothing
-                                   (Just [("R_LIBS_SITE","/bio/sw/R:")])
+    (_,stdoutH,stderrH,pid) <- runInteractiveProcess "Rscript" ["--vanilla",inF] Nothing (Just [])
     forkIO $ do str <- SIO.run $ SIO.hGetContents stderrH
                 case str of {"" -> return (); x -> writeFile errFname x}
                 hClose stderrH
