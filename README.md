@@ -1,4 +1,9 @@
-# Degust (formerly known as DGE-Vis)
+# This repository is deprecated
+
+**You should now use [https://github.com/drpowell/degust](https://github.com/drpowell/degust)**
+
+
+# Degust
 
 * Visualise RNA-seq differential expression data.
 * Perform your own DGE analysis, or use the inbuilt server to analyse from your own "counts" file.
