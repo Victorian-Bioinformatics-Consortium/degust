@@ -48,6 +48,8 @@ data UserSettings =
                -- Only used on the frontend
                , _hide :: [String] -- ^ Used in the frontend to hide some columns
                , _title :: String -- ^ Title to use in UI
+               , _fdr_threshold :: String -- ^ False Discovery Rate initial value on UI
+               , _fc_threshold :: String -- ^ (Log) Fold Change initial value on UI
 
                , _analyze_server_side :: Bool -- ^ To be analysed server side?
 
@@ -75,6 +77,8 @@ defUserSettings = UserSettings { _ec_col = Nothing
                                , _csv_format = True
                                , _skip = 0
                                , _title = ""
+                               , _fdr_threshold = "1"
+                               , _fc_threshold = "0"
                                , _min_counts = Nothing
                                , _fc_cols = []
                                , _primary = ""
@@ -132,6 +136,8 @@ user_settings_cols = [simple "info_columns" info_cols
                      ,simple_with_def "init_select" init_select []
                      ,simple_with_def "hide_columns" hide []
                      ,simple_with_def "name" title ""
+                     ,simple_with_def "fdrThreshold" fdr_threshold "1"
+                     ,simple_with_def "fcThreshold" fc_threshold "0"
                      ,(get_simple_f "min_counts" min_counts id, set_maybe "min_counts" min_counts)
                      ,simple_with_def "fc_columns" fc_cols []
                      ,simple_with_def "primary_name" primary ""
